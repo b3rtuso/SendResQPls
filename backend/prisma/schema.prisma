@@ -1,0 +1,63 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String     @id @default(uuid())
+  phoneNumber String?  @unique // Mobile users might prefer phone login
+  email     String?    @unique
+  name      String
+  passwordHash String
+  role      Role       @default(CITIZEN)
+  incidents Incident[]
+  createdAt DateTime   @default(now())
+  otpCode String?
+}
+
+model Incident {
+  id                    String      @id @default(uuid())
+  latitude              Float       // From user's GPS
+  longitude             Float       // From user's GPS
+  photoUrl              String      // Required: The photo taken by the user
+  
+  // AI Recommendations
+  aiDetectedType        String?     // e.g., "Fire", "Flood", "Fallen Tree"
+  aiRecommendedDept     Department? // e.g., BFP, PNP, Engineering
+  
+  // Admin Actions
+  assignedDepartment    Department? // The final decision made by the admin
+  status                Status      @default(PENDING)
+  adminNotes            String?     // Notes added by the MDRRMO dispatcher
+  
+  reporterId            String
+  reporter              User        @relation(fields: [reporterId], references: [id])
+  
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+}
+
+enum Role {
+  CITIZEN  // Uses mobile app
+  ADMIN    // Uses web app (MDRRMO Dispatcher)
+}
+
+enum Status {
+  PENDING      // Just reported
+  REVIEWING    // Admin is looking at it
+  DISPATCHED   // Responders sent out
+  RESOLVED     // Handled
+  REJECTED     // Fake report
+}
+
+// Common Philippine MDRRMO partner departments
+enum Department {
+  BFP         // Bureau of Fire Protection
+  PNP         // Phil. National Police
+  MEDICAL     // Ambulance / Red Cross
+  ENGINEERING // DPWH / Local Engineering (fallen trees, road blocks)
+  RESCUE      // General MDRRMO Rescue Team
+}

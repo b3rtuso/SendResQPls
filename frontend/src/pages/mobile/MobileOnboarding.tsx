@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { AlertTriangle, Clock, Bell, ArrowRight, ChevronRight } from 'lucide-react';
 
 const ONBOARDING_KEY = 'srq_onboarding_done';

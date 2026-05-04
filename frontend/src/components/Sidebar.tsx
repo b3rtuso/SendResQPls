@@ -7,7 +7,6 @@ import {
   Building2,
   Settings,
   LogOut,
-  Shield,
 } from 'lucide-react';
 
 const navItems = [

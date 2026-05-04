@@ -11,8 +11,7 @@ const PRECACHE_URLS = [
   '/mobile/report',
   '/mobile/history',
   '/mobile/profile',
-  '/icon-192.png',
-  '/icon-512.png',
+  '/logo.jpg',
   '/manifest.json',
 ];
 
@@ -73,7 +72,7 @@ self.addEventListener('fetch', (event) => {
       }).catch(() => {
         // Return offline fallback for images
         if (request.destination === 'image') {
-          return caches.match('/icon-192.png');
+          return caches.match('/logo.jpg');
         }
       });
     })
@@ -86,8 +85,8 @@ self.addEventListener('push', (event) => {
   const title = data.title || 'SendResqPls';
   const options = {
     body: data.body || 'You have a new notification.',
-    icon: '/icon-192.png',
-    badge: '/icon-192.png',
+    icon: '/logo.jpg',
+    badge: '/logo.jpg',
     vibrate: [200, 100, 200],
     data: { url: data.url || '/mobile' },
     actions: [

@@ -15,35 +15,35 @@
   "id": "sendresqpls-mdrrmo",
   "icons": [
     {
-      "src": "/icon-192.png",
+      "src": "/logo.jpg",
       "sizes": "192x192",
-      "type": "image/png",
+      "type": "image/jpeg",
       "purpose": "any"
     },
     {
-      "src": "/icon-192.png",
+      "src": "/logo.jpg",
       "sizes": "192x192",
-      "type": "image/png",
+      "type": "image/jpeg",
       "purpose": "maskable"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/logo.jpg",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/jpeg",
       "purpose": "any"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/logo.jpg",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/jpeg",
       "purpose": "maskable"
     }
   ],
   "screenshots": [
     {
-      "src": "/icon-512.png",
+      "src": "/logo.jpg",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/jpeg",
       "form_factor": "narrow",
       "label": "SendResqPls Mobile Home"
     }
@@ -54,14 +54,14 @@
       "short_name": "Report",
       "description": "Quickly report an emergency incident",
       "url": "/mobile/report",
-      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/logo.jpg", "sizes": "192x192" }]
     },
     {
       "name": "My Reports",
       "short_name": "History",
       "description": "View your submitted incident reports",
       "url": "/mobile/history",
-      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/logo.jpg", "sizes": "192x192" }]
     }
   ],
   "related_applications": [],

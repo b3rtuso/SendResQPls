@@ -29,9 +29,16 @@ export default function MobileHome() {
           background: 'linear-gradient(135deg, #1E3A5F 0%, #2563EB 100%)',
           padding: '36px 24px 28px', color: 'white',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          position: 'relative', overflow: 'hidden'
         }}>
-          <div>
-            <div style={{ fontSize: 14, opacity: 0.75, marginBottom: 4 }}>Welcome back,</div>
+          {/* Decorative Logo Watermark */}
+          <img src="/logo.png" alt="" style={{ position: 'absolute', right: -20, top: -20, width: 120, opacity: 0.1, pointerEvents: 'none' }} />
+          
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+              <img src="/logo.png" alt="SRQ" style={{ width: 20, height: 20, borderRadius: 4 }} />
+              <div style={{ fontSize: 14, opacity: 0.75 }}>Welcome back,</div>
+            </div>
             <div style={{ fontSize: 26, fontWeight: 800 }}>{userName.split(' ')[0]}</div>
           </div>
           <div style={{

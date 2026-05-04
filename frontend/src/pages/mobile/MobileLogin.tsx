@@ -33,7 +33,11 @@ export default function MobileLogin() {
   return (
     <div className="mobile-shell">
       <div className="mobile-auth">
-        <div className="auth-logo">SRQ</div>
+        <img 
+          src="/logo.png" 
+          alt="SRQ Logo" 
+          style={{ width: 100, height: 100, margin: '0 auto 20px', display: 'block', borderRadius: 24, boxShadow: '0 8px 16px rgba(0,0,0,0.1)' }} 
+        />
         <h1>Welcome Back</h1>
         <p className="auth-subtitle">Log in to SendResqPls to report and track emergencies.</p>
 

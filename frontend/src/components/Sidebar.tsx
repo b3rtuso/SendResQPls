@@ -28,8 +28,8 @@ export default function Sidebar() {
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
-        <div className="brand-icon">
-          <Shield size={22} />
+        <div className="brand-icon" style={{ padding: 0, overflow: 'hidden' }}>
+          <img src="/logo.png" alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         </div>
         <div>
           <h1>MDRRMO</h1>

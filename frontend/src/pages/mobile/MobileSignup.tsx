@@ -89,6 +89,11 @@ export default function MobileSignup() {
   return (
     <div className="mobile-shell">
       <div className="mobile-auth">
+        <img 
+          src="/logo.png" 
+          alt="SRQ Logo" 
+          style={{ width: 80, height: 80, margin: '0 auto 16px', display: 'block', borderRadius: 20, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} 
+        />
         <h1>Create Account</h1>
         <p className="auth-subtitle">Sign up to report emergencies securely.</p>
 

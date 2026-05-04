@@ -34,7 +34,7 @@ export default function MobileLogin() {
     <div className="mobile-shell">
       <div className="mobile-auth">
         <img 
-          src="/public/logo.jpg" 
+          src=""/logo.jpg"" 
           alt="SRQ Logo" 
           style={{ width: 100, height: 100, margin: '0 auto 20px', display: 'block', borderRadius: 24, boxShadow: '0 8px 16px rgba(0,0,0,0.1)' }} 
         />

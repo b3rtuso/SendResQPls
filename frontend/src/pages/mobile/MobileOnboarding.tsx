@@ -88,7 +88,7 @@ export default function MobileOnboarding({ onDone }: { onDone: () => void }) {
       <div style={{ textAlign: 'center', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 24 }}>
         {/* Actual Logo */}
         <img
-          src="/srq-logo.png"
+          src="/logo.jpg"
           alt="SRQ Logo"
           style={{ width: 90, height: 90, borderRadius: 22, boxShadow: '0 8px 32px rgba(0,0,0,0.35)', objectFit: 'cover' }}
           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}

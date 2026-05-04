@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { register, login, sendCode, verifyCode, testEmail, updateProfile, changePassword } from '../controllers/authController';
+import { register, login, sendCode, verifyCode, testEmail, updateProfile, changePassword, forgotPassword, resetPassword } from '../controllers/authController';
 
 const router = Router();
 
@@ -10,5 +10,7 @@ router.post('/login', login);
 router.post('/test-email', testEmail);
 router.patch('/profile', updateProfile);
 router.patch('/password', changePassword);
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
 
 export default router;

@@ -7,7 +7,6 @@ import {
   Building2,
   Settings,
   LogOut,
-  Shield,
 } from 'lucide-react';
 
 const navItems = [
@@ -29,7 +28,7 @@ export default function Sidebar() {
     <aside className="sidebar">
       <div className="sidebar-brand">
         <div className="brand-icon">
-          <Shield size={22} />
+          <img src="/logo.jpg" alt="SRQ Logo" style={{ width: 50, height: 50, borderRadius: 18, boxShadow: '0 8px 32px rgba(0,0,0,0.35)', objectFit: 'cover' }} />
         </div>
         <div>
           <h1>MDRRMO</h1>

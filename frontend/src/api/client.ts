@@ -28,6 +28,12 @@ export const sendVerificationCode = (email: string) =>
 export const verifyCode = (email: string, code: string) =>
   api.post('/auth/verify-code', { email, code });
 
+export const forgotPassword = (email: string) =>
+  api.post('/auth/forgot-password', { email });
+
+export const resetPassword = (token: string, newPassword: string) =>
+  api.post('/auth/reset-password', { token, newPassword });
+
 // === INCIDENTS ===
 export const reportIncident = (formData: FormData) =>
   api.post('/incidents/report', formData, {

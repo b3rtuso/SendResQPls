@@ -15,6 +15,8 @@ import MobileReport from './pages/mobile/MobileReport';
 import MobileHistory from './pages/mobile/MobileHistory';
 import MobileProfile from './pages/mobile/MobileProfile';
 import MobileOnboarding, { shouldShowOnboarding } from './pages/mobile/MobileOnboarding';
+import MobileForgotPassword from './pages/mobile/MobileForgotPassword';
+import MobileResetPassword from './pages/mobile/MobileResetPassword';
 import { useState } from 'react';
 import './App.css';
 
@@ -35,6 +37,8 @@ function App() {
         <Route path="/mobile/report" element={<MobileReport />} />
         <Route path="/mobile/history" element={<MobileHistory />} />
         <Route path="/mobile/profile" element={<MobileProfile />} />
+        <Route path="/mobile/forgot-password" element={<MobileForgotPassword />} />
+        <Route path="/mobile/reset-password" element={<MobileResetPassword />} />
 
         {/* === DESKTOP ADMIN ROUTES (with sidebar) === */}
         <Route

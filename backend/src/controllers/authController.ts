@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../config/db';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { sendVerificationEmail } from '../services/emailService';
+import { sendVerificationEmail, sendPasswordResetEmail } from '../services/emailService';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key';
 
@@ -169,5 +169,63 @@ export const changePassword = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error("❌ Password change error:", error.message);
     res.status(500).json({ error: "Failed to change password", details: error.message });
+  }
+};
+
+// In-memory store for password reset tokens
+const resetTokens = new Map<string, { email: string; expiresAt: number }>();
+
+// POST /api/auth/forgot-password — Send password reset link to email
+export const forgotPassword = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    // Always return success to prevent user enumeration
+    if (!user) return res.json({ message: 'If this email is registered, a reset link has been sent.' });
+
+    // Generate a secure random token
+    const token = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+    const expiresAt = Date.now() + 30 * 60 * 1000; // 30 minutes
+    resetTokens.set(token, { email, expiresAt });
+
+    // Build reset URL — uses the app's frontend URL
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/mobile/reset-password?token=${token}`;
+
+    await sendPasswordResetEmail(email, user.name, resetUrl);
+
+    console.log(`📧 Password reset link sent to ${email}`);
+    res.json({ message: 'If this email is registered, a reset link has been sent.' });
+  } catch (error: any) {
+    console.error('❌ Forgot password error:', error.message);
+    res.status(500).json({ error: 'Failed to send reset email', details: error.message });
+  }
+};
+
+// POST /api/auth/reset-password — Apply new password using token
+export const resetPassword = async (req: Request, res: Response) => {
+  try {
+    const { token, newPassword } = req.body;
+    if (!token || !newPassword) return res.status(400).json({ error: 'Token and new password are required' });
+
+    const stored = resetTokens.get(token);
+    if (!stored) return res.status(400).json({ error: 'Invalid or expired reset link. Please request a new one.' });
+    if (Date.now() > stored.expiresAt) {
+      resetTokens.delete(token);
+      return res.status(400).json({ error: 'Reset link has expired. Please request a new one.' });
+    }
+
+    const newHash = await bcrypt.hash(newPassword, 10);
+    await prisma.user.update({
+      where: { email: stored.email },
+      data: { passwordHash: newHash },
+    });
+
+    resetTokens.delete(token); // One-time use
+    res.json({ message: 'Password reset successfully. You can now log in.' });
+  } catch (error: any) {
+    console.error('❌ Reset password error:', error.message);
+    res.status(500).json({ error: 'Failed to reset password', details: error.message });
   }
 };

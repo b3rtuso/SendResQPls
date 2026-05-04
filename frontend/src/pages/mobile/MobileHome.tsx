@@ -31,6 +31,7 @@ export default function MobileHome() {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
           <div>
+            <img src="/logo.jpg" alt="SRQ Logo" style={{ width: 50, height: 50, borderRadius: 18, boxShadow: '0 8px 32px rgba(0,0,0,0.35)', objectFit: 'cover' }} />
             <div style={{ fontSize: 14, opacity: 0.75, marginBottom: 4 }}>Welcome back,</div>
             <div style={{ fontSize: 26, fontWeight: 800 }}>{userName.split(' ')[0]}</div>
           </div>

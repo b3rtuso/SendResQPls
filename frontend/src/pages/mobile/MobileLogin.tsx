@@ -33,7 +33,7 @@ export default function MobileLogin() {
   return (
     <div className="mobile-shell">
       <div className="mobile-auth">
-        <div className="auth-logo">SRQ</div>
+        <img src="/logo.jpg" alt="SRQ Logo" style={{ width: 90, height: 90, borderRadius: 22, boxShadow: '0 8px 32px rgba(0,0,0,0.35)', objectFit: 'cover' }} />
         <h1>Welcome Back</h1>
         <p className="auth-subtitle">Log in to SendResqPls to report and track emergencies.</p>
 
@@ -56,7 +56,7 @@ export default function MobileLogin() {
           </div>
         </div>
 
-        <a href="#" className="forgot-link">Forgot password?</a>
+        <a href="#" className="forgot-link" onClick={(e) => { e.preventDefault(); navigate('/mobile/forgot-password'); }}>Forgot password?</a>
 
         <button className="auth-btn login" onClick={handleLogin} disabled={loading}>
           {loading ? 'Logging in...' : 'Log In'} <ArrowRight size={18} />

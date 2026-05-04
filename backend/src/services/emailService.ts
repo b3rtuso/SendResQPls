@@ -73,3 +73,25 @@ export const sendStatusNotification = async (to: string, reporterName: string, i
 
   return transporter.sendMail(mailOptions);
 };
+
+export const sendPasswordResetEmail = async (to: string, name: string, resetUrl: string) => {
+  const mailOptions = {
+    from: `"MDRRMO System" <${process.env.SYSTEM_EMAIL}>`,
+    to,
+    subject: 'Password Reset - SendResqPls',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 420px; margin: 0 auto; padding: 24px;">
+        <h2 style="color: #DC2626; margin-bottom: 8px;">Password Reset Request</h2>
+        <p style="color: #333;">Hi <strong>${name}</strong>,</p>
+        <p style="color: #333;">You requested to reset your password for SendResqPls. Click the button below to set a new password:</p>
+        <div style="text-align: center; margin: 28px 0;">
+          <a href="${resetUrl}" style="background: #DC2626; color: white; padding: 14px 32px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 15px;">Reset My Password</a>
+        </div>
+        <p style="color: #666; font-size: 13px;">This link expires in 30 minutes. If you didn't request this, you can safely ignore this email.</p>
+        <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 20px 0;" />
+        <p style="color: #999; font-size: 11px;">MDRRMO Disaster Incident Reporting System — SendResqPls</p>
+      </div>
+    `,
+  };
+  return transporter.sendMail(mailOptions);
+};

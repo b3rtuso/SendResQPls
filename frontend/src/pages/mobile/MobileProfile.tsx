@@ -69,7 +69,10 @@ export default function MobileProfile() {
   };
 
   const handleLogout = () => {
+    // Preserve onboarding flag — only shown once after first install
+    const onboardingDone = localStorage.getItem('srq_onboarding_done');
     localStorage.clear();
+    if (onboardingDone) localStorage.setItem('srq_onboarding_done', onboardingDone);
     navigate('/mobile/login');
   };
 

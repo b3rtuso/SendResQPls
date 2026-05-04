@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Header from '../components/Header';
 import {
-  LineChart, Line, AreaChart, Area, BarChart, Bar,
+  Line, AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
 import { TrendingUp, FileText, Download } from 'lucide-react';

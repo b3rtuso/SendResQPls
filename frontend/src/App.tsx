@@ -14,7 +14,15 @@ import MobileHome from './pages/mobile/MobileHome';
 import MobileReport from './pages/mobile/MobileReport';
 import MobileHistory from './pages/mobile/MobileHistory';
 import MobileProfile from './pages/mobile/MobileProfile';
+import MobileOnboarding, { shouldShowOnboarding } from './pages/mobile/MobileOnboarding';
+import { useState } from 'react';
 import './App.css';
+
+function MobileHomeWithOnboarding() {
+  const [done, setDone] = useState(!shouldShowOnboarding());
+  if (!done) return <MobileOnboarding onDone={() => setDone(true)} />;
+  return <MobileHome />;
+}
 
 function App() {
   return (
@@ -23,7 +31,7 @@ function App() {
         {/* === MOBILE ROUTES (no sidebar) === */}
         <Route path="/mobile/login" element={<MobileLogin />} />
         <Route path="/mobile/signup" element={<MobileSignup />} />
-        <Route path="/mobile" element={<MobileHome />} />
+        <Route path="/mobile" element={<MobileHomeWithOnboarding />} />
         <Route path="/mobile/report" element={<MobileReport />} />
         <Route path="/mobile/history" element={<MobileHistory />} />
         <Route path="/mobile/profile" element={<MobileProfile />} />

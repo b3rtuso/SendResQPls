@@ -32,11 +32,11 @@ export default function MobileHome() {
           position: 'relative', overflow: 'hidden'
         }}>
           {/* Decorative Logo Watermark */}
-          <img src=""/logo.jpg"" alt="" style={{ position: 'absolute', right: -20, top: -20, width: 120, opacity: 0.1, pointerEvents: 'none' }} />
+          <img src="/logo.jpg" alt="" style={{ position: 'absolute', right: -20, top: -20, width: 120, opacity: 0.1, pointerEvents: 'none' }} />
 
           <div style={{ position: 'relative', zIndex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-              <img src=""/logo.jpg"" alt="SRQ" style={{ width: 20, height: 20, borderRadius: 4 }} />
+              <img src="/logo.jpg" alt="SRQ" style={{ width: 20, height: 20, borderRadius: 4 }} />
               <div style={{ fontSize: 14, opacity: 0.75 }}>Welcome back,</div>
             </div>
             <div style={{ fontSize: 26, fontWeight: 800 }}>{userName.split(' ')[0]}</div>

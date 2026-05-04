@@ -90,7 +90,7 @@ export default function MobileSignup() {
     <div className="mobile-shell">
       <div className="mobile-auth">
         <img 
-          src=""/logo.jpg"" 
+          src="/logo.jpg"
           alt="SRQ Logo" 
           style={{ width: 80, height: 80, margin: '0 auto 16px', display: 'block', borderRadius: 20, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} 
         />

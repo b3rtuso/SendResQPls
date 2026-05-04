@@ -77,6 +77,10 @@ export default function MobileSignup() {
     setError('');
     try {
       await apiRegister({ name: form.name, email: form.email, password: form.password, phoneNumber: form.phone });
+      // Pre-fill localStorage so profile shows correct data on first login
+      localStorage.setItem('userName', form.name);
+      localStorage.setItem('userEmail', form.email);
+      localStorage.setItem('userPhone', form.phone);
       setToast({ show: true, message: 'Account created!', detail: 'Redirecting to login...', type: 'success' });
       setTimeout(() => navigate('/mobile/login'), 1500);
     } catch {

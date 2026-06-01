@@ -11,11 +11,12 @@ function getTransporter() {
     console.log(`📧 Email transporter using: ${email} (password length: ${pass.length})`);
   }
 
-  // Port 587 + STARTTLS — more compatible with Railway than 465/SSL
+  // Port 587 + STARTTLS — forced IPv4 (Railway doesn't support IPv6 outbound)
   return nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 587,
-    secure: false, // false for port 587 (STARTTLS)
+    secure: false,
+    family: 4, // Force IPv4 — Railway blocks IPv6 outbound connections
     connectionTimeout: 10000,
     greetingTimeout: 10000,
     socketTimeout: 15000,

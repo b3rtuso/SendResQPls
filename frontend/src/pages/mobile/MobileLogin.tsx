@@ -37,7 +37,7 @@ export default function MobileLogin() {
         <h1>Welcome Back</h1>
         <p className="auth-subtitle">Log in to SendResqPls to report and track emergencies.</p>
 
-        {error && <p style={{ color: '#DC2626', fontSize: 13, marginBottom: 12, fontWeight: 600 }}>{error}</p>}
+        {error && <p style={{ color: '#DC2626', fontSize: 13, marginBottom: 12, fontWeight: 600, textAlign: 'center' }}>{error}</p>}
 
         <div className="input-group">
           <label>Email Address</label>

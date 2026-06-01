@@ -100,7 +100,7 @@ export default function MobileSignup() {
           <Toast type={toast.type} message={toast.message} detail={toast.detail} onClose={() => setToast({ ...toast, show: false })} />
         )}
 
-        {error && <p style={{ color: '#DC2626', fontSize: 13, marginBottom: 12, fontWeight: 600 }}>{error}</p>}
+        {error && <p style={{ color: '#DC2626', fontSize: 13, marginBottom: 12, fontWeight: 600, textAlign: 'center' }}>{error}</p>}
 
         <div className="input-group">
           <label>Full Name</label>

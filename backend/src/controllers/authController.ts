@@ -27,21 +27,9 @@ export const sendCode = async (req: Request, res: Response) => {
     verificationCodes.set(email, { code, expiresAt });
 
     // Send email
-    try {
-      await sendVerificationEmail(email, code);
-      console.log(`📧 Verification code sent to ${email}`);
-      res.json({ message: 'Verification code sent to your email' });
-    } catch (emailErr: any) {
-      console.warn(`⚠️ Failed to send verification email to ${email}:`, emailErr.message);
-      console.log(`🔑 [SANDBOX KEY] Verification Code for ${email} is: ${code}`);
-      
-      // Return 200 with code for testing/sandbox mode
-      res.json({
-        message: 'Verification code generated (Sandbox/Offline Mode)',
-        sandbox: true,
-        code
-      });
-    }
+    await sendVerificationEmail(email, code);
+    console.log(`📧 Verification code sent to ${email}`);
+    res.json({ message: 'Verification code sent to your email' });
   } catch (error: any) {
     console.error('❌ Send code error:', error.message);
     res.status(500).json({ error: 'Failed to send verification code', details: error.message });
@@ -202,20 +190,9 @@ export const forgotPassword = async (req: Request, res: Response) => {
     // Build reset URL — uses the app's frontend URL
     const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/mobile/reset-password?token=${token}`;
 
-    try {
-      await sendPasswordResetEmail(email, user.name, resetUrl);
-      console.log(`📧 Password reset link sent to ${email}`);
-      res.json({ message: 'If this email is registered, a reset link has been sent.' });
-    } catch (emailErr: any) {
-      console.warn(`⚠️ Failed to send reset email to ${email}:`, emailErr.message);
-      console.log(`🔑 [SANDBOX KEY] Password Reset Link for ${email} is: ${resetUrl}`);
-      
-      res.json({
-        message: 'If this email is registered, a reset link has been sent.',
-        sandbox: true,
-        resetUrl
-      });
-    }
+    await sendPasswordResetEmail(email, user.name, resetUrl);
+    console.log(`📧 Password reset link sent to ${email}`);
+    res.json({ message: 'If this email is registered, a reset link has been sent.' });
   } catch (error: any) {
     console.error('❌ Forgot password error:', error.message);
     res.status(500).json({ error: 'Failed to send reset email', details: error.message });

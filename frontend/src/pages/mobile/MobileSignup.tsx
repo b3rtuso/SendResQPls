@@ -37,20 +37,10 @@ export default function MobileSignup() {
     setSendingCode(true);
     setError('');
     try {
-      const res = await sendVerificationCode(form.email);
+      await sendVerificationCode(form.email);
       setCodeSent(true);
-      setCooldown(60);
-      if (res.data && res.data.sandbox && res.data.code) {
-        setCodeInput(res.data.code);
-        setToast({
-          show: true,
-          message: 'Sandbox Code Received',
-          detail: `Code is ${res.data.code} (Autofilled for testing)`,
-          type: 'success'
-        });
-      } else {
-        setToast({ show: true, message: 'Code sent!', detail: `Check your inbox at ${form.email}`, type: 'success' });
-      }
+      setCooldown(600); // 10 minutes cooldown
+      setToast({ show: true, message: 'Code sent!', detail: `Check your inbox at ${form.email}`, type: 'success' });
     } catch (err: any) {
       console.error('[SendCode] Error:', err.response?.data || err.message);
       const msg = err.response?.data?.error || err.response?.data?.details || err.message || 'Failed to send code';
@@ -165,7 +155,7 @@ export default function MobileSignup() {
                 ) : sendingCode ? (
                   '...'
                 ) : cooldown > 0 ? (
-                  `${cooldown}s`
+                  `${Math.floor(cooldown / 60)}:${String(cooldown % 60).padStart(2, '0')}`
                 ) : codeSent ? (
                   'Resend Code'
                 ) : (

@@ -12,6 +12,10 @@ export default function MobileLogin() {
   const [error, setError] = useState('');
 
   const handleLogin = async () => {
+    if (!email || !password) {
+      setError('Please fill in both email and password.');
+      return;
+    }
     setLoading(true);
     setError('');
     try {

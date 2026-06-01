@@ -69,6 +69,10 @@ export default function MobileSignup() {
   };
 
   const handleSignup = async () => {
+    if (!form.name || !form.email || !form.password || !form.phone) {
+      setError('Please fill in all fields.');
+      return;
+    }
     if (!verified) {
       setError('Please verify your email first.');
       return;

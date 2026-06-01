@@ -37,10 +37,20 @@ export default function MobileSignup() {
     setSendingCode(true);
     setError('');
     try {
-      await sendVerificationCode(form.email);
+      const res = await sendVerificationCode(form.email);
       setCodeSent(true);
       setCooldown(60);
-      setToast({ show: true, message: 'Code sent!', detail: `Check your inbox at ${form.email}`, type: 'success' });
+      if (res.data && res.data.sandbox && res.data.code) {
+        setCodeInput(res.data.code);
+        setToast({
+          show: true,
+          message: 'Sandbox Code Received',
+          detail: `Code is ${res.data.code} (Autofilled for testing)`,
+          type: 'success'
+        });
+      } else {
+        setToast({ show: true, message: 'Code sent!', detail: `Check your inbox at ${form.email}`, type: 'success' });
+      }
     } catch (err: any) {
       console.error('[SendCode] Error:', err.response?.data || err.message);
       const msg = err.response?.data?.error || err.response?.data?.details || err.message || 'Failed to send code';

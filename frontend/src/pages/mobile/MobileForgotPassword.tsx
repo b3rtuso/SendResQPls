@@ -9,13 +9,17 @@ export default function MobileForgotPassword() {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
+  const [sandboxUrl, setSandboxUrl] = useState('');
 
   const handleSubmit = async () => {
     if (!email || !email.includes('@')) { setError('Please enter a valid email address.'); return; }
     setLoading(true); setError('');
     try {
-      await forgotPassword(email);
+      const res = await forgotPassword(email);
       setSent(true);
+      if (res.data && res.data.sandbox && res.data.resetUrl) {
+        setSandboxUrl(res.data.resetUrl);
+      }
     } catch {
       setError('Something went wrong. Please try again.');
     } finally {
@@ -43,6 +47,12 @@ export default function MobileForgotPassword() {
             <div style={{ fontSize: 32, marginBottom: 8 }}>📧</div>
             <div style={{ fontWeight: 700, color: '#15803D', marginBottom: 4 }}>Reset link sent!</div>
             <div style={{ fontSize: 13, color: '#166534' }}>Check your inbox at <strong>{email}</strong>. The link expires in 30 minutes.</div>
+            {sandboxUrl && (
+              <div style={{ marginTop: 16, padding: 12, background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 8, textAlign: 'left' }}>
+                <p style={{ fontSize: 12, color: '#1E40AF', margin: '0 0 8px 0', fontWeight: 600 }}>🛠️ Resend Sandbox Mode:</p>
+                <a href={sandboxUrl} style={{ fontSize: 12, color: '#2563EB', wordBreak: 'break-all', fontWeight: 700 }}>Click here to reset your password directly</a>
+              </div>
+            )}
             <button onClick={() => navigate('/mobile/login')} style={{
               marginTop: 16, padding: '10px 24px', background: '#22C55E', color: 'white',
               border: 'none', borderRadius: 10, fontWeight: 700, cursor: 'pointer',

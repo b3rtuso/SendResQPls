@@ -1,12 +1,18 @@
 import nodemailer from 'nodemailer';
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.SYSTEM_EMAIL, // Your gmail
-    pass: process.env.SYSTEM_PASSWORD, // Your 16-character App Password
-  },
-});
+// Create transporter lazily so env vars are guaranteed to be loaded
+function getTransporter() {
+  return nodemailer.createTransport({
+    service: 'gmail',
+    connectionTimeout: 8000,  // fail fast if Gmail unreachable
+    greetingTimeout: 8000,
+    socketTimeout: 10000,
+    auth: {
+      user: process.env.SYSTEM_EMAIL,
+      pass: process.env.SYSTEM_PASSWORD,
+    },
+  });
+}
 
 export const sendVerificationEmail = async (to: string, code: string) => {
   const mailOptions = {
@@ -28,7 +34,7 @@ export const sendVerificationEmail = async (to: string, code: string) => {
     `,
   };
 
-  return transporter.sendMail(mailOptions);
+  return getTransporter().sendMail(mailOptions);
 };
 
 export const sendStatusNotification = async (to: string, reporterName: string, incidentType: string, newStatus: string) => {
@@ -71,7 +77,7 @@ export const sendStatusNotification = async (to: string, reporterName: string, i
     `,
   };
 
-  return transporter.sendMail(mailOptions);
+  return getTransporter().sendMail(mailOptions);
 };
 
 export const sendPasswordResetEmail = async (to: string, name: string, resetUrl: string) => {
@@ -93,5 +99,5 @@ export const sendPasswordResetEmail = async (to: string, name: string, resetUrl:
       </div>
     `,
   };
-  return transporter.sendMail(mailOptions);
+  return getTransporter().sendMail(mailOptions);
 };

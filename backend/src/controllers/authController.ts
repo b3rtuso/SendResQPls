@@ -106,10 +106,13 @@ export const testEmail = async (req: Request, res: Response) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: 'Please provide a destination email' });
 
-  const apiKey = process.env.RESEND_API_KEY;
+  const apiKey = process.env.BREVO_API_KEY;
+  const systemEmail = process.env.SYSTEM_EMAIL;
   const envStatus = {
-    RESEND_API_KEY_set: !!apiKey,
-    RESEND_API_KEY_preview: apiKey ? `${apiKey.slice(0, 8)}****` : 'NOT SET',
+    BREVO_API_KEY_set: !!apiKey,
+    BREVO_API_KEY_preview: apiKey ? `${apiKey.slice(0, 10)}****` : 'NOT SET',
+    SYSTEM_EMAIL_set: !!systemEmail,
+    SYSTEM_EMAIL: systemEmail || 'NOT SET',
   };
 
   try {
@@ -117,7 +120,7 @@ export const testEmail = async (req: Request, res: Response) => {
     console.log(`📧 Test email sent successfully to ${email}`);
     res.status(200).json({ message: '✅ Email sent! Check your inbox (and Spam folder).', env: envStatus });
   } catch (error: any) {
-    console.error('❌ Resend Error:', error);
+    console.error('❌ Brevo Error:', error);
     res.status(500).json({ error: 'Failed to send email', details: error.message, env: envStatus });
   }
 };

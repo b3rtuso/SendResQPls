@@ -3,6 +3,17 @@
 .spin { animation: spin 1s linear infinite; }
 @keyframes slideUp { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
 
+/* ===== GLOBAL BUTTON INTERACTION ===== */
+button {
+  transition: filter 0.2s ease, transform 0.1s ease, opacity 0.2s ease !important;
+}
+button:hover:not(:disabled) {
+  filter: brightness(0.92);
+}
+button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
 /* ===== MOBILE APP STYLES (SRQ - SendResqPls) ===== */
 
 /* Mobile Layout Shell */

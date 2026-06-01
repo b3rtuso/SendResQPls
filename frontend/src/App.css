@@ -7,8 +7,10 @@
 
 /* Mobile Layout Shell */
 .mobile-shell {
-  max-width: 420px;
+  width: 100%;
+  max-width: 480px;   /* comfortable cap on tablet; none on phone */
   min-height: 100vh;
+  min-height: 100dvh; /* dynamic viewport height for Android chrome bars */
   margin: 0 auto;
   background: #FFFFFF;
   position: relative;
@@ -18,15 +20,27 @@
   overflow-x: hidden;
 }
 
+/* On real phones (narrow), always go full width */
+@media (max-width: 480px) {
+  .mobile-shell {
+    max-width: 100%;
+  }
+}
+
 /* ===== MOBILE AUTH SCREENS ===== */
 .mobile-auth {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;   /* children fill full width */
   justify-content: center;
-  padding: 40px 28px;
+  padding: 40px clamp(20px, 6vw, 36px); /* responsive side padding */
+  padding-top: max(40px, env(safe-area-inset-top, 40px));
+  padding-bottom: max(40px, env(safe-area-inset-bottom, 40px));
   background: #FFFFFF;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .mobile-auth .auth-logo {

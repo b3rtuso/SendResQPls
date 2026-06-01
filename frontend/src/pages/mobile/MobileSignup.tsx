@@ -114,9 +114,9 @@ export default function MobileSignup() {
         {/* Email + Send Code */}
         <div className="input-group">
           <label>Email Address</label>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <div className="input-wrapper" style={{ flex: 1 }}>
-              <Mail size={18} className="input-icon" />
+          <div style={{ display: 'flex', gap: 8, alignItems: 'stretch', flexWrap: 'nowrap' }}>
+            <div className="input-wrapper" style={{ flex: 1, minWidth: 0 }}>
+              <Mail size={18} className="input-icon" style={{ flexShrink: 0 }} />
               <input
                 type="email"
                 placeholder="juan@example.com"
@@ -133,26 +133,28 @@ export default function MobileSignup() {
               onClick={handleSendCode}
               disabled={sendingCode || cooldown > 0 || verified || !form.email}
               style={{
-                display: 'flex', alignItems: 'center', gap: 4,
-                padding: '0 14px', borderRadius: 12,
+                flexShrink: 0,
+                width: 90,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+                padding: '0 10px', borderRadius: 12,
                 fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap',
                 background: verified ? '#22C55E' : '#DC2626',
                 color: 'white', border: 'none', cursor: verified ? 'default' : 'pointer',
                 opacity: (sendingCode || (cooldown > 0 && !verified)) ? 0.6 : 1,
                 fontFamily: 'var(--font)', transition: 'all 0.2s ease',
-                minHeight: 46,
+                minHeight: 50,
               }}
             >
               {verified ? (
-                <><CheckCircle size={14} /> Verified</>
+                <><CheckCircle size={14} /> ✓</>
               ) : sendingCode ? (
-                'Sending...'
+                '...'
               ) : cooldown > 0 ? (
                 `${cooldown}s`
               ) : codeSent ? (
                 <><Send size={13} /> Resend</>
               ) : (
-                <><Send size={13} /> Send Code</>
+                <><Send size={13} /> Send</>
               )}
             </button>
           </div>

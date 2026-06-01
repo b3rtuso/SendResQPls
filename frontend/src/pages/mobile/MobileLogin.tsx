@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, EyeOff, Eye, ArrowRight } from 'lucide-react';
+import { Mail, Lock, EyeOff, Eye } from 'lucide-react';
 import { login as apiLogin } from '../../api/client';
 
 export default function MobileLogin() {

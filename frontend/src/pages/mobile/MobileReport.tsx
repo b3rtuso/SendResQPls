@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, AlertTriangle, Camera, Loader } from 'lucide-react';
 import { reportIncident } from '../../api/client';
+import { isWithinBalayan } from '../../data/balayan-data';
 import BottomNav from '../../components/BottomNav';
 import Toast, { type ToastType } from '../../components/Toast';
 
@@ -49,19 +50,30 @@ export default function MobileReport() {
       formData.append('photo', photo);
       formData.append('userId', userId);
 
-      // Try to get GPS coordinates
-      let lat = '14.5995'; // Default: Balayan, Batangas
-      let lng = '120.9842';
+      // Get GPS coordinates (required — no fallback)
+      let lat: string;
+      let lng: string;
 
       try {
         const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            timeout: 10000,
+            enableHighAccuracy: true,
+          });
         });
         lat = String(position.coords.latitude);
         lng = String(position.coords.longitude);
       } catch {
-        // GPS unavailable — use default coordinates
-        console.log('📍 GPS unavailable, using default location');
+        showToast('error', 'Location Required', 'Please enable GPS/location services to submit a report. Reports can only be sent from within Balayan, Batangas.');
+        setSending(false);
+        return;
+      }
+
+      // Validate location is within Balayan, Batangas
+      if (!isWithinBalayan(parseFloat(lat), parseFloat(lng))) {
+        showToast('error', 'Outside Balayan Area', 'Reports can only be submitted from within Balayan, Batangas municipality. Please ensure you are in the area.');
+        setSending(false);
+        return;
       }
 
       formData.append('latitude', lat);

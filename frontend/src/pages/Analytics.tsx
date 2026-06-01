@@ -1,12 +1,28 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Header from '../components/Header';
 import {
   Line, AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
-import { TrendingUp, FileText, Download } from 'lucide-react';
+import { TrendingUp, FileText, Download, MapPin } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import './analytics-map.css';
+import {
+  BALAYAN_CENTER, BALAYAN_BOUNDS, BARANGAYS, INCIDENT_TYPES,
+  type Barangay,
+} from '../data/balayan-data';
 
-// Forecast chart data — matches Figma: Total (blue), Predicted Forecast (purple dashed), Resolved (green)
+// Fix Leaflet default icon issue with bundlers
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+});
+
+// ---- Existing hardcoded data (kept) ----
 const forecastData = [
   { month: 'Jan', total: 18, predicted: 16, resolved: 12 },
   { month: 'Feb', total: 15, predicted: 17, resolved: 10 },
@@ -22,7 +38,6 @@ const forecastData = [
   { month: 'Dec', total: null, predicted: 22, resolved: null },
 ];
 
-// Request distribution bar chart — matches Figma: blue bars
 const distributionData = [
   { month: 'Jul', total: 18, completed: 12 },
   { month: 'Aug', total: 17, completed: 14 },
@@ -32,7 +47,6 @@ const distributionData = [
   { month: 'Dec', total: 14, completed: 10 },
 ];
 
-// Monthly forecast detail cards — matches Figma
 const monthlyDetails = [
   { month: 'Jan', type: 'Fire', typeClass: 'fire', desc: 'Increased fire hazards due to dry weather and holiday fireworks remnants.' },
   { month: 'Feb', type: 'Medical', typeClass: 'medical', desc: 'Spike in respiratory issues during colder nights.' },
@@ -62,14 +76,97 @@ const tooltipStyle = {
   fontSize: '13px',
 };
 
+// ---- Map Utilities ----
+
+function createMarkerIcon(riskLevel: string): L.DivIcon {
+  const riskClass = `risk-${riskLevel.toLowerCase()}`;
+  const initial = riskLevel[0];
+  return L.divIcon({
+    className: '',
+    html: `<div class="brgy-marker ${riskClass}" style="background: ${
+      riskLevel === 'HIGH' ? 'linear-gradient(135deg, #EF4444, #DC2626)' :
+      riskLevel === 'MEDIUM' ? 'linear-gradient(135deg, #F59E0B, #D97706)' :
+      'linear-gradient(135deg, #22C55E, #16A34A)'
+    }">${initial}</div>`,
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+    popupAnchor: [0, -20],
+  });
+}
+
+// Component to restrict map bounds
+function MapBoundsController() {
+  const map = useMap();
+  useEffect(() => {
+    const bounds = L.latLngBounds(
+      [BALAYAN_BOUNDS.south - 0.01, BALAYAN_BOUNDS.west - 0.01],
+      [BALAYAN_BOUNDS.north + 0.01, BALAYAN_BOUNDS.east + 0.01]
+    );
+    map.setMaxBounds(bounds);
+    map.setMinZoom(12);
+  }, [map]);
+  return null;
+}
+
+// ---- Popup Content Builder ----
+function buildPopupContent(brgy: Barangay, incidentType: string): string {
+  const risk = brgy.riskProfile[incidentType];
+  if (!risk) return '';
+  const incType = INCIDENT_TYPES.find(t => t.id === incidentType);
+  const riskClass = risk.riskLevel.toLowerCase();
+
+  return `
+    <div class="map-popup">
+      <div class="popup-header">
+        <div class="popup-icon" style="background: ${incType?.color || '#3B82F6'}22; color: ${incType?.color || '#3B82F6'};">
+          ${incType?.icon || '📍'}
+        </div>
+        <div>
+          <div class="popup-title">${brgy.name}</div>
+          <div class="popup-subtitle">${incType?.label || incidentType} Risk Assessment</div>
+        </div>
+      </div>
+      <div class="risk-badge ${riskClass}">
+        ${riskClass === 'high' ? '🔴' : riskClass === 'medium' ? '🟡' : '🟢'}
+        ${risk.riskLevel} RISK
+      </div>
+      <div class="prescription-box">
+        <div class="prescription-label">📋 Recommended Action</div>
+        <div class="prescription-text">${risk.prescription}</div>
+      </div>
+    </div>
+  `;
+}
+
+// ---- Main Component ----
 export default function Analytics() {
-  const [tab, setTab] = useState<'forecast' | 'reports'>('forecast');
+  const [tab, setTab] = useState<'map' | 'forecast' | 'reports'>('map');
+  const [selectedType, setSelectedType] = useState('fire');
+
+  // Compute stats for current incident type
+  const riskStats = useMemo(() => {
+    let high = 0, medium = 0, low = 0;
+    BARANGAYS.forEach(b => {
+      const r = b.riskProfile[selectedType];
+      if (r) {
+        if (r.riskLevel === 'HIGH') high++;
+        else if (r.riskLevel === 'MEDIUM') medium++;
+        else low++;
+      }
+    });
+    return { high, medium, low, total: BARANGAYS.length };
+  }, [selectedType]);
+
+  const currentIncident = INCIDENT_TYPES.find(t => t.id === selectedType);
 
   return (
     <>
-      <Header title="Analytics & Reports" subtitle="Forecasting and incident analysis" />
+      <Header title="Analytics & Reports" subtitle="Forecasting, incident mapping, and analysis" />
       <div className="page-content">
         <div className="tabs fade-in">
+          <button className={`tab ${tab === 'map' ? 'active' : ''}`} onClick={() => setTab('map')}>
+            <MapPin size={16} style={{ marginRight: 6, verticalAlign: -3 }} /> Incident Map
+          </button>
           <button className={`tab ${tab === 'forecast' ? 'active' : ''}`} onClick={() => setTab('forecast')}>
             <TrendingUp size={16} style={{ marginRight: 6, verticalAlign: -3 }} /> Incident Forecast
           </button>
@@ -78,18 +175,125 @@ export default function Analytics() {
           </button>
         </div>
 
+        {/* ============ MAP TAB ============ */}
+        {tab === 'map' && (
+          <div className="fade-in">
+            <div className="analytics-map-wrapper">
+              {/* Floating Filter Bar */}
+              <div className="map-filter-bar">
+                <span className="filter-label">Filter by</span>
+                {INCIDENT_TYPES.map(t => (
+                  <button
+                    key={t.id}
+                    className={`incident-pill ${selectedType === t.id ? 'active' : ''}`}
+                    style={{ '--pill-color': t.color } as React.CSSProperties}
+                    onClick={() => setSelectedType(t.id)}
+                  >
+                    <span className="pill-emoji">{t.icon}</span>
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Leaflet Map */}
+              <MapContainer
+                center={[BALAYAN_CENTER.lat, BALAYAN_CENTER.lng]}
+                zoom={13}
+                className="analytics-map-container"
+                scrollWheelZoom={true}
+                zoomControl={true}
+              >
+                <TileLayer
+                  attribution='&copy; <a href="https://carto.com/">CARTO</a>'
+                  url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                />
+                <MapBoundsController />
+
+                {BARANGAYS.map(brgy => {
+                  const risk = brgy.riskProfile[selectedType];
+                  if (!risk) return null;
+                  return (
+                    <Marker
+                      key={brgy.name}
+                      position={[brgy.lat, brgy.lng]}
+                      icon={createMarkerIcon(risk.riskLevel)}
+                    >
+                      <Popup maxWidth={300} minWidth={280}>
+                        <div dangerouslySetInnerHTML={{ __html: buildPopupContent(brgy, selectedType) }} />
+                      </Popup>
+                    </Marker>
+                  );
+                })}
+              </MapContainer>
+
+              {/* Legend */}
+              <div className="map-legend">
+                <div className="legend-item">
+                  <div className="legend-dot" style={{ background: '#EF4444' }}></div>
+                  High Risk
+                </div>
+                <div className="legend-item">
+                  <div className="legend-dot" style={{ background: '#F59E0B' }}></div>
+                  Medium Risk
+                </div>
+                <div className="legend-item">
+                  <div className="legend-dot" style={{ background: '#22C55E' }}></div>
+                  Low Risk
+                </div>
+              </div>
+            </div>
+
+            {/* Stats Bar */}
+            <div className="map-stats-bar">
+              <div className="map-stat-card" style={{ '--stat-color': '#EF4444' } as React.CSSProperties}>
+                <div className="stat-number">{riskStats.high}</div>
+                <div className="stat-label">High Risk Areas</div>
+              </div>
+              <div className="map-stat-card" style={{ '--stat-color': '#F59E0B' } as React.CSSProperties}>
+                <div className="stat-number">{riskStats.medium}</div>
+                <div className="stat-label">Medium Risk Areas</div>
+              </div>
+              <div className="map-stat-card" style={{ '--stat-color': '#22C55E' } as React.CSSProperties}>
+                <div className="stat-number">{riskStats.low}</div>
+                <div className="stat-label">Low Risk Areas</div>
+              </div>
+              <div className="map-stat-card" style={{ '--stat-color': currentIncident?.color || '#3B82F6' } as React.CSSProperties}>
+                <div className="stat-number">{riskStats.total}</div>
+                <div className="stat-label">Total Barangays</div>
+              </div>
+            </div>
+
+            {/* Incident Type Info Card */}
+            <div className="card" style={{ marginTop: 16 }}>
+              <div className="card-header" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 24 }}>{currentIncident?.icon}</span>
+                <div>
+                  <h3 style={{ margin: 0 }}>{currentIncident?.label} Risk Assessment — Balayan, Batangas</h3>
+                  <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-secondary)' }}>{currentIncident?.description}</p>
+                </div>
+              </div>
+              <div className="card-body">
+                <p style={{ fontSize: 13, lineHeight: 1.7, color: 'var(--text-secondary)' }}>
+                  This map displays the risk assessment for <strong style={{ color: currentIncident?.color }}>{currentIncident?.label}</strong> incidents
+                  across all 48 barangays of Balayan, Batangas. Click on any marker to view the detailed prescription
+                  and recommended actions for that specific area. Risk levels are determined by geographic factors,
+                  historical incident data, and proximity to hazard zones.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ============ FORECAST TAB (existing) ============ */}
         {tab === 'forecast' && (
           <div className="fade-in">
-            {/* Stats Row */}
             <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
               <div className="stat-card"><div className="stat-info"><h3>This Month Predicted</h3><div className="stat-value">21</div><div className="stat-change up">↑ Based on trend analysis</div></div><div className="stat-icon purple"><TrendingUp size={22} /></div></div>
               <div className="stat-card"><div className="stat-info"><h3>Peak Month (Predicted)</h3><div className="stat-value">Aug</div><div className="stat-change up">28 incidents forecasted</div></div><div className="stat-icon red"><TrendingUp size={22} /></div></div>
               <div className="stat-card"><div className="stat-info"><h3>YoY Growth</h3><div className="stat-value">+18%</div><div className="stat-change up">↑ Compared to 2025</div></div><div className="stat-icon blue"><TrendingUp size={22} /></div></div>
             </div>
 
-            {/* Two Charts Side by Side */}
             <div className="grid-2" style={{ marginTop: 20 }}>
-              {/* Incident Forecast — Multi-line chart */}
               <div className="card">
                 <div className="card-header"><h3>Incident Forecast</h3></div>
                 <div className="card-body">
@@ -110,7 +314,6 @@ export default function Analytics() {
                 </div>
               </div>
 
-              {/* Requests Over Time — Grouped bar chart */}
               <div className="card">
                 <div className="card-header"><h3>Requests Over Time</h3></div>
                 <div className="card-body">
@@ -131,7 +334,6 @@ export default function Analytics() {
               </div>
             </div>
 
-            {/* Monthly Incident Forecast Details — Grid of 12 months */}
             <div className="card" style={{ marginTop: 20 }}>
               <div className="card-header"><h3>Monthly Incident Forecast Details</h3></div>
               <div className="card-body">
@@ -151,6 +353,7 @@ export default function Analytics() {
           </div>
         )}
 
+        {/* ============ REPORTS TAB (existing) ============ */}
         {tab === 'reports' && (
           <div className="fade-in">
             <div className="filters-bar">

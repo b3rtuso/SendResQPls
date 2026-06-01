@@ -3,6 +3,14 @@ import { prisma } from '../config/db';
 import { runAIAnalysis } from '../services/aiService';
 import { sendStatusNotification } from '../services/emailService';
 
+// Balayan, Batangas municipality boundary (bounding box)
+const BALAYAN_BOUNDS = {
+  north: 14.00,
+  south: 13.88,
+  east: 120.78,
+  west: 120.68,
+};
+
 // GET /api/incidents — List all incidents with optional search & status filter
 export const getIncidents = async (req: Request, res: Response) => {
   try {
@@ -98,6 +106,13 @@ export const reportIncident = async (req: Request, res: Response) => {
     const { userId, latitude, longitude } = req.body;
     
     if (!req.file) return res.status(400).json({ error: "No image provided" });
+
+    // Validate location is within Balayan, Batangas
+    const lat = parseFloat(latitude);
+    const lng = parseFloat(longitude);
+    if (isNaN(lat) || isNaN(lng) || lat < BALAYAN_BOUNDS.south || lat > BALAYAN_BOUNDS.north || lng < BALAYAN_BOUNDS.west || lng > BALAYAN_BOUNDS.east) {
+      return res.status(400).json({ error: 'Reports can only be submitted from within Balayan, Batangas municipality. Please enable GPS and ensure you are in the area.' });
+    }
 
     const imageUrl = req.file.path;
 

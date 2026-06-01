@@ -7,6 +7,7 @@ import CallLogs from './pages/CallLogs';
 import Analytics from './pages/Analytics';
 import Departments from './pages/Departments';
 import SettingsPage from './pages/Settings';
+import AdminLogin from './pages/AdminLogin';
 // Mobile screens
 import MobileLogin from './pages/mobile/MobileLogin';
 import MobileSignup from './pages/mobile/MobileSignup';
@@ -20,12 +21,24 @@ import MobileResetPassword from './pages/mobile/MobileResetPassword';
 import { useState } from 'react';
 import './App.css';
 
-// ── Auth guard: redirects to login if no token ──────────────────────────────
+// ── Mobile auth guard: redirects to /mobile/login if no token ───────────────
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem('token');
   const location = useLocation();
   if (!token) {
     return <Navigate to="/mobile/login" state={{ from: location }} replace />;
+  }
+  return <>{children}</>;
+}
+
+// ── Admin auth guard: must have token AND ADMIN role ────────────────────────
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const token = localStorage.getItem('token');
+  const role = localStorage.getItem('userRole');
+  const location = useLocation();
+
+  if (!token || role !== 'ADMIN') {
+    return <Navigate to="/admin/login" state={{ from: location }} replace />;
   }
   return <>{children}</>;
 }
@@ -45,6 +58,9 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* === ADMIN LOGIN (public) === */}
+        <Route path="/admin/login" element={<AdminLogin />} />
+
         {/* === PUBLIC MOBILE ROUTES === */}
         <Route path="/mobile/login" element={<MobileLogin />} />
         <Route path="/mobile/signup" element={<MobileSignup />} />
@@ -57,24 +73,26 @@ function App() {
         <Route path="/mobile/history" element={<PrivateRoute><MobileHistory /></PrivateRoute>} />
         <Route path="/mobile/profile" element={<PrivateRoute><MobileProfile /></PrivateRoute>} />
 
-        {/* === DESKTOP ADMIN ROUTES (with sidebar) === */}
+        {/* === PROTECTED ADMIN ROUTES (require ADMIN role) === */}
         <Route
           path="*"
           element={
-            <div className="app-layout">
-              <Sidebar />
-              <main className="main-content">
-                <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/requests" element={<Requests />} />
-                  <Route path="/requests/:id" element={<RequestDetails />} />
-                  <Route path="/call-logs" element={<CallLogs />} />
-                  <Route path="/analytics" element={<Analytics />} />
-                  <Route path="/departments" element={<Departments />} />
-                  <Route path="/settings" element={<SettingsPage />} />
-                </Routes>
-              </main>
-            </div>
+            <AdminRoute>
+              <div className="app-layout">
+                <Sidebar />
+                <main className="main-content">
+                  <Routes>
+                    <Route path="/" element={<Dashboard />} />
+                    <Route path="/requests" element={<Requests />} />
+                    <Route path="/requests/:id" element={<RequestDetails />} />
+                    <Route path="/call-logs" element={<CallLogs />} />
+                    <Route path="/analytics" element={<Analytics />} />
+                    <Route path="/departments" element={<Departments />} />
+                    <Route path="/settings" element={<SettingsPage />} />
+                  </Routes>
+                </main>
+              </div>
+            </AdminRoute>
           }
         />
       </Routes>

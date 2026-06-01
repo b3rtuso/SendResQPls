@@ -26,7 +26,13 @@ export default function MobileLogin() {
       localStorage.setItem('userEmail', res.data.user?.email || '');
       localStorage.setItem('userPhone', res.data.user?.phoneNumber || '');
       localStorage.setItem('userRole', res.data.user?.role || 'CITIZEN');
-      navigate('/mobile');
+
+      // Admins go to the dashboard, citizens stay on mobile
+      if (res.data.role === 'ADMIN') {
+        navigate('/');
+      } else {
+        navigate('/mobile');
+      }
     } catch {
       setError('Invalid email or password');
     } finally {

@@ -110,17 +110,31 @@ export const testEmail = async (req: Request, res: Response) => {
     return res.status(400).json({ error: "Please provide a destination email" });
   }
 
+  const systemEmail = process.env.SYSTEM_EMAIL?.trim();
+  const systemPass = process.env.SYSTEM_PASSWORD?.trim();
+
+  // Return env var status immediately for diagnosis
+  const envStatus = {
+    SYSTEM_EMAIL_set: !!systemEmail,
+    SYSTEM_EMAIL_value: systemEmail ? `${systemEmail.slice(0, 4)}****` : 'NOT SET',
+    SYSTEM_PASSWORD_set: !!systemPass,
+    SYSTEM_PASSWORD_length: systemPass?.length ?? 0,
+  };
+
   try {
     const testCode = "123456";
     await sendVerificationEmail(email, testCode);
-    
+
     console.log(`📧 Test email sent successfully to ${email}`);
-    res.status(200).json({ message: "Email sent! Check your inbox (and Spam folder)." });
+    res.status(200).json({ message: "✅ Email sent! Check your inbox (and Spam folder).", env: envStatus });
   } catch (error: any) {
     console.error("❌ Nodemailer Error:", error);
-    res.status(500).json({ 
-      error: "Failed to send email", 
-      details: error.message 
+    res.status(500).json({
+      error: "Failed to send email",
+      details: error.message,
+      code: error.code,        // e.g. EAUTH, ECONNECTION
+      responseCode: error.responseCode, // e.g. 535 = wrong password
+      env: envStatus,
     });
   }
 };

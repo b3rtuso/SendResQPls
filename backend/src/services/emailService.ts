@@ -2,18 +2,20 @@ import nodemailer from 'nodemailer';
 
 // Create transporter lazily so env vars are guaranteed to be loaded
 function getTransporter() {
-  const email = process.env.SYSTEM_EMAIL;
-  const pass = process.env.SYSTEM_PASSWORD;
+  const email = process.env.SYSTEM_EMAIL?.trim();
+  const pass = process.env.SYSTEM_PASSWORD?.trim();
 
   if (!email || !pass) {
     console.error('❌ SYSTEM_EMAIL or SYSTEM_PASSWORD is not set in environment variables!');
+  } else {
+    console.log(`📧 Email transporter using: ${email} (password length: ${pass.length})`);
   }
 
-  // Use explicit SMTP settings instead of service:'gmail' for Railway compatibility
+  // Port 587 + STARTTLS — more compatible with Railway than 465/SSL
   return nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 465,
-    secure: true, // true for port 465 (SSL)
+    port: 587,
+    secure: false, // false for port 587 (STARTTLS)
     connectionTimeout: 10000,
     greetingTimeout: 10000,
     socketTimeout: 15000,

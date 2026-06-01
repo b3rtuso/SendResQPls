@@ -69,10 +69,6 @@ export default function MobileSignup() {
   };
 
   const handleSignup = async () => {
-    if (!form.name || !form.email || !form.password || !form.phone) {
-      setError('Please fill in all fields.');
-      return;
-    }
     if (!verified) {
       setError('Please verify your email first.');
       return;
@@ -97,16 +93,14 @@ export default function MobileSignup() {
   return (
     <div className="mobile-shell">
       <div className="mobile-auth">
-        <div style={{ textAlign: 'center', marginBottom: 20 }}>
-          <h1>Create Account</h1>
-          <p className="auth-subtitle">Sign up to report emergencies securely.</p>
-        </div>
+        <h1>Create Account</h1>
+        <p className="auth-subtitle">Sign up to report emergencies securely.</p>
 
         {toast.show && (
           <Toast type={toast.type} message={toast.message} detail={toast.detail} onClose={() => setToast({ ...toast, show: false })} />
         )}
 
-        {error && <p style={{ color: '#DC2626', fontSize: 13, marginBottom: 12, fontWeight: 600, textAlign: 'center' }}>{error}</p>}
+        {error && <p style={{ color: '#DC2626', fontSize: 13, marginBottom: 12, fontWeight: 600 }}>{error}</p>}
 
         <div className="input-group">
           <label>Full Name</label>
@@ -158,9 +152,9 @@ export default function MobileSignup() {
               ) : cooldown > 0 ? (
                 `${cooldown}s`
               ) : codeSent ? (
-                <><Send size={13} /> Resend</>
+                <><Send size={13} /> Resend Code</>
               ) : (
-                <><Send size={13} /> Send</>
+                <><Send size={13} /> Send Code</>
               )}
             </button>
           </div>

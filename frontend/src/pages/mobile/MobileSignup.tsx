@@ -42,7 +42,8 @@ export default function MobileSignup() {
       setCooldown(60);
       setToast({ show: true, message: 'Code sent!', detail: `Check your inbox at ${form.email}`, type: 'success' });
     } catch (err: any) {
-      const msg = err.response?.data?.error || 'Failed to send code';
+      console.error('[SendCode] Error:', err.response?.data || err.message);
+      const msg = err.response?.data?.error || err.response?.data?.details || err.message || 'Failed to send code';
       setError(msg);
     } finally {
       setSendingCode(false);

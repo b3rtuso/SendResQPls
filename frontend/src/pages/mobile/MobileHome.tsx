@@ -24,24 +24,38 @@ export default function MobileHome() {
   return (
     <div className="mobile-shell">
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }}>
-        {/* Header */}
+        {/* ── Compact Header ─────────────────────────────────── */}
         <div style={{
           background: 'linear-gradient(135deg, #1E3A5F 0%, #2563EB 100%)',
-          padding: '36px 24px 28px', color: 'white',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '10px 16px',
+          display: 'flex', alignItems: 'center', gap: 10,
+          position: 'sticky', top: 0, zIndex: 20,
         }}>
-          <div>
-            <img src="/logo.jpg" alt="SRQ Logo" style={{ width: 50, height: 50, borderRadius: 18, boxShadow: '0 8px 32px rgba(0,0,0,0.35)', objectFit: 'cover' }} />
-            <div style={{ fontSize: 14, opacity: 0.75, marginBottom: 4 }}>Welcome back,</div>
-            <div style={{ fontSize: 26, fontWeight: 800 }}>{userName.split(' ')[0]}</div>
+          {/* Logo */}
+          <img
+            src="/logo.jpg"
+            alt="SRQ"
+            style={{ width: 34, height: 34, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }}
+          />
+
+          {/* Welcome text + name */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.65)', lineHeight: 1 }}>Welcome back,</div>
+            <div style={{
+              fontSize: 15, fontWeight: 800, color: 'white',
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}>{userName}</div>
           </div>
+
+          {/* Avatar */}
           <div style={{
-            width: 50, height: 50, borderRadius: '50%',
-            background: 'rgba(255,255,255,0.15)', border: '2px solid rgba(255,255,255,0.3)',
+            width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
+            background: 'rgba(255,255,255,0.18)', border: '1.5px solid rgba(255,255,255,0.35)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: 700, fontSize: 17,
+            fontWeight: 800, fontSize: 12, color: 'white',
           }}>{initials}</div>
         </div>
+
 
         {/* SOS Card */}
         <div style={{ padding: '20px 20px 0' }}>

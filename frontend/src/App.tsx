@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import Requests from './pages/Requests';
@@ -20,25 +20,42 @@ import MobileResetPassword from './pages/mobile/MobileResetPassword';
 import { useState } from 'react';
 import './App.css';
 
+// ── Auth guard: redirects to login if no token ──────────────────────────────
+function PrivateRoute({ children }: { children: React.ReactNode }) {
+  const token = localStorage.getItem('token');
+  const location = useLocation();
+  if (!token) {
+    return <Navigate to="/mobile/login" state={{ from: location }} replace />;
+  }
+  return <>{children}</>;
+}
+
+// ── Onboarding wrapper: shows intro slides once, then requires auth ──────────
 function MobileHomeWithOnboarding() {
   const [done, setDone] = useState(!shouldShowOnboarding());
   if (!done) return <MobileOnboarding onDone={() => setDone(true)} />;
-  return <MobileHome />;
+  return (
+    <PrivateRoute>
+      <MobileHome />
+    </PrivateRoute>
+  );
 }
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* === MOBILE ROUTES (no sidebar) === */}
+        {/* === PUBLIC MOBILE ROUTES === */}
         <Route path="/mobile/login" element={<MobileLogin />} />
         <Route path="/mobile/signup" element={<MobileSignup />} />
-        <Route path="/mobile" element={<MobileHomeWithOnboarding />} />
-        <Route path="/mobile/report" element={<MobileReport />} />
-        <Route path="/mobile/history" element={<MobileHistory />} />
-        <Route path="/mobile/profile" element={<MobileProfile />} />
         <Route path="/mobile/forgot-password" element={<MobileForgotPassword />} />
         <Route path="/mobile/reset-password" element={<MobileResetPassword />} />
+
+        {/* === PROTECTED MOBILE ROUTES (require login) === */}
+        <Route path="/mobile" element={<MobileHomeWithOnboarding />} />
+        <Route path="/mobile/report" element={<PrivateRoute><MobileReport /></PrivateRoute>} />
+        <Route path="/mobile/history" element={<PrivateRoute><MobileHistory /></PrivateRoute>} />
+        <Route path="/mobile/profile" element={<PrivateRoute><MobileProfile /></PrivateRoute>} />
 
         {/* === DESKTOP ADMIN ROUTES (with sidebar) === */}
         <Route

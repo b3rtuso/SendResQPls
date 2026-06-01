@@ -105,37 +105,21 @@ export const login = async (req: Request, res: Response) => {
 // POST /api/auth/test-email
 export const testEmail = async (req: Request, res: Response) => {
   const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Please provide a destination email' });
 
-  if (!email) {
-    return res.status(400).json({ error: "Please provide a destination email" });
-  }
-
-  const systemEmail = process.env.SYSTEM_EMAIL?.trim();
-  const systemPass = process.env.SYSTEM_PASSWORD?.trim();
-
-  // Return env var status immediately for diagnosis
+  const apiKey = process.env.RESEND_API_KEY;
   const envStatus = {
-    SYSTEM_EMAIL_set: !!systemEmail,
-    SYSTEM_EMAIL_value: systemEmail ? `${systemEmail.slice(0, 4)}****` : 'NOT SET',
-    SYSTEM_PASSWORD_set: !!systemPass,
-    SYSTEM_PASSWORD_length: systemPass?.length ?? 0,
+    RESEND_API_KEY_set: !!apiKey,
+    RESEND_API_KEY_preview: apiKey ? `${apiKey.slice(0, 8)}****` : 'NOT SET',
   };
 
   try {
-    const testCode = "123456";
-    await sendVerificationEmail(email, testCode);
-
+    await sendVerificationEmail(email, '123456');
     console.log(`📧 Test email sent successfully to ${email}`);
-    res.status(200).json({ message: "✅ Email sent! Check your inbox (and Spam folder).", env: envStatus });
+    res.status(200).json({ message: '✅ Email sent! Check your inbox (and Spam folder).', env: envStatus });
   } catch (error: any) {
-    console.error("❌ Nodemailer Error:", error);
-    res.status(500).json({
-      error: "Failed to send email",
-      details: error.message,
-      code: error.code,        // e.g. EAUTH, ECONNECTION
-      responseCode: error.responseCode, // e.g. 535 = wrong password
-      env: envStatus,
-    });
+    console.error('❌ Resend Error:', error);
+    res.status(500).json({ error: 'Failed to send email', details: error.message, env: envStatus });
   }
 };
 

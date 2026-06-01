@@ -1,42 +1,22 @@
-import nodemailer from 'nodemailer';
-import { setDefaultResultOrder } from 'dns';
+import { Resend } from 'resend';
 
-// Force IPv4 DNS resolution — cloud platforms (Render/Railway) don't support
-// IPv6 outbound, so Gmail SMTP resolves to an unreachable IPv6 address without this
-setDefaultResultOrder('ipv4first');
-
-// Create transporter lazily so env vars are guaranteed to be loaded
-function getTransporter() {
-  const email = process.env.SYSTEM_EMAIL?.trim();
-  const pass = process.env.SYSTEM_PASSWORD?.trim();
-
-  if (!email || !pass) {
-    console.error('❌ SYSTEM_EMAIL or SYSTEM_PASSWORD is not set in environment variables!');
-  } else {
-    console.log(`📧 Email transporter using: ${email} (password length: ${pass.length})`);
+function getResend() {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.error('❌ RESEND_API_KEY is not set in environment variables!');
   }
-
-  // Port 587 + STARTTLS — forced IPv4 (Railway doesn't support IPv6 outbound)
-  return nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 15000,
-    auth: {
-      user: email,
-      pass: pass,
-    },
-  });
+  return new Resend(apiKey);
 }
 
+// Sender address — use your verified Resend domain, or the default onboarding address
+const FROM = process.env.RESEND_FROM || 'MDRRMO System <onboarding@resend.dev>';
+
 export const sendVerificationEmail = async (to: string, code: string) => {
-  const mailOptions = {
-    from: `"MDRRMO System" <${process.env.SYSTEM_EMAIL}>`,
+  const resend = getResend();
+  const { error } = await resend.emails.send({
+    from: FROM,
     to,
-    subject: "Your Verification Code - SendResqPls",
-    text: `Your verification code for SendResqPls is: ${code}. This code expires in 10 minutes.`,
+    subject: 'Your Verification Code - SendResqPls',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 420px; margin: 0 auto; padding: 24px;">
         <h2 style="color: #DC2626; margin-bottom: 8px;">SendResqPls Verification</h2>
@@ -49,9 +29,8 @@ export const sendVerificationEmail = async (to: string, code: string) => {
         <p style="color: #999; font-size: 11px;">MDRRMO Disaster Incident Reporting System</p>
       </div>
     `,
-  };
-
-  return getTransporter().sendMail(mailOptions);
+  });
+  if (error) throw new Error(error.message);
 };
 
 export const sendStatusNotification = async (to: string, reporterName: string, incidentType: string, newStatus: string) => {
@@ -71,11 +50,11 @@ export const sendStatusNotification = async (to: string, reporterName: string, i
     REJECTED: '#EF4444',
   };
 
-  const mailOptions = {
-    from: `"MDRRMO System" <${process.env.SYSTEM_EMAIL}>`,
+  const resend = getResend();
+  const { error } = await resend.emails.send({
+    from: FROM,
     to,
     subject: `Report Update: ${incidentType} — ${newStatus}`,
-    text: `Hi ${reporterName}, your incident report (${incidentType}) has been updated to: ${newStatus}. ${statusMessages[newStatus] || ''}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 420px; margin: 0 auto; padding: 24px;">
         <h2 style="color: #DC2626; margin-bottom: 8px;">Report Status Update</h2>
@@ -92,14 +71,14 @@ export const sendStatusNotification = async (to: string, reporterName: string, i
         <p style="color: #999; font-size: 11px;">MDRRMO Disaster Incident Reporting System — SendResqPls</p>
       </div>
     `,
-  };
-
-  return getTransporter().sendMail(mailOptions);
+  });
+  if (error) throw new Error(error.message);
 };
 
 export const sendPasswordResetEmail = async (to: string, name: string, resetUrl: string) => {
-  const mailOptions = {
-    from: `"MDRRMO System" <${process.env.SYSTEM_EMAIL}>`,
+  const resend = getResend();
+  const { error } = await resend.emails.send({
+    from: FROM,
     to,
     subject: 'Password Reset - SendResqPls',
     html: `
@@ -115,6 +94,6 @@ export const sendPasswordResetEmail = async (to: string, name: string, resetUrl:
         <p style="color: #999; font-size: 11px;">MDRRMO Disaster Incident Reporting System — SendResqPls</p>
       </div>
     `,
-  };
-  return getTransporter().sendMail(mailOptions);
+  });
+  if (error) throw new Error(error.message);
 };

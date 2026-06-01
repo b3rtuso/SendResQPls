@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">SendResqPls</string>
+    <string name="title_activity_main">SendResqPls</string>
+    <string name="package_name">com.mdrrmo.balayan.sendresqpls</string>
+    <string name="custom_url_scheme">com.mdrrmo.balayan.sendresqpls</string>
+</resources>

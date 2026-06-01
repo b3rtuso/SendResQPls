@@ -108,7 +108,7 @@ export default function MobileSignup() {
         </div>
         <div className="input-group">
           <label>Mobile Number</label>
-          <div className="input-wrapper"><Phone size={18} className="input-icon" /><input placeholder="+63 900 000 0000" value={form.phone} onChange={(e) => update('phone', e.target.value)} /></div>
+          <div className="input-wrapper"><Phone size={18} className="input-icon" /><input type="tel" placeholder="+63 900 000 0000" value={form.phone} onChange={(e) => update('phone', e.target.value.replace(/[^0-9+ ]/g, ''))} /></div>
         </div>
 
         {/* Email + Send Code */}

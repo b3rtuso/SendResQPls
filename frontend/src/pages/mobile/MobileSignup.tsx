@@ -152,9 +152,9 @@ export default function MobileSignup() {
               ) : cooldown > 0 ? (
                 `${cooldown}s`
               ) : codeSent ? (
-                <><Send size={13} /> Resend Code</>
+                'Resend Code'
               ) : (
-                <><Send size={13} /> Send Code</>
+                'Send Code'
               )}
             </button>
           </div>

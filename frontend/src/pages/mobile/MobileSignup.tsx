@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Phone, Mail, Lock, EyeOff, Eye, CheckCircle, Send } from 'lucide-react';
+import { User, Phone, Mail, Lock, EyeOff, Eye, CheckCircle } from 'lucide-react';
 import { register as apiRegister, sendVerificationCode, verifyCode } from '../../api/client';
 import Toast, { type ToastType } from '../../components/Toast';
 

@@ -1,4 +1,9 @@
 import nodemailer from 'nodemailer';
+import { setDefaultResultOrder } from 'dns';
+
+// Force IPv4 DNS resolution — cloud platforms (Render/Railway) don't support
+// IPv6 outbound, so Gmail SMTP resolves to an unreachable IPv6 address without this
+setDefaultResultOrder('ipv4first');
 
 // Create transporter lazily so env vars are guaranteed to be loaded
 function getTransporter() {
@@ -16,7 +21,6 @@ function getTransporter() {
     host: 'smtp.gmail.com',
     port: 587,
     secure: false,
-    family: 4, // Force IPv4 — Railway blocks IPv6 outbound connections
     connectionTimeout: 10000,
     greetingTimeout: 10000,
     socketTimeout: 15000,

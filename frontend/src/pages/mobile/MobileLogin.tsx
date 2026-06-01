@@ -65,7 +65,7 @@ export default function MobileLogin() {
         <a href="#" className="forgot-link" onClick={(e) => { e.preventDefault(); navigate('/mobile/forgot-password'); }}>Forgot password?</a>
 
         <button className="auth-btn login" onClick={handleLogin} disabled={loading}>
-          {loading ? 'Logging in...' : 'Log In'} <ArrowRight size={18} />
+          {loading ? 'Logging in...' : 'Log In'} 
         </button>
 
         <p className="auth-footer">

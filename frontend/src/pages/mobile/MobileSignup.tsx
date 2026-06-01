@@ -97,8 +97,10 @@ export default function MobileSignup() {
   return (
     <div className="mobile-shell">
       <div className="mobile-auth">
-        <h1>Create Account</h1>
-        <p className="auth-subtitle">Sign up to report emergencies securely.</p>
+        <div style={{ textAlign: 'center', marginBottom: 20 }}>
+          <h1>Create Account</h1>
+          <p className="auth-subtitle">Sign up to report emergencies securely.</p>
+        </div>
 
         {toast.show && (
           <Toast type={toast.type} message={toast.message} detail={toast.detail} onClose={() => setToast({ ...toast, show: false })} />

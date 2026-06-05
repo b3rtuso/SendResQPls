@@ -287,7 +287,7 @@ export default function Departments() {
                 >
                   {/* Header info */}
                   <div className="dept-card-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 18 }}>
-                    <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'center', minWidth: 0, flex: 1 }}>
                       <div style={{
                         width: 40, height: 40, borderRadius: 10,
                         background: theme.bg, color: theme.color,
@@ -296,14 +296,14 @@ export default function Departments() {
                       }}>
                         <IconComponent size={20} />
                       </div>
-                      <div>
-                        <h4 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: 'var(--text-primary)' }}>{dept.name}</h4>
-                        <div className="dept-sub" style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{dept.fullName}</div>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <h4 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{dept.name}</h4>
+                        <div className="dept-sub" style={{ fontSize: 11, color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={dept.fullName}>{dept.fullName}</div>
                       </div>
                     </div>
                     
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span className={`badge ${statusClass[dept.status]}`} style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', height: '22px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                      <span className={`badge ${statusClass[dept.status] || 'available'}`} style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', height: '22px' }}>
                         <span 
                           className="status-pulse-dot" 
                           style={{ '--pulse-color': statusColor, background: statusColor, width: 6, height: 6, marginRight: 6 } as any} 

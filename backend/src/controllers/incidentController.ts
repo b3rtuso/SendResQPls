@@ -3,6 +3,7 @@ import { prisma } from '../config/db';
 import { runAIAnalysis } from '../services/aiService';
 import { sendStatusNotification } from '../services/emailService';
 import { performReverseGeocode } from '../services/geocodingService';
+import { syncDepartmentStatuses } from './departmentController';
 
 // Balayan, Batangas municipality boundary (bounding box)
 const BALAYAN_BOUNDS = {
@@ -177,6 +178,9 @@ export const updateIncidentStatus = async (req: Request, res: Response) => {
       data,
       include: { reporter: true },
     });
+
+    // Sync department statuses dynamically in the database
+    await syncDepartmentStatuses();
 
     const actions = [];
     if (status) actions.push(`status → ${status}`);

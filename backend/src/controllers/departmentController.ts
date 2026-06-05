@@ -54,6 +54,43 @@ const defaultDepartments = [
   },
 ];
 
+// Helper function to sync department status based on assigned incidents
+export async function syncDepartmentStatuses() {
+  try {
+    const departments = await prisma.departmentInfo.findMany();
+    const incidents = await prisma.incident.findMany();
+
+    for (const dept of departments) {
+      // Find incidents assigned to this department
+      // Match by name (BFP, PNP, MEDICAL, ENGINEERING, RESCUE)
+      const deptIncidents = incidents.filter(
+        (inc) => inc.assignedDepartment === dept.name
+      );
+
+      let calculatedStatus = 'Available';
+      if (deptIncidents.some((inc) => inc.status === 'DISPATCHED')) {
+        calculatedStatus = 'Deployed';
+      } else if (
+        deptIncidents.some((inc) => inc.status === 'REVIEWING' || inc.status === 'PENDING')
+      ) {
+        calculatedStatus = 'On Standby';
+      } else {
+        calculatedStatus = 'Available';
+      }
+
+      if (dept.status !== calculatedStatus) {
+        await prisma.departmentInfo.update({
+          where: { id: dept.id },
+          data: { status: calculatedStatus },
+        });
+        dept.status = calculatedStatus;
+      }
+    }
+  } catch (error: any) {
+    console.error('⚠️ Failed to sync department statuses:', error.message);
+  }
+}
+
 // GET /api/departments
 export const getDepartments = async (req: Request, res: Response) => {
   try {
@@ -67,10 +104,15 @@ export const getDepartments = async (req: Request, res: Response) => {
       await prisma.departmentInfo.createMany({
         data: defaultDepartments,
       });
-      departments = await prisma.departmentInfo.findMany({
-        orderBy: { name: 'asc' },
-      });
     }
+
+    // Always sync status before returning
+    await syncDepartmentStatuses();
+
+    // Fetch the updated departments list
+    departments = await prisma.departmentInfo.findMany({
+      orderBy: { name: 'asc' },
+    });
 
     res.json(departments);
   } catch (error: any) {

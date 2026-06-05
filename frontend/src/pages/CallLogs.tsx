@@ -3,13 +3,7 @@ import Header from '../components/Header';
 import { Phone, PhoneOff, PhoneIncoming, Clock } from 'lucide-react';
 import type { CallLog } from '../types';
 
-const mockCallLogs: CallLog[] = [
-  { id: 'CL-001', requestId: 'INC-2026-001', callerName: 'Juan Dela Cruz', department: 'BFP', duration: '3:24', status: 'Accepted', timestamp: '2026-05-04T08:15:00Z' },
-  { id: 'CL-002', requestId: 'INC-2026-002', callerName: 'Maria Santos', department: 'RESCUE', duration: '0:00', status: 'No Response', timestamp: '2026-05-04T07:30:00Z' },
-  { id: 'CL-003', requestId: 'INC-2026-003', callerName: 'Pedro Reyes', department: 'ENGINEERING', duration: '1:45', status: 'Accepted', timestamp: '2026-05-04T07:50:00Z' },
-  { id: 'CL-004', requestId: 'INC-2026-004', callerName: 'Ana Gonzales', department: 'MEDICAL', duration: '0:12', status: 'Declined', timestamp: '2026-05-03T15:10:00Z' },
-  { id: 'CL-005', requestId: 'INC-2026-005', callerName: 'Carlos Mendoza', department: 'PNP', duration: '2:10', status: 'Accepted', timestamp: '2026-05-04T08:05:00Z' },
-];
+const mockCallLogs: CallLog[] = [];
 
 const statusIcon = { Accepted: PhoneIncoming, 'No Response': PhoneOff, Declined: PhoneOff };
 const statusBadge = { Accepted: 'resolved', 'No Response': 'pending', Declined: 'rejected' };
@@ -72,20 +66,46 @@ export default function CallLogs() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((log) => {
-                const Icon = statusIcon[log.status] || Phone;
-                return (
-                  <tr key={log.id}>
-                    <td style={{ fontWeight: 600 }}>{log.id}</td>
-                    <td><span className="table-link">{log.requestId}</span></td>
-                    <td>{log.callerName}</td>
-                    <td>{log.department}</td>
-                    <td>{log.duration}</td>
-                    <td><span className={`badge ${statusBadge[log.status]}`}><Icon size={12} /> {log.status}</span></td>
-                    <td>{new Date(log.timestamp).toLocaleTimeString()}</td>
-                  </tr>
-                );
-              })}
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={7} style={{ textAlign: 'center', padding: '48px 24px', color: 'var(--text-secondary)' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+                      <div style={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: '50%',
+                        background: 'rgba(255, 255, 255, 0.03)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        border: '1px solid var(--border-color)',
+                        marginBottom: 4
+                      }}>
+                        <Phone size={20} style={{ color: 'var(--text-secondary)' }} />
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 14 }}>No Call Logs</div>
+                        <div style={{ fontSize: 12, marginTop: 4, opacity: 0.7 }}>Emergency call history will appear here once calls are initiated.</div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                filtered.map((log) => {
+                  const Icon = statusIcon[log.status] || Phone;
+                  return (
+                    <tr key={log.id}>
+                      <td style={{ fontWeight: 600 }}>{log.id}</td>
+                      <td><span className="table-link">{log.requestId}</span></td>
+                      <td>{log.callerName}</td>
+                      <td>{log.department}</td>
+                      <td>{log.duration}</td>
+                      <td><span className={`badge ${statusBadge[log.status]}`}><Icon size={12} /> {log.status}</span></td>
+                      <td>{new Date(log.timestamp).toLocaleTimeString()}</td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import {
@@ -6,7 +6,7 @@ import {
   RefreshCw, ArrowRight, Phone, Flame,
   Stethoscope, HardHat, Anchor, ShieldCheck,
 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
 import type { Incident, Status } from '../types';
 import { getIncidents, getIncidentStats } from '../api/client';
 import { getNearestBarangay } from '../data/balayan-data';
@@ -21,11 +21,11 @@ const chartData = [
 ];
 
 const DEPARTMENTS = [
-  { label: 'BFP',         sub: 'Bureau of Fire Protection', icon: Flame,       color: '#EA580C', bg: '#FFF7ED', tel: 'tel:160' },
-  { label: 'PNP',         sub: 'Philippine National Police', icon: ShieldCheck, color: '#2563EB', bg: '#EFF6FF', tel: 'tel:117' },
-  { label: 'Medical',     sub: 'EMS / Health Services',      icon: Stethoscope, color: '#DC2626', bg: '#FEF2F2', tel: 'tel:911' },
-  { label: 'Engineering', sub: 'Public Works & Infra',       icon: HardHat,     color: '#CA8A04', bg: '#FEFCE8', tel: 'tel:' },
-  { label: 'Rescue',      sub: 'Search & Rescue Team',       icon: Anchor,      color: '#059669', bg: '#ECFDF5', tel: 'tel:' },
+  { label: 'BFP',         sub: 'Bureau of Fire Protection', icon: Flame,       color: '#EF4444', bg: '#FEF2F2', tel: 'tel:(043) 211-6387' },
+  { label: 'PNP',         sub: 'Philippine National Police', icon: ShieldCheck, color: '#3B82F6', bg: '#EFF6FF', tel: 'tel:(043) 211-4325' },
+  { label: 'Medical',     sub: 'EMS / Health Services',      icon: Stethoscope, color: '#22C55E', bg: '#ECFDF5', tel: 'tel:(043) 911-0012' },
+  { label: 'Engineering', sub: 'Public Works & Infra',       icon: HardHat,     color: '#F59E0B', bg: '#FEFCE8', tel: 'tel:(043) 211-5678' },
+  { label: 'Rescue',      sub: 'Search & Rescue Team',       icon: Anchor,      color: '#8B5CF6', bg: '#F5F3FF', tel: 'tel:(043) 211-1234' },
 ];
 
 const STATUS_STYLE: Record<Status, { bg: string; color: string; label: string }> = {
@@ -45,6 +45,18 @@ const TYPE_ICON: Record<string, { emoji: string; color: string }> = {
   'Landslide':          { emoji: '⛰️', color: '#78716C' },
 };
 
+const DONUT_COLORS: Record<string, string> = {
+  'Fire': '#EF4444',
+  'Flood': '#3B82F6',
+  'Medical': '#22C55E',
+  'Accident': '#F59E0B',
+  'Typhoon': '#8B5CF6',
+  'Landslide': '#78716C',
+  'Other': '#94A3B8',
+};
+
+const defaultColor = '#64748B';
+
 function timeAgo(date: string) {
   const diff = Date.now() - new Date(date).getTime();
   const m = Math.floor(diff / 60000);
@@ -55,11 +67,38 @@ function timeAgo(date: string) {
   return `${Math.floor(h / 24)}d ago`;
 }
 
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div style={{
+        background: 'rgba(15, 23, 42, 0.92)',
+        backdropFilter: 'blur(12px)',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        borderRadius: 12,
+        padding: '10px 14px',
+        boxShadow: '0 8px 30px rgba(0, 0, 0, 0.3)',
+        color: 'white',
+      }}>
+        {label && <p style={{ margin: 0, fontWeight: 700, fontSize: 13, marginBottom: 6 }}>{label}</p>}
+        {payload.map((p: any) => (
+          <div key={p.name} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'rgba(255,255,255,0.8)' }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: p.fill || p.color }} />
+            <span style={{ textTransform: 'capitalize' }}>{p.name}:</span>
+            <strong style={{ marginLeft: 'auto', color: 'white' }}>{p.value}</strong>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [stats, setStats] = useState({ total: 0, pending: 0, dispatched: 0, resolved: 0 });
   const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<Status | 'ALL'>('ALL');
 
   const fetchData = async () => {
     setLoading(true);
@@ -93,11 +132,40 @@ export default function Dashboard() {
 
   const pendingCount = stats.pending;
 
+  const handleStatCardClick = (filter: Status | 'ALL') => {
+    setStatusFilter(prev => prev === filter ? 'ALL' : filter);
+  };
+
+  const filteredIncidents = useMemo(() => {
+    if (statusFilter === 'ALL') return incidents;
+    return incidents.filter(inc => inc.status === statusFilter);
+  }, [incidents, statusFilter]);
+
+  const donutData = useMemo(() => {
+    if (incidents.length === 0) {
+      return [
+        { name: 'Fire', value: 0 },
+        { name: 'Flood', value: 0 },
+        { name: 'Medical', value: 0 },
+        { name: 'Accident', value: 0 },
+      ];
+    }
+    const counts: Record<string, number> = {};
+    incidents.forEach(inc => {
+      const type = inc.aiDetectedType || 'Other';
+      counts[type] = (counts[type] || 0) + 1;
+    });
+    return Object.entries(counts).map(([name, value]) => ({
+      name,
+      value,
+    }));
+  }, [incidents]);
+
   const STAT_CARDS = [
-    { label: 'Total Reports',   value: stats.total,      accent: '#2563EB', icon: AlertTriangle },
-    { label: 'Pending',         value: stats.pending,    accent: '#F59E0B', icon: Clock         },
-    { label: 'Dispatched',      value: stats.dispatched, accent: '#8B5CF6', icon: Truck         },
-    { label: 'Resolved Today',  value: stats.resolved,   accent: '#22C55E', icon: CheckCircle   },
+    { label: 'Total Reports',   value: stats.total,      accent: '#2563EB', bg: 'rgba(37, 99, 235, 0.05)', glow: 'rgba(37, 99, 235, 0.15)', activeGlow: 'rgba(37, 99, 235, 0.3)', filter: 'ALL', icon: AlertTriangle },
+    { label: 'Pending',         value: stats.pending,    accent: '#F59E0B', bg: 'rgba(245, 158, 11, 0.05)', glow: 'rgba(245, 158, 11, 0.15)', activeGlow: 'rgba(245, 158, 11, 0.3)', filter: 'PENDING', icon: Clock         },
+    { label: 'Dispatched',      value: stats.dispatched, accent: '#8B5CF6', bg: 'rgba(139, 92, 246, 0.05)', glow: 'rgba(139, 92, 246, 0.15)', activeGlow: 'rgba(139, 92, 246, 0.3)', filter: 'DISPATCHED', icon: Truck         },
+    { label: 'Resolved Today',  value: stats.resolved,   accent: '#22C55E', bg: 'rgba(34, 197, 94, 0.05)', glow: 'rgba(34, 197, 94, 0.15)', activeGlow: 'rgba(34, 197, 94, 0.3)', filter: 'RESOLVED', icon: CheckCircle   },
   ];
 
   return (
@@ -155,27 +223,138 @@ export default function Dashboard() {
         )}
 
         {/* ── Stat Cards ───────────────────────────────────── */}
-        <div className="stats-grid fade-in" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: 18, marginBottom: 24 }}>
-          {STAT_CARDS.map(({ label, value, accent, icon: Icon }) => (
-            <div key={label} style={{
-              background: 'white', borderRadius: 14, padding: '22px 22px',
-              borderLeft: `4px solid ${accent}`,
-              boxShadow: '0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04)',
-              display: 'flex', flexDirection: 'column',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-                <div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
-                    {label}
+        <div className="stats-grid fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 18, marginBottom: 24 }}>
+          {STAT_CARDS.map(({ label, value, accent, bg, glow, activeGlow, filter, icon: Icon }) => {
+            const isActive = statusFilter === filter;
+            return (
+              <div
+                key={label}
+                className={`stat-card-clickable ${isActive ? 'active' : ''}`}
+                onClick={() => handleStatCardClick(filter as Status | 'ALL')}
+                style={{
+                  background: 'white',
+                  borderRadius: 14,
+                  padding: '22px 22px',
+                  borderLeft: `4px solid ${accent}`,
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  '--glow-color': glow,
+                  '--active-bg': bg,
+                  '--active-border': accent,
+                  '--active-glow': activeGlow,
+                } as any}
+              >
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+                      {label}
+                    </div>
+                    <div style={{ fontSize: 38, fontWeight: 900, color: '#0F172A', lineHeight: 1, letterSpacing: '-1px' }}>
+                      {loading ? '—' : value}
+                    </div>
                   </div>
-                  <div style={{ fontSize: 38, fontWeight: 900, color: '#0F172A', lineHeight: 1, letterSpacing: '-1px' }}>
-                    {loading ? '—' : value}
+                  <div style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 10,
+                    background: bg,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                    <Icon size={22} style={{ color: accent }} />
                   </div>
                 </div>
-                <Icon size={28} style={{ color: accent, opacity: 0.18, marginTop: 4 }} />
+              </div>
+            );
+          })}
+        </div>
+
+        {/* ── Two-column Charts Grid ────────────────────────── */}
+        <div className="dashboard-charts-grid fade-in">
+          {/* Incident Trends Bar Chart */}
+          <div className="card">
+            <div className="card-header">
+              <h3 style={{ fontWeight: 700, fontSize: 16, color: '#0F172A' }}>Incident Trends</h3>
+              <select className="filter-select">
+                <option>Last 6 Months</option>
+                <option>Last 12 Months</option>
+                <option>This Year</option>
+              </select>
+            </div>
+            <div className="card-body">
+              <div className="chart-container" style={{ height: '300px' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData} barCategoryGap="35%">
+                    <defs>
+                      <linearGradient id="fireGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#EF4444" />
+                        <stop offset="100%" stopColor="#991B1B" />
+                      </linearGradient>
+                      <linearGradient id="floodGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#3B82F6" />
+                        <stop offset="100%" stopColor="#1D4ED8" />
+                      </linearGradient>
+                      <linearGradient id="accidentGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#F59E0B" />
+                        <stop offset="100%" stopColor="#B45309" />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
+                    <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#94A3B8' }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 12, fill: '#94A3B8' }} axisLine={false} tickLine={false} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend />
+                    <Bar dataKey="Fire" fill="url(#fireGrad)" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="Flood" fill="url(#floodGrad)" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="Accident" fill="url(#accidentGrad)" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
             </div>
-          ))}
+          </div>
+
+          {/* Incident Distribution Donut Chart */}
+          <div className="card">
+            <div className="card-header">
+              <h3 style={{ fontWeight: 700, fontSize: 16, color: '#0F172A' }}>Incident Distribution</h3>
+            </div>
+            <div className="card-body" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 16, alignItems: 'center' }}>
+              <div style={{ height: '260px', width: '100%' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={donutData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={4}
+                      dataKey="value"
+                    >
+                      {donutData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={DONUT_COLORS[entry.name] || defaultColor} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="donut-legend-list">
+                {donutData.map((entry) => {
+                  const color = DONUT_COLORS[entry.name] || defaultColor;
+                  return (
+                    <div key={entry.name} className="donut-legend-item">
+                      <div className="donut-legend-color" style={{ background: color }} />
+                      <span style={{ textTransform: 'capitalize' }}>{entry.name}</span>
+                      <span className="donut-legend-value">{entry.value}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* ── Two-column: incidents table + departments ─────── */}
@@ -184,7 +363,28 @@ export default function Dashboard() {
           {/* Recent Incidents */}
           <div style={{ background: 'white', borderRadius: 14, boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden', border: '1px solid #F1F5F9' }}>
             <div style={{ padding: '18px 22px', borderBottom: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ fontWeight: 700, fontSize: 16, color: '#0F172A' }}>Recent Incidents</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ fontWeight: 700, fontSize: 16, color: '#0F172A' }}>Recent Incidents</div>
+                {statusFilter !== 'ALL' && (
+                  <span
+                    onClick={() => setStatusFilter('ALL')}
+                    style={{
+                      background: 'var(--primary-bg)',
+                      color: 'var(--primary)',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      padding: '3px 8px',
+                      borderRadius: 12,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4
+                    }}
+                  >
+                    Filter: {statusFilter} ✕
+                  </span>
+                )}
+              </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button onClick={fetchData} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8', padding: 4, display: 'flex' }}>
                   <RefreshCw size={16} />
@@ -194,16 +394,16 @@ export default function Dashboard() {
                 </button>
               </div>
             </div>
-            {loading && incidents.length === 0 ? (
+            {loading && filteredIncidents.length === 0 ? (
               <div style={{ padding: 48, textAlign: 'center', color: '#94A3B8' }}>
                 <RefreshCw size={24} style={{ animation: 'spin 1s linear infinite', display: 'inline-block' }} />
                 <div style={{ marginTop: 8, fontSize: 13 }}>Loading incidents…</div>
               </div>
-            ) : incidents.length === 0 ? (
+            ) : filteredIncidents.length === 0 ? (
               <div style={{ padding: 48, textAlign: 'center', color: '#94A3B8' }}>
                 <div style={{ fontSize: 36, marginBottom: 8 }}>📋</div>
-                <div style={{ fontSize: 14, fontWeight: 600 }}>No incidents yet</div>
-                <div style={{ fontSize: 13, marginTop: 4 }}>Mobile reports will appear here automatically.</div>
+                <div style={{ fontSize: 14, fontWeight: 600 }}>No reports match filter</div>
+                <div style={{ fontSize: 13, marginTop: 4 }}>Try clearing the status filter to see other items.</div>
               </div>
             ) : (
               <div style={{ overflowX: 'auto' }}>
@@ -216,7 +416,7 @@ export default function Dashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {incidents.slice(0, 8).map((inc, idx) => {
+                    {filteredIncidents.slice(0, 8).map((inc, idx) => {
                       const ss = STATUS_STYLE[inc.status] || STATUS_STYLE.PENDING;
                       const ti = TYPE_ICON[inc.aiDetectedType || ''] || { emoji: '⚠️', color: '#64748B' };
                       return (
@@ -287,8 +487,8 @@ export default function Dashboard() {
                   onMouseEnter={e => (e.currentTarget.style.borderColor = '#BFDBFE')}
                   onMouseLeave={e => (e.currentTarget.style.borderColor = '#F1F5F9')}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, width: '100%' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
                       <div style={{ width: 38, height: 38, borderRadius: 10, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         <Icon size={18} style={{ color }} />
                       </div>
@@ -297,7 +497,10 @@ export default function Dashboard() {
                         <div style={{ fontSize: 10, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>{sub}</div>
                       </div>
                     </div>
-                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#22C55E', boxShadow: '0 0 6px #22C55E' }} />
+                    <div
+                      className="status-pulse-dot"
+                      style={{ '--pulse-color': '#22C55E', background: '#22C55E', marginLeft: 'auto' } as any}
+                    />
                   </div>
                   <a href={tel} style={{ textDecoration: 'none', display: 'block' }}>
                     <button style={{
@@ -315,34 +518,6 @@ export default function Dashboard() {
                   </a>
                 </div>
               ))}
-            </div>
-          </div>
-        </div>
-
-        {/* ── Incident Trend Chart ──────────────────────────── */}
-        <div className="card fade-in" style={{ animationDelay: '0.2s' }}>
-          <div className="card-header">
-            <h3 style={{ fontWeight: 700, fontSize: 16, color: '#0F172A' }}>Incident Trends</h3>
-            <select className="filter-select">
-              <option>Last 6 Months</option>
-              <option>Last 12 Months</option>
-              <option>This Year</option>
-            </select>
-          </div>
-          <div className="card-body">
-            <div className="chart-container">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} barCategoryGap="35%">
-                  <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
-                  <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#94A3B8' }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 12, fill: '#94A3B8' }} axisLine={false} tickLine={false} />
-                  <Tooltip contentStyle={{ background: 'white', border: '1px solid #E2E8F0', borderRadius: 10, fontSize: 13 }} />
-                  <Legend />
-                  <Bar dataKey="Fire"     fill="#EF4444" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Flood"    fill="#3B82F6" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Accident" fill="#F59E0B" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
             </div>
           </div>
         </div>

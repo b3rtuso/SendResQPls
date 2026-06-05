@@ -125,6 +125,22 @@ export const testEmail = async (req: Request, res: Response) => {
   }
 };
 
+// GET /api/auth/profile/:userId
+export const getProfile = async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, name: true, email: true, phoneNumber: true, role: true },
+    });
+    if (!user) return res.status(404).json({ error: "User not found" });
+    res.json(user);
+  } catch (error: any) {
+    console.error("❌ Get profile error:", error.message);
+    res.status(500).json({ error: "Failed to fetch profile", details: error.message });
+  }
+};
+
 // PATCH /api/auth/profile
 export const updateProfile = async (req: Request, res: Response) => {
   try {

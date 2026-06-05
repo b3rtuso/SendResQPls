@@ -67,6 +67,7 @@ export const updateDepartment = (id: string, data: any) => api.put(`/departments
 export const deleteDepartment = (id: string) => api.delete(`/departments/${id}`);
 
 // === SETTINGS ===
+export const getProfile = (userId: string) => api.get(`/auth/profile/${userId}`);
 export const updateProfile = (data: Record<string, string>) =>
   api.patch('/auth/profile', data);
 export const changePassword = (data: { currentPassword: string; newPassword: string }) =>

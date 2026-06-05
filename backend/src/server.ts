@@ -3,6 +3,7 @@ import cors from 'cors';
 import 'dotenv/config';
 import incidentRoutes from './routes/incidentRoutes';
 import authRoutes from './routes/authRoutes';
+import departmentRoutes from './routes/departmentRoutes';
 
 import { prisma } from './config/db';
 import bcrypt from 'bcrypt';
@@ -15,6 +16,7 @@ app.use(express.json());
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/incidents', incidentRoutes);
+app.use('/api/departments', departmentRoutes);
 
 // Auto-seed default MDRRMO admin on startup
 async function seedDefaultAdmin() {

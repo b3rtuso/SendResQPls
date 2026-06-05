@@ -61,3 +61,17 @@ enum Department {
   ENGINEERING // DPWH / Local Engineering (fallen trees, road blocks)
   RESCUE      // General MDRRMO Rescue Team
 }
+
+model DepartmentInfo {
+  id             String   @id @default(uuid())
+  name           String   @unique
+  fullName       String
+  headOfficer    String
+  contact        String
+  email          String
+  personnelCount Int      @default(0)
+  equipment      String[] @default([])
+  status         String   @default("Available") // Available, On Standby, Deployed
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}

@@ -60,8 +60,11 @@ export const getAnalytics = () => api.get('/analytics/forecast');
 export const generateReport = (params: { startDate: string; endDate: string; department?: string }) =>
   api.get('/reports/generate', { params });
 
-// === DEPARTMENTS (NOT in backend) ===
+// === DEPARTMENTS ===
 export const getDepartments = () => api.get('/departments');
+export const createDepartment = (data: any) => api.post('/departments', data);
+export const updateDepartment = (id: string, data: any) => api.put(`/departments/${id}`, data);
+export const deleteDepartment = (id: string) => api.delete(`/departments/${id}`);
 
 // === SETTINGS ===
 export const updateProfile = (data: Record<string, string>) =>

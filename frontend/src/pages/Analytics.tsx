@@ -195,7 +195,7 @@ export default function Analytics() {
                 ))}
               </div>
 
-              {/* Leaflet Map */}
+              {/* Leaflet Map — OSM tiles show correct PH barangay names */}
               <MapContainer
                 center={[BALAYAN_CENTER.lat, BALAYAN_CENTER.lng]}
                 zoom={13}
@@ -204,8 +204,9 @@ export default function Analytics() {
                 zoomControl={true}
               >
                 <TileLayer
-                  attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-                  url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  maxZoom={19}
                 />
                 <MapBoundsController />
 

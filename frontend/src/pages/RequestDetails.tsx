@@ -5,6 +5,7 @@ import Toast, { type ToastType } from '../components/Toast';
 import { ArrowLeft, Brain, MapPin, Camera, User, Clock, ExternalLink, X, Phone, Building2, CheckCircle2 } from 'lucide-react';
 import { updateIncidentStatus, getIncident as fetchIncident } from '../api/client';
 import type { Status, Incident } from '../types';
+import { getNearestBarangay } from '../data/balayan-data';
 
 const allStatuses: Status[] = ['PENDING', 'REVIEWING', 'DISPATCHED', 'RESOLVED', 'REJECTED'];
 
@@ -198,7 +199,11 @@ export default function RequestDetails() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                   <div className="dept-detail">
                     <MapPin size={16} />
-                    <strong>Location:</strong> {incident.latitude.toFixed(4)}°N, {incident.longitude.toFixed(4)}°E
+                    <strong>Location:</strong>{' '}
+                    {getNearestBarangay(incident.latitude, incident.longitude)}
+                    <span style={{ marginLeft: 6, fontSize: 11, color: 'var(--text-muted)' }}>
+                      ({incident.latitude.toFixed(4)}°N, {incident.longitude.toFixed(4)}°E)
+                    </span>
                     <button
                       onClick={openLocation}
                       style={{

@@ -16,18 +16,18 @@ export default function MobileResetPassword() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!token) setError('Invalid reset link. Please request a new one.');
+    if (!token) setError('Invalid ang reset link. Humingi ng bago.');
   }, [token]);
 
   const handleReset = async () => {
-    if (newPass.length < 6) { setError('Password must be at least 6 characters.'); return; }
-    if (newPass !== confirmPass) { setError('Passwords do not match.'); return; }
+    if (newPass.length < 6) { setError('Dapat 6 characters man lang ang password.'); return; }
+    if (newPass !== confirmPass) { setError('Hindi match ang passwords. Try mo ulit.'); return; }
     setLoading(true); setError('');
     try {
       await resetPassword(token, newPass);
       setDone(true);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to reset password. The link may have expired.');
+      setError(err.response?.data?.error || 'Failed ang reset. Baka expired na ang link.');
     } finally {
       setLoading(false);
     }
@@ -37,27 +37,29 @@ export default function MobileResetPassword() {
     <div className="mobile-shell">
       <div className="mobile-auth">
         <img src="/logo.jpg" alt="SRQ Logo" style={{ width: 80, height: 80, borderRadius: 20, boxShadow: '0 8px 32px rgba(0,0,0,0.15)', objectFit: 'cover', marginBottom: 8 }} />
-        <h1>Reset Password</h1>
-        <p className="auth-subtitle">Enter your new password below.</p>
+        <h1>Reset Password 🔒</h1>
+        <p className="auth-subtitle">I-enter ang bagong password mo.</p>
 
         {done ? (
           <div style={{ background: '#F0FDF4', border: '1.5px solid #22C55E', borderRadius: 12, padding: '24px 16px', textAlign: 'center', marginTop: 16 }}>
             <CheckCircle size={40} color="#22C55E" style={{ marginBottom: 12 }} />
-            <div style={{ fontWeight: 700, color: '#15803D', marginBottom: 4 }}>Password Updated!</div>
-            <div style={{ fontSize: 13, color: '#166534', marginBottom: 16 }}>You can now log in with your new password.</div>
+            <div style={{ fontWeight: 700, color: '#15803D', marginBottom: 4 }}>Na-update na ang Password! 🎉</div>
+            <div style={{ fontSize: 13, color: '#166534', marginBottom: 16 }}>Pwede ka nang mag-login gamit ang bagong password.</div>
             <button onClick={() => navigate('/mobile/login')} style={{
               padding: '10px 24px', background: '#22C55E', color: 'white',
               border: 'none', borderRadius: 10, fontWeight: 700, cursor: 'pointer',
-            }}>Go to Login</button>
+            }}>
+              Go to Login
+            </button>
           </div>
         ) : (
           <>
             {error && <p style={{ color: '#DC2626', fontSize: 13, marginBottom: 12, fontWeight: 600 }}>{error}</p>}
             <div className="input-group">
-              <label>New Password</label>
+              <label>Bagong Password</label>
               <div className="input-wrapper">
                 <Lock size={18} className="input-icon" />
-                <input type={showPass ? 'text' : 'password'} placeholder="At least 6 characters" value={newPass} onChange={(e) => setNewPass(e.target.value)} />
+                <input type={showPass ? 'text' : 'password'} placeholder="6 characters man lang" value={newPass} onChange={(e) => setNewPass(e.target.value)} />
                 <button className="toggle-pass" onClick={() => setShowPass(!showPass)}>{showPass ? <Eye size={18} /> : <EyeOff size={18} />}</button>
               </div>
             </div>
@@ -65,11 +67,11 @@ export default function MobileResetPassword() {
               <label>Confirm Password</label>
               <div className="input-wrapper">
                 <Lock size={18} className="input-icon" />
-                <input type={showPass ? 'text' : 'password'} placeholder="Repeat new password" value={confirmPass} onChange={(e) => setConfirmPass(e.target.value)} />
+                <input type={showPass ? 'text' : 'password'} placeholder="Ulitin ang bagong password" value={confirmPass} onChange={(e) => setConfirmPass(e.target.value)} />
               </div>
             </div>
             <button className="auth-btn login" onClick={handleReset} disabled={loading || !token}>
-              {loading ? 'Resetting...' : 'Set New Password'} <CheckCircle size={18} />
+              {loading ? 'Updating...' : 'Set New Password'} <CheckCircle size={18} />
             </button>
           </>
         )}

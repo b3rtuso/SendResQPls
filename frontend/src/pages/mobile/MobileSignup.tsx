@@ -11,7 +11,6 @@ export default function MobileSignup() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Verification state
   const [codeSent, setCodeSent] = useState(false);
   const [codeInput, setCodeInput] = useState('');
   const [verified, setVerified] = useState(false);
@@ -20,7 +19,6 @@ export default function MobileSignup() {
   const [cooldown, setCooldown] = useState(0);
   const [toast, setToast] = useState<{ show: boolean; message: string; detail?: string; type: ToastType }>({ show: false, message: '', type: 'info' });
 
-  // Cooldown timer
   useEffect(() => {
     if (cooldown <= 0) return;
     const t = setTimeout(() => setCooldown(cooldown - 1), 1000);
@@ -31,7 +29,7 @@ export default function MobileSignup() {
 
   const handleSendCode = async () => {
     if (!form.email || !form.email.includes('@')) {
-      setError('Please enter a valid email address first.');
+      setError('Lagay muna ng valid email.');
       return;
     }
     setSendingCode(true);
@@ -39,11 +37,11 @@ export default function MobileSignup() {
     try {
       await sendVerificationCode(form.email);
       setCodeSent(true);
-      setCooldown(600); // 10 minutes cooldown
-      setToast({ show: true, message: 'Code sent!', detail: `Check your inbox at ${form.email}`, type: 'success' });
+      setCooldown(600);
+      setToast({ show: true, message: 'Code sent! 📩', detail: `Check ang inbox mo sa ${form.email}`, type: 'success' });
     } catch (err: any) {
       console.error('[SendCode] Error:', err.response?.data || err.message);
-      const msg = err.response?.data?.error || err.response?.data?.details || err.message || 'Failed to send code';
+      const msg = err.response?.data?.error || err.response?.data?.details || err.message || 'Hindi na-send ang code';
       setError(msg);
     } finally {
       setSendingCode(false);
@@ -52,7 +50,7 @@ export default function MobileSignup() {
 
   const handleVerifyCode = async () => {
     if (codeInput.length !== 6) {
-      setError('Please enter the 6-digit code.');
+      setError('I-enter ang 6-digit code.');
       return;
     }
     setVerifying(true);
@@ -60,9 +58,9 @@ export default function MobileSignup() {
     try {
       await verifyCode(form.email, codeInput);
       setVerified(true);
-      setToast({ show: true, message: 'Email verified!', detail: 'You can now complete registration.', type: 'success' });
+      setToast({ show: true, message: 'Verified na! ✅', detail: 'Pwede na mag-complete ng registration.', type: 'success' });
     } catch (err: any) {
-      const msg = err.response?.data?.error || 'Invalid code';
+      const msg = err.response?.data?.error || 'Mali ang code. Try mo ulit.';
       setError(msg);
     } finally {
       setVerifying(false);
@@ -71,21 +69,24 @@ export default function MobileSignup() {
 
   const handleSignup = async () => {
     if (!verified) {
-      setError('Please verify your email first.');
+      setError('I-verify muna ang email mo.');
+      return;
+    }
+    if (form.password.length < 6) {
+      setError('Dapat 6 characters man lang ang password.');
       return;
     }
     setLoading(true);
     setError('');
     try {
       await apiRegister({ name: form.name, email: form.email, password: form.password, phoneNumber: form.phone });
-      // Pre-fill localStorage so profile shows correct data on first login
       localStorage.setItem('userName', form.name);
       localStorage.setItem('userEmail', form.email);
       localStorage.setItem('userPhone', form.phone);
-      setToast({ show: true, message: 'Account created!', detail: 'Redirecting to login...', type: 'success' });
+      setToast({ show: true, message: 'Account created! 🎉', detail: 'Papunta na sa login...', type: 'success' });
       setTimeout(() => navigate('/mobile/login'), 1500);
     } catch {
-      setError('Registration failed. Try again.');
+      setError('Hindi nagawa ang account. Try mo ulit.');
     } finally {
       setLoading(false);
     }
@@ -94,8 +95,8 @@ export default function MobileSignup() {
   return (
     <div className="mobile-shell">
       <div className="mobile-auth">
-        <h1>Create Account</h1>
-        <p className="auth-subtitle">Sign up to report emergencies securely.</p>
+        <h1>Gawa tayo ng Account 🙌</h1>
+        <p className="auth-subtitle">Mag-sign up para ma-report ang emergency safely.</p>
 
         {toast.show && (
           <Toast type={toast.type} message={toast.message} detail={toast.detail} onClose={() => setToast({ ...toast, show: false })} />
@@ -103,15 +104,21 @@ export default function MobileSignup() {
 
         {error && <p style={{ color: '#DC2626', fontSize: 13, marginBottom: 12, fontWeight: 600 }}>{error}</p>}
 
-        {/* Wrap in form so browser password manager works correctly */}
         <form autoComplete="on" onSubmit={(e) => e.preventDefault()} style={{ display: 'contents' }}>
           <div className="input-group">
-            <label>Full Name</label>
-            <div className="input-wrapper"><User size={18} className="input-icon" /><input autoComplete="name" placeholder="Juan Dela Cruz" value={form.name} onChange={(e) => update('name', e.target.value)} /></div>
+            <label>Buong Pangalan</label>
+            <div className="input-wrapper">
+              <User size={18} className="input-icon" />
+              <input autoComplete="name" placeholder="Juan Dela Cruz" value={form.name} onChange={(e) => update('name', e.target.value)} />
+            </div>
           </div>
+
           <div className="input-group">
-            <label>Mobile Number</label>
-            <div className="input-wrapper"><Phone size={18} className="input-icon" /><input type="tel" autoComplete="tel" placeholder="+63 900 000 0000" value={form.phone} onChange={(e) => update('phone', e.target.value.replace(/[^0-9+ ]/g, ''))} /></div>
+            <label>Numero ng Telepono</label>
+            <div className="input-wrapper">
+              <Phone size={18} className="input-icon" />
+              <input type="tel" autoComplete="tel" placeholder="+63 900 000 0000" value={form.phone} onChange={(e) => update('phone', e.target.value.replace(/[^0-9+ ]/g, ''))} />
+            </div>
           </div>
 
           {/* Email + Send Code */}
@@ -123,7 +130,7 @@ export default function MobileSignup() {
                 <input
                   type="email"
                   autoComplete="email"
-                  placeholder="juan@example.com"
+                  placeholder="juan@halimbawa.com"
                   value={form.email}
                   onChange={(e) => {
                     update('email', e.target.value);
@@ -157,7 +164,7 @@ export default function MobileSignup() {
                 ) : cooldown > 0 ? (
                   `${Math.floor(cooldown / 60)}:${String(cooldown % 60).padStart(2, '0')}`
                 ) : codeSent ? (
-                  'Resend Code'
+                  'Resend'
                 ) : (
                   'Send Code'
                 )}
@@ -175,7 +182,7 @@ export default function MobileSignup() {
                   <input
                     type="text"
                     autoComplete="one-time-code"
-                    placeholder="Enter 6-digit code"
+                    placeholder="I-enter ang 6-digit code"
                     value={codeInput}
                     onChange={(e) => setCodeInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     maxLength={6}
@@ -213,7 +220,9 @@ export default function MobileSignup() {
                 value={form.password}
                 onChange={(e) => update('password', e.target.value)}
               />
-              <button type="button" className="toggle-pass" onClick={() => setShowPass(!showPass)}>{showPass ? <Eye size={18} /> : <EyeOff size={18} />}</button>
+              <button type="button" className="toggle-pass" onClick={() => setShowPass(!showPass)}>
+                {showPass ? <Eye size={18} /> : <EyeOff size={18} />}
+              </button>
             </div>
           </div>
 
@@ -224,12 +233,13 @@ export default function MobileSignup() {
             disabled={loading || !verified}
             style={{ marginTop: 8, opacity: !verified ? 0.5 : 1 }}
           >
-            {loading ? 'Creating...' : 'Create Account'} <CheckCircle size={18} />
+            {loading ? 'Ginagawa...' : 'Create Account'} <CheckCircle size={18} />
           </button>
         </form>
 
         <p className="auth-footer">
-          Already have an account? <a href="#" onClick={(e) => { e.preventDefault(); navigate('/mobile/login'); }}>Log in</a>
+          May account ka na?{' '}
+          <a href="#" onClick={(e) => { e.preventDefault(); navigate('/mobile/login'); }}>Mag-login</a>
         </p>
       </div>
     </div>

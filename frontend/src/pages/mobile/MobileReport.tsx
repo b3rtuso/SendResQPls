@@ -35,22 +35,18 @@ export default function MobileReport() {
 
   const handleSend = async () => {
     if (!photo) {
-      showToast('warning', 'No photo selected', 'Please capture or upload an image of the emergency.');
+      showToast('warning', 'Walang photo', 'Kumuha o mag-upload ng larawan ng emergency.');
       return;
     }
 
     setSending(true);
 
     try {
-      // Get the user ID from localStorage (set during login)
       const userId = localStorage.getItem('userId') || 'anonymous';
-
-      // Build FormData
       const formData = new FormData();
       formData.append('photo', photo);
       formData.append('userId', userId);
 
-      // Get GPS coordinates (required — no fallback)
       let lat: string;
       let lng: string;
 
@@ -64,14 +60,13 @@ export default function MobileReport() {
         lat = String(position.coords.latitude);
         lng = String(position.coords.longitude);
       } catch {
-        showToast('error', 'Location Required', 'Please enable GPS/location services to submit a report. Reports can only be sent from within Balayan, Batangas.');
+        showToast('error', 'Kailangan ng Location', 'I-enable ang GPS/location para makapag-submit ng report. Ang mga report ay para lang sa loob ng Balayan, Batangas.');
         setSending(false);
         return;
       }
 
-      // Validate location is within Balayan, Batangas
       if (!isWithinBalayan(parseFloat(lat), parseFloat(lng))) {
-        showToast('error', 'Outside Balayan Area', 'Reports can only be submitted from within Balayan, Batangas municipality. Please ensure you are in the area.');
+        showToast('error', 'Outside ng Balayan', 'Ang reports ay para lang sa loob ng Balayan, Batangas. Siguraduhing nasa area ka.');
         setSending(false);
         return;
       }
@@ -79,30 +74,23 @@ export default function MobileReport() {
       formData.append('latitude', lat);
       formData.append('longitude', lng);
 
-      // Send to backend → AI classifies → saves to database
       const response = await reportIncident(formData);
       const { incident } = response.data;
 
-      // ✅ SUCCESS NOTIFICATION — report went through!
       showToast(
         'success',
-        'Emergency Report Submitted!',
-        `AI classified as: ${incident?.aiDetectedType || 'Processing...'} — Routed to ${incident?.aiRecommendedDept || 'MDRRMO'}`
+        'Na-send na ang Emergency Report! 🚑',
+        `AI-classified bilang: ${incident?.aiDetectedType || 'Processing...'} — Na-route sa ${incident?.aiRecommendedDept || 'MDRRMO'}`
       );
 
-      // Clear the form
       setPhoto(null);
       setPreview(null);
 
-      // Navigate to history after a short delay so user sees the notification
-      setTimeout(() => {
-        navigate('/mobile/history');
-      }, 3000);
+      setTimeout(() => navigate('/mobile/history'), 3000);
 
     } catch (error: any) {
-      // ❌ FAILURE NOTIFICATION — report did NOT go through
-      const detail = error?.response?.data?.details || error?.message || 'Check your connection and try again.';
-      showToast('error', 'Failed to send report', detail);
+      const detail = error?.response?.data?.details || error?.message || 'I-check ang connection at try mo ulit.';
+      showToast('error', 'Hindi na-send ang report', detail);
     } finally {
       setSending(false);
     }
@@ -126,14 +114,14 @@ export default function MobileReport() {
           </button>
           <div>
             <h1>Quick SOS Alert</h1>
-            <p>MDRRMO will assess & dispatch</p>
+            <p>MDRRMO will respond agad</p>
           </div>
         </div>
 
         <div className="report-hero">
           <div className="alert-icon"><AlertTriangle size={28} /></div>
-          <h2>Need Help Fast?</h2>
-          <p>Just capture an image of the situation and share your location. The AI will classify the emergency and dispatch the right teams immediately.</p>
+          <h2>Need Help? 🙋</h2>
+          <p>Kumuha ng pic ng sitwasyon at i-share ang location. Ang AI ang mag-cla-classify ng emergency at magpadala ng tamang team agad.</p>
         </div>
 
         <input
@@ -149,18 +137,13 @@ export default function MobileReport() {
           {preview ? (
             <img
               src={preview}
-              alt="Captured"
-              style={{
-                width: '100%',
-                maxHeight: 200,
-                objectFit: 'cover',
-                borderRadius: 12,
-              }}
+              alt="Kinuha"
+              style={{ width: '100%', maxHeight: 200, objectFit: 'cover', borderRadius: 12 }}
             />
           ) : (
             <>
               <div className="cam-icon"><Camera size={26} /></div>
-              <p>Tap to capture or upload a photo</p>
+              <p>I-tap para kumuha o mag-upload ng photo</p>
             </>
           )}
           {photo && !preview && <p className="file-name">📷 {photo.name}</p>}
@@ -175,11 +158,11 @@ export default function MobileReport() {
           ) : (
             <>
               <AlertTriangle size={20} />
-              SEND EMERGENCY ALERT
+              🚨 SEND EMERGENCY ALERT
             </>
           )}
         </button>
-        <p className="report-note">* Location and image are required to send alert</p>
+        <p className="report-note">* Kailangan ang location at photo para mapadala ang alert</p>
       </div>
       <BottomNav />
     </div>

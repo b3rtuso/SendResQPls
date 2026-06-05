@@ -2,6 +2,21 @@
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 .spin { animation: spin 1s linear infinite; }
 @keyframes slideUp { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes sosPulse {
+  0%, 100% { box-shadow: 0 8px 32px rgba(220,38,38,0.35), 0 0 0 0 rgba(220,38,38,0.4); }
+  50% { box-shadow: 0 12px 48px rgba(220,38,38,0.55), 0 0 0 12px rgba(220,38,38,0); }
+}
+@keyframes tapBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(4px); }
+}
+@keyframes btnPulse {
+  0%, 100% { box-shadow: 0 6px 24px rgba(220,38,38,0.35), 0 0 0 0 rgba(220,38,38,0.3); }
+  60% { box-shadow: 0 8px 32px rgba(220,38,38,0.5), 0 0 0 10px rgba(220,38,38,0); }
+}
+
 
 /* ===== GLOBAL BUTTON INTERACTION ===== */
 button {
@@ -115,12 +130,23 @@ button:active:not(:disabled) {
 
 .mobile-auth .input-wrapper input {
   flex: 1;
+  min-width: 0;          /* prevents flex children from overflowing */
   border: none;
   background: none;
   outline: none;
   font-size: 15px;
   font-family: var(--font);
   color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mobile-auth .input-wrapper input::placeholder {
+  font-size: 13px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .mobile-auth .input-wrapper .input-icon {
@@ -242,33 +268,61 @@ button:active:not(:disabled) {
 .sos-card {
   margin: 24px;
   padding: 40px 24px;
-  background: #DC2626;
+  background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
   border-radius: 24px;
   text-align: center;
   color: white;
   cursor: pointer;
-  transition: all var(--transition);
-  box-shadow: 0 8px 32px rgba(220, 38, 38, 0.3);
+  animation: sosPulse 2.4s ease-in-out infinite;
+  position: relative;
+  overflow: hidden;
+  -webkit-tap-highlight-color: rgba(255,255,255,0.15);
+  user-select: none;
 }
 
-.sos-card:hover {
-  transform: scale(1.02);
-  box-shadow: 0 12px 40px rgba(220, 38, 38, 0.4);
+.sos-card::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 26px;
+  border: 2px solid rgba(255,255,255,0.25);
+  animation: sosPulse 2.4s ease-in-out infinite;
+  pointer-events: none;
 }
 
 .sos-card:active {
-  transform: scale(0.98);
+  transform: scale(0.96);
+  filter: brightness(0.9);
+  transition: transform 0.08s ease, filter 0.08s ease;
+}
+
+.sos-card .tap-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.65;
+  letter-spacing: 0.5px;
+}
+
+.sos-card .tap-arrow {
+  animation: tapBounce 1.2s ease-in-out infinite;
+  display: inline-block;
 }
 
 .sos-card .sos-icon {
   width: 64px;
   height: 64px;
   margin: 0 auto 16px;
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.18);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 2px solid rgba(255,255,255,0.3);
 }
 
 .sos-card h2 {
@@ -455,7 +509,7 @@ button:active:not(:disabled) {
 .sos-btn {
   width: 100%;
   padding: 18px;
-  background: #DC2626;
+  background: linear-gradient(135deg, #DC2626, #B91C1C);
   color: white;
   border: none;
   border-radius: 16px;
@@ -468,18 +522,22 @@ button:active:not(:disabled) {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  transition: all var(--transition);
-  box-shadow: 0 6px 24px rgba(220, 38, 38, 0.3);
+  animation: btnPulse 2.2s ease-in-out infinite;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
-.sos-btn:hover {
-  background: #B91C1C;
-  box-shadow: 0 8px 32px rgba(220, 38, 38, 0.4);
+.sos-btn:active:not(:disabled) {
+  transform: scale(0.97);
+  filter: brightness(0.88);
+  transition: transform 0.08s ease;
 }
 
 .sos-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
+  animation: none;
+  background: #9CA3AF;
 }
 
 .report-note {

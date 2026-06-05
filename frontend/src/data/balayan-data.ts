@@ -10,10 +10,10 @@ export const BALAYAN_CENTER = { lat: 13.9350, lng: 120.7200 };
 
 // Corrected bounds based on actual barangay extents
 export const BALAYAN_BOUNDS = {
-  north: 13.980,
-  south: 13.905,
-  east:  120.785,
-  west:  120.665,
+  north: 14.050,
+  south: 13.880,
+  east:  120.820,
+  west:  120.650,
 };
 
 export const INCIDENT_TYPES = [
@@ -123,27 +123,26 @@ export const BARANGAYS: Barangay[] = [
 
   // ── POBLACION (Urban center — 12 barangays) ─────────────────
   // Clustered around the Balayan town plaza / municipal hall
-  { name: 'Brgy. 1 (Poblacion)',  lat: 13.9320, lng: 120.7296, riskProfile: { ...URBAN_PROFILE } },
-  { name: 'Brgy. 2 (Poblacion)',  lat: 13.9330, lng: 120.7308, riskProfile: { ...URBAN_PROFILE } },
-  { name: 'Brgy. 3 (Poblacion)',  lat: 13.9340, lng: 120.7290, riskProfile: { ...URBAN_PROFILE } },
-  { name: 'Brgy. 4 (Poblacion)',  lat: 13.9369, lng: 120.7293, riskProfile: { ...URBAN_PROFILE } },
-  { name: 'Brgy. 5 (Poblacion)',  lat: 13.9355, lng: 120.7275, riskProfile: { ...URBAN_PROFILE } },
-  { name: 'Brgy. 6 (Poblacion)',  lat: 13.9380, lng: 120.7310, riskProfile: { ...URBAN_PROFILE } },
-  { name: 'Brgy. 7 (Poblacion)',  lat: 13.9310, lng: 120.7315, riskProfile: { ...URBAN_PROFILE } },
-  { name: 'Brgy. 8 (Poblacion)',  lat: 13.9350, lng: 120.7285, riskProfile: { ...URBAN_PROFILE } },
-  { name: 'Brgy. 9 (Poblacion)',  lat: 13.9360, lng: 120.7300, riskProfile: { ...URBAN_PROFILE } },
-  { name: 'Brgy. 10 (Poblacion)', lat: 13.9325, lng: 120.7270, riskProfile: { ...URBAN_PROFILE } },
-  { name: 'Brgy. 11 (Poblacion)', lat: 13.9345, lng: 120.7260, riskProfile: { ...URBAN_PROFILE } },
-  { name: 'Brgy. 12 (Poblacion)', lat: 13.9390, lng: 120.7295, riskProfile: { ...URBAN_PROFILE } },
+  { name: 'Brgy. 1 (Poblacion)',  lat: 13.9349, lng: 120.7285, riskProfile: { ...URBAN_PROFILE } },
+  { name: 'Brgy. 2 (Poblacion)',  lat: 13.9355, lng: 120.7260, riskProfile: { ...URBAN_PROFILE } },
+  { name: 'Brgy. 3 (Poblacion)',  lat: 13.9381, lng: 120.7265, riskProfile: { ...URBAN_PROFILE } },
+  { name: 'Brgy. 4 (Poblacion)',  lat: 13.9389, lng: 120.7286, riskProfile: { ...URBAN_PROFILE } },
+  { name: 'Brgy. 5 (Poblacion)',  lat: 13.9396, lng: 120.7310, riskProfile: { ...URBAN_PROFILE } },
+  { name: 'Brgy. 6 (Poblacion)',  lat: 13.9398, lng: 120.7338, riskProfile: { ...URBAN_PROFILE } },
+  { name: 'Brgy. 7 (Poblacion)',  lat: 13.9381, lng: 120.7359, riskProfile: { ...URBAN_PROFILE } },
+  { name: 'Brgy. 8 (Poblacion)',  lat: 13.9369, lng: 120.7382, riskProfile: { ...URBAN_PROFILE } },
+  { name: 'Brgy. 9 (Poblacion)',  lat: 13.9354, lng: 120.7358, riskProfile: { ...URBAN_PROFILE } },
+  { name: 'Brgy. 10 (Poblacion)', lat: 13.9360, lng: 120.7344, riskProfile: { ...URBAN_PROFILE } },
+  { name: 'Brgy. 11 (Poblacion)', lat: 13.9359, lng: 120.7326, riskProfile: { ...URBAN_PROFILE } },
+  { name: 'Brgy. 12 (Poblacion)', lat: 13.9366, lng: 120.7306, riskProfile: { ...URBAN_PROFILE } },
 
   // ── COASTAL (Near Balayan Bay — south/southwest) ─────────────
-  { name: 'Baclaran',    lat: 13.9200, lng: 120.7150, riskProfile: { ...COASTAL_PROFILE } },
-  { name: 'Navotas',     lat: 13.9302, lng: 120.7187, riskProfile: { ...COASTAL_PROFILE } }, // PhilAtlas confirmed
-  { name: 'Duhatan',     lat: 13.9245, lng: 120.7220, riskProfile: { ...COASTAL_PROFILE } },
-  { name: 'Malalay',     lat: 13.9220, lng: 120.7310, riskProfile: { ...COASTAL_PROFILE } },
-  { name: 'Sukol',       lat: 13.9270, lng: 120.7240, riskProfile: { ...COASTAL_PROFILE } },
-  { name: 'Palincaro',   lat: 13.9180, lng: 120.7080, riskProfile: { ...COASTAL_PROFILE } },
-  { name: 'Munting Tubig', lat: 13.9155, lng: 120.7180, riskProfile: {
+  { name: 'Baclaran',    lat: 13.9292, lng: 120.7727, riskProfile: { ...COASTAL_PROFILE } },
+  { name: 'Navotas',     lat: 13.9311, lng: 120.7197, riskProfile: { ...COASTAL_PROFILE } }, // PhilAtlas confirmed
+  { name: 'Duhatan',     lat: 13.9441, lng: 120.6618, riskProfile: { ...COASTAL_PROFILE } },
+  { name: 'Malalay',     lat: 13.9578, lng: 120.6762, riskProfile: { ...COASTAL_PROFILE } },
+  { name: 'Sukol',       lat: 14.0130, lng: 120.7817, riskProfile: { ...COASTAL_PROFILE } },
+  { name: 'Munting Tubig', lat: 13.9664, lng: 120.7266, riskProfile: {
     fire:      { riskLevel: 'LOW',  prescription: 'Contact BFP Balayan. Low-density residential area. Evacuate via main road toward Poblacion.' },
     flood:     { riskLevel: 'HIGH', prescription: 'HIGHEST FLOOD RISK in Balayan. Move to 2nd floor or higher ground immediately. Munting Tubig creek overflows rapidly. Evacuate to Balayan Central School.' },
     medical:   { riskLevel: 'MEDIUM', prescription: 'Call MDRRMO. Hospital is 15 min away. During floods, medical access may be cut off — stock basic medicines and first aid kit.' },
@@ -151,7 +150,7 @@ export const BARANGAYS: Barangay[] = [
     typhoon:   { riskLevel: 'HIGH', prescription: 'MANDATORY EVACUATION for Signal No. 2+. This is one of the most vulnerable areas. Pre-position at Balayan Sports Complex evacuation center.' },
     landslide: { riskLevel: 'MEDIUM', prescription: 'Watch for ground saturation near creek banks. Avoid steep areas after prolonged rain. Report to Brgy Captain.' },
   }},
-  { name: 'Carenahan', lat: 13.9258, lng: 120.7420, riskProfile: {
+  { name: 'Carenahan', lat: 13.9315, lng: 120.7581, riskProfile: {
     fire:      { riskLevel: 'LOW',  prescription: 'Contact BFP Balayan. Evacuate via Carenahan Road. Low density area — fire spread risk is minimal. Assemble at Carenahan Barangay Hall.' },
     flood:     { riskLevel: 'HIGH', prescription: 'Move to higher ground IMMEDIATELY. Carenahan Bridge becomes impassable during heavy rain. Evacuate to Balayan Central School. Do NOT attempt to cross flooded Carenahan River.' },
     medical:   { riskLevel: 'MEDIUM', prescription: 'Call MDRRMO. Balayan District Hospital is 12 min away. Apply first aid. For flood-related injuries, watch for leptospirosis symptoms within 2 weeks.' },
@@ -161,8 +160,8 @@ export const BARANGAYS: Barangay[] = [
   }},
 
   // ── HIGHLANDS / NORTH (Higher elevation) ─────────────────────
-  { name: 'Lagnas',     lat: 13.9741, lng: 120.6778, riskProfile: { ...HILLSIDE_PROFILE } }, // PhilAtlas confirmed
-  { name: 'Dalig',      lat: 13.9680, lng: 120.6920, riskProfile: {
+  { name: 'Lagnas',     lat: 13.9666, lng: 120.6899, riskProfile: { ...HILLSIDE_PROFILE } }, // PhilAtlas confirmed
+  { name: 'Dalig',      lat: 13.9348, lng: 120.6954, riskProfile: {
     fire:      { riskLevel: 'LOW',    prescription: 'Contact BFP Balayan. Remote area — response time ~15 min. Use available water sources for initial suppression. Evacuate toward San Juan Road.' },
     flood:     { riskLevel: 'LOW',    prescription: 'Elevated terrain reduces flood risk. Watch for flash floods in narrow valleys only. Monitor MDRRMO weather updates.' },
     medical:   { riskLevel: 'MEDIUM', prescription: 'Call MDRRMO. Balayan District Hospital is ~20 min away. For critical cases, request helicopter evacuation. Apply first aid and stabilize patient.' },
@@ -170,34 +169,34 @@ export const BARANGAYS: Barangay[] = [
     typhoon:   { riskLevel: 'MEDIUM', prescription: 'High winds at elevation. Secure roofing. Evacuate to Dalig Barangay Hall (concrete structure). Stock 3-day supplies.' },
     landslide: { riskLevel: 'HIGH',   prescription: 'HIGHEST LANDSLIDE RISK. Evacuate downhill immediately at first signs: ground cracks, tilting trees, unusual spring water. Do NOT return without MDRRMO clearance.' },
   }},
-  { name: 'Calan',      lat: 13.9620, lng: 120.7050, riskProfile: { ...HILLSIDE_PROFILE } },
-  { name: 'Caloocan',   lat: 13.9560, lng: 120.7120, riskProfile: { ...HILLSIDE_PROFILE } },
-  { name: 'Durungao',   lat: 13.9650, lng: 120.6980, riskProfile: { ...HILLSIDE_PROFILE } },
-  { name: 'Palikpikan', lat: 13.9215, lng: 120.6837, riskProfile: { ...HILLSIDE_PROFILE } }, // PhilAtlas confirmed
-  { name: 'Tactac',     lat: 13.9510, lng: 120.6970, riskProfile: { ...HILLSIDE_PROFILE } },
-  { name: 'Taludtud',   lat: 13.9470, lng: 120.7050, riskProfile: { ...HILLSIDE_PROFILE } },
+  { name: 'Calan',      lat: 13.9977, lng: 120.7679, riskProfile: { ...HILLSIDE_PROFILE } },
+  { name: 'Caloocan',   lat: 13.9501, lng: 120.7225, riskProfile: { ...HILLSIDE_PROFILE } },
+  { name: 'Durungao',   lat: 13.9435, lng: 120.7653, riskProfile: { ...HILLSIDE_PROFILE } },
+  { name: 'Palikpikan', lat: 13.9123, lng: 120.7010, riskProfile: { ...HILLSIDE_PROFILE } }, // PhilAtlas confirmed
+  { name: 'Tactac',     lat: 13.9805, lng: 120.6975, riskProfile: { ...HILLSIDE_PROFILE } },
+  { name: 'Taludtud',   lat: 13.9835, lng: 120.7559, riskProfile: { ...HILLSIDE_PROFILE } },
 
   // ── RURAL / INLAND (Agricultural areas — east & northeast) ───
-  { name: 'Calzada',      lat: 13.9420, lng: 120.7480, riskProfile: { ...RURAL_PROFILE } },
-  { name: 'Canda',        lat: 13.9450, lng: 120.7540, riskProfile: { ...RURAL_PROFILE } },
-  { name: 'Caybunga',     lat: 13.9390, lng: 120.7580, riskProfile: { ...RURAL_PROFILE } },
-  { name: 'Cayponce',     lat: 13.9490, lng: 120.7620, riskProfile: { ...RURAL_PROFILE } },
-  { name: 'Dilao',        lat: 13.9440, lng: 120.7380, riskProfile: { ...RURAL_PROFILE } },
-  { name: 'Gimalas',      lat: 13.9530, lng: 120.7420, riskProfile: { ...RURAL_PROFILE } },
-  { name: 'Gumamela',     lat: 13.9570, lng: 120.7480, riskProfile: { ...RURAL_PROFILE } },
-  { name: 'Langgangan',   lat: 13.9460, lng: 120.7340, riskProfile: { ...RURAL_PROFILE } },
-  { name: 'Lucban Pook',  lat: 13.9580, lng: 120.7500, riskProfile: { ...RURAL_PROFILE } },
-  { name: 'Lucban Putol', lat: 13.9560, lng: 120.7520, riskProfile: { ...RURAL_PROFILE } },
-  { name: 'Magabe',       lat: 13.9500, lng: 120.7680, riskProfile: { ...RURAL_PROFILE } },
-  { name: 'Patugo',       lat: 13.9470, lng: 120.7600, riskProfile: { ...RURAL_PROFILE } },
-  { name: 'Pooc',         lat: 13.9430, lng: 120.7520, riskProfile: { ...RURAL_PROFILE } },
-  { name: 'Sambat',       lat: 13.9370, lng: 120.7680, riskProfile: { ...RURAL_PROFILE } },
-  { name: 'Sampaga',      lat: 13.9428, lng: 120.7728, riskProfile: { ...RURAL_PROFILE } }, // PhilAtlas confirmed
-  { name: 'San Juan',     lat: 13.9610, lng: 120.7380, riskProfile: { ...RURAL_PROFILE } },
-  { name: 'San Piro',     lat: 13.9550, lng: 120.7560, riskProfile: { ...RURAL_PROFILE } },
-  { name: 'Santol',       lat: 13.9445, lng: 120.7455, riskProfile: { ...RURAL_PROFILE } },
-  { name: 'Tanggoy',      lat: 13.9435, lng: 120.7310, riskProfile: { ...RURAL_PROFILE } },
-  { name: 'Dao',          lat: 13.9355, lng: 120.7500, riskProfile: {
+  { name: 'Calzada',      lat: 13.9500, lng: 120.7296, riskProfile: { ...RURAL_PROFILE } },
+  { name: 'Canda',        lat: 13.9573, lng: 120.7014, riskProfile: { ...RURAL_PROFILE } },
+  { name: 'Caybunga',     lat: 13.9452, lng: 120.7596, riskProfile: { ...RURAL_PROFILE } },
+  { name: 'Cayponce',     lat: 13.9568, lng: 120.7358, riskProfile: { ...RURAL_PROFILE } },
+  { name: 'Dilao',        lat: 13.9753, lng: 120.6816, riskProfile: { ...RURAL_PROFILE } },
+  { name: 'Gimalas',      lat: 13.9476, lng: 120.7496, riskProfile: { ...RURAL_PROFILE } },
+  { name: 'Gumamela',     lat: 13.9451, lng: 120.7418, riskProfile: { ...RURAL_PROFILE } },
+  { name: 'Langgangan',   lat: 13.9455, lng: 120.7537, riskProfile: { ...RURAL_PROFILE } },
+  { name: 'Lucban Pook',  lat: 13.9909, lng: 120.7711, riskProfile: { ...RURAL_PROFILE } },
+  { name: 'Lucban Putol', lat: 13.9561, lng: 120.7511, riskProfile: { ...RURAL_PROFILE } },
+  { name: 'Magabe',       lat: 13.9717, lng: 120.7065, riskProfile: { ...RURAL_PROFILE } },
+  { name: 'Patugo',       lat: 14.0044, lng: 120.7851, riskProfile: { ...RURAL_PROFILE } },
+  { name: 'Pooc',         lat: 13.9580, lng: 120.7578, riskProfile: { ...RURAL_PROFILE } },
+  { name: 'Sambat',       lat: 13.9506, lng: 120.7080, riskProfile: { ...RURAL_PROFILE } },
+  { name: 'Sampaga',      lat: 13.9405, lng: 120.7721, riskProfile: { ...RURAL_PROFILE } }, // PhilAtlas confirmed
+  { name: 'San Juan',     lat: 13.9375, lng: 120.7407, riskProfile: { ...RURAL_PROFILE } },
+  { name: 'San Piro',     lat: 13.9207, lng: 120.7060, riskProfile: { ...RURAL_PROFILE } },
+  { name: 'Santol',       lat: 13.9412, lng: 120.7133, riskProfile: { ...RURAL_PROFILE } },
+  { name: 'Tanggoy',      lat: 13.9514, lng: 120.6844, riskProfile: { ...RURAL_PROFILE } },
+  { name: 'Dao',          lat: 13.9731, lng: 120.7405, riskProfile: {
     fire:      { riskLevel: 'LOW',    prescription: 'Contact BFP Balayan. Agricultural area — watch for crop burning spreading. Evacuate via Dao Barangay Road.' },
     flood:     { riskLevel: 'HIGH',   prescription: 'Low-lying rice paddy area. Move to Dao Barangay Hall immediately. Do NOT cross flooded fields. Wait for MDRRMO rescue boats if stranded.' },
     medical:   { riskLevel: 'LOW',    prescription: 'Call MDRRMO. Hospital is ~18 min. For pesticide exposure, remove contaminated clothing and rinse with clean water. Bring product label to hospital.' },
@@ -205,7 +204,7 @@ export const BARANGAYS: Barangay[] = [
     typhoon:   { riskLevel: 'HIGH',   prescription: 'Flood-prone during typhoons. PRE-EMPTIVE EVACUATION recommended. Move to Balayan Sports Complex. Secure livestock early.' },
     landslide: { riskLevel: 'LOW',    prescription: 'Flat terrain — low landslide risk. Monitor nearby hillside areas for runoff during storms.' },
   }},
-  { name: 'Lanatan', lat: 13.9400, lng: 120.7440, riskProfile: {
+  { name: 'Lanatan', lat: 13.9562, lng: 120.7286, riskProfile: {
     fire:      { riskLevel: 'LOW',    prescription: 'Contact BFP. Low-density area. Use fire extinguisher for small fires. Evacuate to Lanatan Barangay Hall.' },
     flood:     { riskLevel: 'HIGH',   prescription: 'Near river system — HIGH flood risk. Evacuate to higher ground immediately. Do not attempt to wade through floodwaters. Proceed to Balayan Central School.' },
     medical:   { riskLevel: 'LOW',    prescription: 'Call MDRRMO. Hospital is ~18 min. Apply first aid. For flood-related injuries, watch for waterborne disease symptoms.' },

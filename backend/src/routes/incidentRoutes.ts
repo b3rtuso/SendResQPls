@@ -7,12 +7,16 @@ import {
   getMyIncidents,
   reportIncident,
   updateIncidentStatus,
+  reverseGeocode,
 } from '../controllers/incidentController';
 
 const router = Router();
 
 // Stats must come BEFORE /:id to avoid matching "stats" as an id
 router.get('/stats', getIncidentStats);
+
+// Geocoding reverse lookup
+router.get('/geocode/reverse', reverseGeocode);
 
 // User's own incidents (for mobile history) — must come before /:id
 router.get('/my/:userId', getMyIncidents);

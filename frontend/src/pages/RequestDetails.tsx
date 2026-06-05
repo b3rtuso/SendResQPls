@@ -3,9 +3,42 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Toast, { type ToastType } from '../components/Toast';
 import { ArrowLeft, Brain, MapPin, Camera, User, Clock, ExternalLink, X, Phone, Building2, CheckCircle2 } from 'lucide-react';
-import { updateIncidentStatus, getIncident as fetchIncident } from '../api/client';
+import { updateIncidentStatus, getIncident as fetchIncident, reverseGeocode } from '../api/client';
 import type { Status, Incident } from '../types';
 import { getNearestBarangay } from '../data/balayan-data';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import './request-details-map.css';
+
+// Fix Leaflet default icon issue with bundlers
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+});
+
+// Create a premium pulsing emergency marker icon
+const emergencyMarkerIcon = L.divIcon({
+  html: `<div style="
+    width: 24px;
+    height: 24px;
+    background: #EF4444;
+    border: 3px solid white;
+    border-radius: 50%;
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: pulse-emergency 1.5s infinite;
+  ">
+    <div style="width: 8px; height: 8px; background: white; border-radius: 50%;"></div>
+  </div>`,
+  className: 'custom-emergency-marker',
+  iconSize: [24, 24],
+  iconAnchor: [12, 12],
+});
 
 const allStatuses: Status[] = ['PENDING', 'REVIEWING', 'DISPATCHED', 'RESOLVED', 'REJECTED'];
 
@@ -42,6 +75,8 @@ export default function RequestDetails() {
   const [loading, setLoading] = useState(true);
   const [showPhoto, setShowPhoto] = useState(false);
   const [toast, setToast] = useState<ToastState>({ show: false, message: '', type: 'info' });
+  const [resolvedAddress, setResolvedAddress] = useState('');
+  const [resolvingAddress, setResolvingAddress] = useState(false);
 
   const showToast = useCallback((type: ToastType, message: string, detail?: string) => {
     setToast({ show: true, message, detail, type });
@@ -62,6 +97,23 @@ export default function RequestDetails() {
         .finally(() => setLoading(false));
     }
   }, [id, showToast]);
+
+  useEffect(() => {
+    if (incident) {
+      setResolvingAddress(true);
+      reverseGeocode(incident.latitude, incident.longitude)
+        .then((res) => {
+          setResolvedAddress(res.data.formattedAddress);
+        })
+        .catch((err) => {
+          console.error('[Geocoding] Reverse geocoding failed:', err);
+          // Fallback to local nearest barangay
+          const localFallback = getNearestBarangay(incident.latitude, incident.longitude);
+          setResolvedAddress(localFallback);
+        })
+        .finally(() => setResolvingAddress(false));
+    }
+  }, [incident?.latitude, incident?.longitude]);
 
   const handleStatusUpdate = async (status: Status) => {
     setCurrentStatus(status);
@@ -197,33 +249,27 @@ export default function RequestDetails() {
               <div className="card-header"><h3>Incident Details</h3></div>
               <div className="card-body">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                  <div className="dept-detail">
-                    <MapPin size={16} />
-                    <strong>Location:</strong>{' '}
-                    {getNearestBarangay(incident.latitude, incident.longitude)}
-                    <span style={{ marginLeft: 6, fontSize: 11, color: 'var(--text-muted)' }}>
-                      ({incident.latitude.toFixed(4)}°N, {incident.longitude.toFixed(4)}°E)
-                    </span>
-                    <button
-                      onClick={openLocation}
-                      style={{
-                        marginLeft: 10,
-                        background: 'var(--primary)',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: 8,
-                        padding: '5px 12px',
-                        fontSize: 12,
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 4,
-                        fontFamily: 'var(--font)',
-                      }}
-                    >
-                      <ExternalLink size={12} /> View on Map
-                    </button>
+                  <div className="dept-detail" style={{ alignItems: 'flex-start' }}>
+                    <MapPin size={16} style={{ marginTop: 3, flexShrink: 0 }} />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      <div>
+                        <strong>Location:</strong>{' '}
+                        {resolvingAddress ? (
+                          <span style={{ color: 'var(--text-muted)' }}>Resolving address...</span>
+                        ) : (
+                          resolvedAddress || getNearestBarangay(incident.latitude, incident.longitude)
+                        )}
+                      </div>
+                      <div style={{ fontSize: 12, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <span>
+                          Coordinates: {incident.latitude.toFixed(6)}°N, {incident.longitude.toFixed(6)}°E
+                        </span>
+                        <span style={{ color: 'var(--border)' }}>|</span>
+                        <span>
+                          Nearest: {getNearestBarangay(incident.latitude, incident.longitude)}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                   <div className="dept-detail">
                     <Camera size={16} />
@@ -254,6 +300,48 @@ export default function RequestDetails() {
                       <strong>Last Updated:</strong> {new Date(incident.updatedAt).toLocaleString()}
                     </div>
                   )}
+                </div>
+              </div>
+            </div>
+
+            {/* Map Card */}
+            <div className="card" style={{ overflow: 'hidden' }}>
+              <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3><MapPin size={18} style={{ marginRight: 6, verticalAlign: -3, display: 'inline-block' }} /> Incident Location Map</h3>
+                <button
+                  onClick={openLocation}
+                  className="btn btn-sm btn-outline"
+                  style={{ padding: '4px 10px', fontSize: 12 }}
+                >
+                  <ExternalLink size={12} /> Open in Google Maps
+                </button>
+              </div>
+              <div className="card-body" style={{ padding: 0, position: 'relative' }}>
+                <div style={{ height: '350px', width: '100%', position: 'relative' }} className="details-map-container">
+                  <MapContainer
+                    center={[incident.latitude, incident.longitude]}
+                    zoom={16}
+                    style={{ height: '100%', width: '100%', background: '#0d1117' }}
+                    scrollWheelZoom={true}
+                  >
+                    <TileLayer
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+                    <Marker position={[incident.latitude, incident.longitude]} icon={emergencyMarkerIcon}>
+                      <Popup maxWidth={300}>
+                        <div style={{ padding: '6px 8px', color: '#1e293b' }}>
+                          <strong style={{ fontSize: 13, color: '#0f172a' }}>Emergency Report</strong>
+                          <p style={{ margin: '4px 0 0 0', fontSize: 12, color: '#334155', lineHeight: 1.4 }}>
+                            {resolvedAddress || getNearestBarangay(incident.latitude, incident.longitude)}
+                          </p>
+                          <span style={{ fontSize: 10, color: '#64748b', display: 'block', marginTop: 4 }}>
+                            {incident.latitude.toFixed(6)}°N, {incident.longitude.toFixed(6)}°E
+                          </span>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  </MapContainer>
                 </div>
               </div>
             </div>

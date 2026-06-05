@@ -2,13 +2,14 @@ import { Request, Response } from 'express';
 import { prisma } from '../config/db';
 import { runAIAnalysis } from '../services/aiService';
 import { sendStatusNotification } from '../services/emailService';
+import { performReverseGeocode } from '../services/geocodingService';
 
 // Balayan, Batangas municipality boundary (bounding box)
 const BALAYAN_BOUNDS = {
-  north: 14.00,
-  south: 13.88,
-  east: 120.78,
-  west: 120.68,
+  north: 14.050,
+  south: 13.880,
+  east: 120.820,
+  west: 120.650,
 };
 
 // GET /api/incidents — List all incidents with optional search & status filter
@@ -203,5 +204,25 @@ export const updateIncidentStatus = async (req: Request, res: Response) => {
   } catch (err: any) {
     console.error("❌ Update incident error:", err.message);
     res.status(500).json({ error: "Update failed", details: err.message });
+  }
+};
+
+// GET /api/incidents/geocode/reverse — Reverse geocode coordinates
+export const reverseGeocode = async (req: Request, res: Response) => {
+  try {
+    const { lat, lng } = req.query;
+    if (!lat || !lng) {
+      return res.status(400).json({ error: "Missing lat or lng query parameters" });
+    }
+    const latitude = parseFloat(lat as string);
+    const longitude = parseFloat(lng as string);
+    if (isNaN(latitude) || isNaN(longitude)) {
+      return res.status(400).json({ error: "Invalid lat or lng values" });
+    }
+    const result = await performReverseGeocode(latitude, longitude);
+    res.json(result);
+  } catch (error: any) {
+    console.error("❌ reverseGeocode error:", error.message);
+    res.status(500).json({ error: "Failed to reverse geocode location", details: error.message });
   }
 };

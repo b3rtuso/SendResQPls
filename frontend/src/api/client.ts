@@ -49,6 +49,8 @@ export const getIncidents = () => api.get('/incidents');
 export const getIncident = (id: string) => api.get(`/incidents/${id}`);
 export const getIncidentStats = () => api.get('/incidents/stats');
 export const getMyIncidents = (userId: string) => api.get(`/incidents/my/${userId}`);
+export const reverseGeocode = (lat: number, lng: number) =>
+  api.get('/incidents/geocode/reverse', { params: { lat, lng } });
 
 // === CALL LOGS (NOT in backend) ===
 export const getCallLogs = () => api.get('/call-logs');

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Phone, AlertTriangle, Shield, Droplets, Flame, Heart, Bell, X, CheckCircle2, ChevronDown, MapPin, MapPinOff } from 'lucide-react';
 import BottomNav from '../../components/BottomNav';
 import { getMyIncidents } from '../../api/client';
+import { setupPushNotifications } from '../../utils/pushNotificationHelper';
 
 const hotlines = [
   { name: 'National Emergency', number: '911', color: '#DC2626' },
@@ -133,6 +134,13 @@ export default function MobileHome() {
     init();
     pollRef.current = setInterval(checkForUpdates, 30000);
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, [userId]);
+
+  // Request push notifications setup on mount
+  useEffect(() => {
+    if (userId) {
+      setupPushNotifications();
+    }
   }, [userId]);
 
   // Auto-dismiss the green banner after 4s

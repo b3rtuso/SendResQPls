@@ -4,3 +4,4 @@ node_modules
 
 /generated/prisma
 /src/config/google-credentials.json
+/src/config/firebase-credentials.json

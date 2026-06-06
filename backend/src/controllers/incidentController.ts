@@ -4,6 +4,18 @@ import { runAIAnalysis } from '../services/aiService';
 import { sendStatusNotification } from '../services/emailService';
 import { performReverseGeocode } from '../services/geocodingService';
 import { syncDepartmentStatuses } from './departmentController';
+import { messaging } from '../config/firebase';
+
+const getTagalogStatus = (status: string) => {
+  switch (status) {
+    case 'PENDING': return 'Naghihintay ng review';
+    case 'REVIEWING': return 'Nire-review ng MDRRMO';
+    case 'DISPATCHED': return 'Na-dispatch na ang responder!';
+    case 'RESOLVED': return 'Resolved na ang iyong report';
+    case 'REJECTED': return 'Hindi na-approve ang report';
+    default: return status;
+  }
+};
 
 // Balayan, Batangas municipality boundary (bounding box)
 const BALAYAN_BOUNDS = {
@@ -201,6 +213,47 @@ export const updateIncidentStatus = async (req: Request, res: Response) => {
       } catch (emailErr: any) {
         // Don't fail the update if email fails
         console.error(`⚠️ Email notification failed: ${emailErr.message}`);
+      }
+    }
+
+    // Send push notification to the reporter via Firebase Cloud Messaging
+    if (updated.reporter?.pushToken && messaging) {
+      try {
+        let title = 'Update sa iyong Report! 🚨';
+        let body = '';
+
+        if (status && assignedDepartment) {
+          body = `Ang report mo ay na-assign sa ${assignedDepartment} at ito ay: ${getTagalogStatus(status)}`;
+        } else if (status) {
+          body = `Ang status ng iyong report ay: ${getTagalogStatus(status)}`;
+        } else if (assignedDepartment) {
+          title = 'Naka-assign na ang iyong Report! 🚒';
+          body = `Ang report mo ay na-assign na sa ${assignedDepartment}`;
+        }
+
+        if (body) {
+          await messaging.send({
+            token: updated.reporter.pushToken,
+            notification: {
+              title,
+              body,
+            },
+            data: {
+              incidentId: id,
+              status: status || updated.status,
+              department: assignedDepartment || updated.assignedDepartment || '',
+            },
+            android: {
+              notification: {
+                sound: 'default',
+                clickAction: 'FCM_PLUGIN_ACTIVITY',
+              }
+            }
+          });
+          console.log(`📱 Push notification sent to user ${updated.reporter.id}`);
+        }
+      } catch (pushErr: any) {
+        console.error(`⚠️ Push notification failed: ${pushErr.message}`);
       }
     }
 

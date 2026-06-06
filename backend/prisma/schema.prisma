@@ -16,6 +16,7 @@ model User {
   incidents Incident[]
   createdAt DateTime   @default(now())
   otpCode String?
+  pushToken String?
 }
 
 model Incident {

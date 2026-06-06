@@ -155,12 +155,13 @@ export const getProfile = async (req: Request, res: Response) => {
 export const updateProfile = async (req: Request, res: Response) => {
   try {
     const { userId } = req.body;
-    const { name, email, phoneNumber } = req.body;
+    const { name, email, phoneNumber, pushToken } = req.body;
 
     const data: any = {};
     if (name) data.name = name;
     if (email) data.email = email;
     if (phoneNumber) data.phoneNumber = phoneNumber;
+    if (pushToken !== undefined) data.pushToken = pushToken;
 
     const updated = await prisma.user.update({
       where: { id: userId },

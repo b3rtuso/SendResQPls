@@ -69,7 +69,7 @@ export const deleteDepartment = (id: string) => api.delete(`/departments/${id}`)
 // === SETTINGS ===
 export const getProfile = (userId: string) =>
   api.get(`/auth/profile/${userId}`);
-export const updateProfile = (data: Record<string, string>) =>
+export const updateProfile = (data: Record<string, any>) =>
   api.patch('/auth/profile', { ...data, userId: localStorage.getItem('userId') });
 export const changePassword = (data: { currentPassword: string; newPassword: string }) =>
   api.patch('/auth/password', { ...data, userId: localStorage.getItem('userId') });

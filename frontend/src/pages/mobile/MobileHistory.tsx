@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { AlertCircle, MapPin, RefreshCw } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { AlertCircle, MapPin, RefreshCw, ChevronLeft } from 'lucide-react';
 import { getMyIncidents, getIncidents } from '../../api/client';
 import type { Incident, Status } from '../../types';
 import BottomNav from '../../components/BottomNav';
@@ -29,6 +30,7 @@ const dotColors: Record<string, string> = {
 };
 
 export default function MobileHistory() {
+  const navigate = useNavigate();
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -156,10 +158,39 @@ export default function MobileHistory() {
           />
           <span>{refreshing ? 'Sina-sync...' : pullDistance > 60 ? 'Bitiwan para mag-refresh' : 'Hilahin pababa para i-refresh'}</span>
         </div>
-        <div style={{ padding: '20px 0 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        {/* Header */}
+        <div style={{
+          background: 'linear-gradient(135deg, #1E3A5F 0%, #2563EB 100%)',
+          margin: '0 -24px 20px',
+          padding: '16px 24px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          color: 'white',
+          boxShadow: '0 4px 12px rgba(14, 165, 233, 0.15)',
+        }}>
+          <button 
+            onClick={() => navigate('/mobile')}
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 12,
+              border: '1.5px solid rgba(255, 255, 255, 0.3)',
+              background: 'rgba(255, 255, 255, 0.15)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: 'white',
+              padding: 0,
+            }}
+            aria-label="Bumalik"
+          >
+            <ChevronLeft size={20} />
+          </button>
           <div>
-            <h1 style={{ fontSize: 24, fontWeight: 800 }}>History ng Reports</h1>
-            <p style={{ fontSize: 14, color: 'var(--text-secondary)' }}>Subaybayan ang iyong mga active at nakaraang reports</p>
+            <h1 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: 'white', letterSpacing: '0.3px' }}>History ng Reports</h1>
+            <p style={{ fontSize: 11, opacity: 0.85, margin: '2px 0 0' }}>Subaybayan ang iyong mga active at nakaraang reports</p>
           </div>
         </div>
 

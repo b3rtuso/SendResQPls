@@ -108,13 +108,38 @@ export default function MobileReport() {
       )}
 
       <div className="mobile-page">
-        <div className="mobile-page-header">
-          <button className="back-btn" onClick={() => navigate('/mobile')}>
+        {/* Header */}
+        <div style={{
+          background: 'linear-gradient(135deg, #1E3A5F 0%, #2563EB 100%)',
+          margin: '0 -24px 20px',
+          padding: '16px 24px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          color: 'white',
+          boxShadow: '0 4px 12px rgba(14, 165, 233, 0.15)',
+        }}>
+          <button 
+            onClick={() => navigate('/mobile')}
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 12,
+              border: '1.5px solid rgba(255, 255, 255, 0.3)',
+              background: 'rgba(255, 255, 255, 0.15)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: 'white',
+              padding: 0,
+            }}
+          >
             <ChevronLeft size={20} />
           </button>
           <div>
-            <h1>Quick SOS Alert</h1>
-            <p>MDRRMO will respond agad</p>
+            <h1 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: 'white', letterSpacing: '0.3px' }}>Quick SOS Alert</h1>
+            <p style={{ fontSize: 11, opacity: 0.85, margin: '2px 0 0' }}>MDRRMO will respond agad</p>
           </div>
         </div>
 

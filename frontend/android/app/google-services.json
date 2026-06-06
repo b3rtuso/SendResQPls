@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "39360181074",
+    "project_id": "sendresqpls",
+    "storage_bucket": "sendresqpls.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:39360181074:android:e527ecf62d459e436cc08b",
+        "android_client_info": {
+          "package_name": "com.mdrrmo.balayan.sendresqpls"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC3NdR2qJf8c_vuOB8DvFc_TNTVw123HWw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

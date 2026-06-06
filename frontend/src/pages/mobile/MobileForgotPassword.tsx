@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, ArrowLeft, Send } from 'lucide-react';
+import { Mail, ArrowLeft } from 'lucide-react';
 import { forgotPassword } from '../../api/client';
 
 export default function MobileForgotPassword() {
@@ -35,19 +35,19 @@ export default function MobileForgotPassword() {
           border: 'none', color: '#2563EB', fontWeight: 600, cursor: 'pointer',
           fontSize: 14, marginBottom: 24, padding: 0,
         }}>
-          <ArrowLeft size={16} /> Back sa Login
+          <ArrowLeft size={16} /> Bumalik sa Login
         </button>
 
-        <img src="/logo.jpg" alt="SRQ Logo" style={{ width: 80, height: 80, borderRadius: 20, boxShadow: '0 8px 32px rgba(0,0,0,0.15)', objectFit: 'cover', marginBottom: 8 }} />
+        <img src="/logo.jpg" alt="SRQ Logo" style={{ width: 80, height: 80, borderRadius: 20, boxShadow: '0 8px 32px rgba(0,0,0,0.15)', objectFit: 'cover', marginBottom: 8, display: 'block', marginLeft: 'auto', marginRight: 'auto' }} />
         <h1>Forgot Password? 🔑</h1>
-        <p className="auth-subtitle">I-enter ang email mo, mag-se-send kami ng reset link.</p>
+        <p className="auth-subtitle">I-enter ang email na ginamit sa pag-register ng account, mag-se-send kami ng reset link.</p>
 
         {sent ? (
           <div style={{ background: '#F0FDF4', border: '1.5px solid #22C55E', borderRadius: 12, padding: '20px 16px', textAlign: 'center', marginTop: 16 }}>
             <div style={{ fontSize: 32, marginBottom: 8 }}>📧</div>
             <div style={{ fontWeight: 700, color: '#15803D', marginBottom: 4 }}>Sent na ang reset link! 📧</div>
             <div style={{ fontSize: 13, color: '#166534' }}>
-              Paki-check ang inbox mo sa <strong>{email}</strong>. Mag-e-expire ang link pagkalipas ng 30 minuto.
+              Paki-check ang inbox mo or spam folder ng <strong>{email}</strong>. Mag-e-expire ang link pagkalipas ng 30 minuto.
             </div>
             <button onClick={() => navigate('/mobile/login')} style={{
               marginTop: 16, padding: '10px 24px', background: '#22C55E', color: 'white',
@@ -73,7 +73,7 @@ export default function MobileForgotPassword() {
               </div>
             </div>
             <button className="auth-btn login" onClick={handleSubmit} disabled={loading}>
-              {loading ? 'Sending...' : 'Send Reset Link'} <Send size={18} />
+              {loading ? 'Sending...' : 'Send Reset Link'}
             </button>
           </>
         )}

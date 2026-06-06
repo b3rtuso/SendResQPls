@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { AlertCircle, MapPin, RefreshCw } from 'lucide-react';
 import { getMyIncidents, getIncidents } from '../../api/client';
 import type { Incident, Status } from '../../types';
@@ -32,6 +32,26 @@ export default function MobileHistory() {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Pull-to-refresh states & refs
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isPulling, setIsPulling] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const startYRef = useRef(0);
+  const isPullingRef = useRef(false);
+  const refreshingRef = useRef(false);
+  const pullDistanceRef = useRef(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const updatePullDistance = (val: number) => {
+    pullDistanceRef.current = val;
+    setPullDistance(val);
+  };
+
+  useEffect(() => {
+    refreshingRef.current = refreshing;
+  }, [refreshing]);
+
   const fetchHistory = async () => {
     setLoading(true);
     try {
@@ -52,13 +72,94 @@ export default function MobileHistory() {
 
   useEffect(() => { fetchHistory(); }, []);
 
+  // Set up touchmove listener with passive: false so we can preventDefault
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isPullingRef.current || refreshingRef.current) return;
+      const currentY = e.touches[0].clientY;
+      const deltaY = currentY - startYRef.current;
+
+      // Only drag if scrolled to the very top
+      if (deltaY > 0 && window.scrollY === 0) {
+        const pull = Math.min(100, deltaY * 0.4);
+        updatePullDistance(pull);
+        if (pull > 5 && e.cancelable) {
+          e.preventDefault();
+        }
+      }
+    };
+
+    container.addEventListener('touchmove', handleTouchMove, { passive: false });
+    return () => {
+      container.removeEventListener('touchmove', handleTouchMove);
+    };
+  }, []);
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (window.scrollY === 0 && !refreshingRef.current) {
+      startYRef.current = e.touches[0].clientY;
+      isPullingRef.current = true;
+      setIsPulling(true);
+    }
+  };
+
+  const handleTouchEnd = async () => {
+    if (!isPullingRef.current) return;
+    isPullingRef.current = false;
+    setIsPulling(false);
+
+    if (pullDistanceRef.current > 60) {
+      setRefreshing(true);
+      updatePullDistance(50);
+      await fetchHistory();
+      setRefreshing(false);
+    }
+    updatePullDistance(0);
+  };
+
   return (
-    <div className="mobile-shell">
+    <div 
+      className="mobile-shell"
+      ref={containerRef}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       <div className="mobile-page">
+        {/* Pull-to-refresh Indicator */}
+        <div style={{
+          height: pullDistance > 0 || refreshing ? Math.max(pullDistance, refreshing ? 50 : 0) : 0,
+          opacity: pullDistance > 0 || refreshing ? 1 : 0,
+          transition: isPulling ? 'none' : 'height 0.2s ease, opacity 0.2s ease',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden',
+          background: 'rgba(37, 99, 235, 0.05)',
+          borderBottom: pullDistance > 0 || refreshing ? '1px solid var(--border-light)' : 'none',
+          color: 'var(--text-secondary)',
+          fontSize: 13,
+          fontWeight: 600,
+          gap: 8,
+          margin: '0 -24px',
+          borderRadius: '0 0 16px 16px',
+        }}>
+          <RefreshCw 
+            size={16} 
+            className={refreshing ? "spin" : ""} 
+            style={{ 
+              transform: refreshing ? undefined : `rotate(${pullDistance * 3}deg)`,
+              transition: refreshing ? undefined : 'transform 0.1s linear'
+            }} 
+          />
+          <span>{refreshing ? 'Sina-sync...' : pullDistance > 60 ? 'Bitiwan para mag-refresh' : 'Hilahin pababa para i-refresh'}</span>
+        </div>
         <div style={{ padding: '20px 0 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <h1 style={{ fontSize: 24, fontWeight: 800 }}>History ng Reports</h1>
-            <p style={{ fontSize: 14, color: 'var(--text-secondary)' }}>Subaybayan ang iyong mga active at nakaraang alert</p>
+            <p style={{ fontSize: 14, color: 'var(--text-secondary)' }}>Subaybayan ang iyong mga active at nakaraang reports</p>
           </div>
           <button
             onClick={fetchHistory}
@@ -81,7 +182,7 @@ export default function MobileHistory() {
         {loading ? (
           <div style={{ textAlign: 'center', padding: 60, color: 'var(--text-muted)' }}>
             <div className="spin" style={{ display: 'inline-block' }}><RefreshCw size={28} /></div>
-            <p style={{ marginTop: 12 }}>Kino-load ang iyong mga report...</p>
+            <p style={{ marginTop: 12 }}>Kinukuha ang mga report...</p>
           </div>
         ) : (
           <div className="history-list">

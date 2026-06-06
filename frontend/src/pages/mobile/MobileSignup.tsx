@@ -38,7 +38,7 @@ export default function MobileSignup() {
       await sendVerificationCode(form.email);
       setCodeSent(true);
       setCooldown(600);
-      setToast({ show: true, message: 'Code sent! 📩', detail: `Check ang inbox mo sa ${form.email}`, type: 'success' });
+      setToast({ show: true, message: 'Code sent! 📩', detail: `Maaaring mapunta ang email sa Spam folder. Tingnan sa ${form.email}`, type: 'success' });
     } catch (err: any) {
       console.error('[SendCode] Error:', err.response?.data || err.message);
       const msg = err.response?.data?.error || err.response?.data?.details || err.message || 'Hindi na-send ang code';
@@ -73,7 +73,7 @@ export default function MobileSignup() {
       return;
     }
     if (form.password.length < 6) {
-      setError('Dapat 6 characters man lang ang password.');
+      setError('Dapat 6 or more characters ang password.');
       return;
     }
     setLoading(true);
@@ -96,7 +96,7 @@ export default function MobileSignup() {
     <div className="mobile-shell">
       <div className="mobile-auth">
         <h1>Gawa tayo ng Account 🙌</h1>
-        <p className="auth-subtitle">Mag-sign up para ma-report ang emergency safely.</p>
+        <p className="auth-subtitle">Mag-register na para makapag-report agad ng emergency.</p>
 
         {toast.show && (
           <Toast type={toast.type} message={toast.message} detail={toast.detail} onClose={() => setToast({ ...toast, show: false })} />
@@ -176,8 +176,8 @@ export default function MobileSignup() {
           {codeSent && !verified && (
             <div className="input-group" style={{ animation: 'fadeIn 0.3s ease' }}>
               <label>Verification Code</label>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <div className="input-wrapper" style={{ flex: 1 }}>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'stretch', flexWrap: 'nowrap' }}>
+                <div className="input-wrapper" style={{ flex: 1, minWidth: 0 }}>
                   <Lock size={18} className="input-icon" />
                   <input
                     type="text"
@@ -186,7 +186,7 @@ export default function MobileSignup() {
                     value={codeInput}
                     onChange={(e) => setCodeInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     maxLength={6}
-                    style={{ letterSpacing: 6, fontWeight: 700, fontSize: 18 }}
+                    style={{ letterSpacing: 2, fontWeight: 700, fontSize: 18 }}
                   />
                 </div>
                 <button
@@ -233,7 +233,7 @@ export default function MobileSignup() {
             disabled={loading || !verified}
             style={{ marginTop: 8, opacity: !verified ? 0.5 : 1 }}
           >
-            {loading ? 'Ginagawa...' : 'Create Account'} <CheckCircle size={18} />
+            {loading ? 'Ginagawa...' : 'Create Account'}
           </button>
         </form>
 

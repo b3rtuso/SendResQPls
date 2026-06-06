@@ -12,10 +12,10 @@ const hotlines = [
 ];
 
 const safetyTips = [
-  { icon: Shield, color: '#2563EB', bg: '#EFF6FF', title: 'Manatiling Kalmado', tip: 'Deep breaths lang. Pag nagpanic, mas mahirap umisip nang maayos.' },
-  { icon: Droplets, color: '#0EA5E9', bg: '#F0F9FF', title: 'Baha Safety', tip: 'Pumunta agad sa mataas na lugar. Huwag lalakad o magmaneho sa baha.' },
+  { icon: Shield, color: '#2563EB', bg: '#EFF6FF', title: 'Manatiling Kalmado', tip: 'Deep breaths lang. Pag nagpanic, mas mahirap mag-isip nang maayos.' },
+  { icon: Droplets, color: '#0EA5E9', bg: '#F0F9FF', title: 'Baha Safety', tip: 'Pumunta agad sa mataas na lugar. Huwag lumakad o magmaneho sa baha.' },
   { icon: Flame, color: '#EF4444', bg: '#FEF2F2', title: 'Fire Safety', tip: 'Lumayo sa usok. Takpan ang ilong ng basang tela at lumabas agad.' },
-  { icon: Heart, color: '#EC4899', bg: '#FDF2F8', title: 'First Aid', tip: 'Pindutin ang sugat para mapigilan ang dugo. Huwag ipakilos ang nasugatan hanggang may dumating na tulong.' },
+  { icon: Heart, color: '#EC4899', bg: '#FDF2F8', title: 'First Aid', tip: 'Ipitin ang sugat ng malinis na tela para mapigilan ang pagdurugo. Huwag galawin ang nasugatan hanggang wala pang dumarating na tulong.' },
 ];
 
 interface NotifItem {
@@ -29,12 +29,12 @@ const STATUS_KEY = 'srq_last_statuses';
 
 function getStatusLabel(status: string): string {
   switch (status) {
-    case 'PENDING':    return 'Naghihintay ng review';
-    case 'REVIEWING':  return 'Nire-review ng MDRRMO';
+    case 'PENDING': return 'Naghihintay ng review';
+    case 'REVIEWING': return 'Nire-review ng MDRRMO';
     case 'DISPATCHED': return 'Na-dispatch na ang responder!';
-    case 'RESOLVED':   return 'Resolved na ang iyong report';
-    case 'REJECTED':   return 'Hindi na-approve ang report';
-    default:           return status;
+    case 'RESOLVED': return 'Resolved na ang iyong report';
+    case 'REJECTED': return 'Hindi na-approve ang report';
+    default: return status;
   }
 }
 
@@ -255,7 +255,7 @@ export default function MobileHome() {
           }}>
             <MapPin size={16} color="#16A34A" style={{ flexShrink: 0 }} />
             <div style={{ flex: 1, fontSize: 12, fontWeight: 600, color: '#15803D' }}>
-              ✓ Location ready — pwede ka nang mag-send ng alert
+              ✓ Location ready — pwede ka nang mag-send ng emergency reports
             </div>
             <button onClick={() => setShowLocBanner(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#15803D', padding: 0 }}>
               <X size={14} />
@@ -324,7 +324,7 @@ export default function MobileHome() {
             </div>
             <h2>🚨 SEND EMERGENCY ALERT</h2>
             <p style={{ fontSize: 13, opacity: 0.85, marginTop: 4 }}>
-              I-tap para ma-report agad sa MDRRMO
+              I-tap para makapag-report kaagad ng emergency sa MDRRMO
             </p>
             <div className="tap-hint">
               <span className="tap-arrow"><ChevronDown size={13} /></span>

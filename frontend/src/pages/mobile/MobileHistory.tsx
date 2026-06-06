@@ -121,7 +121,7 @@ export default function MobileHistory() {
   };
 
   return (
-    <div 
+    <div
       className="mobile-shell"
       ref={containerRef}
       onTouchStart={handleTouchStart}
@@ -146,13 +146,13 @@ export default function MobileHistory() {
           margin: '0 -24px',
           borderRadius: '0 0 16px 16px',
         }}>
-          <RefreshCw 
-            size={16} 
-            className={refreshing ? "spin" : ""} 
-            style={{ 
+          <RefreshCw
+            size={16}
+            className={refreshing ? "spin" : ""}
+            style={{
               transform: refreshing ? undefined : `rotate(${pullDistance * 3}deg)`,
               transition: refreshing ? undefined : 'transform 0.1s linear'
-            }} 
+            }}
           />
           <span>{refreshing ? 'Sina-sync...' : pullDistance > 60 ? 'Bitiwan para mag-refresh' : 'Hilahin pababa para i-refresh'}</span>
         </div>
@@ -161,22 +161,6 @@ export default function MobileHistory() {
             <h1 style={{ fontSize: 24, fontWeight: 800 }}>History ng Reports</h1>
             <p style={{ fontSize: 14, color: 'var(--text-secondary)' }}>Subaybayan ang iyong mga active at nakaraang reports</p>
           </div>
-          <button
-            onClick={fetchHistory}
-            style={{
-              background: 'var(--bg-body)',
-              border: '1px solid var(--border)',
-              borderRadius: 12,
-              padding: 10,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-            aria-label="I-refresh"
-          >
-            <RefreshCw size={18} color="var(--text-secondary)" />
-          </button>
         </div>
 
         {loading ? (

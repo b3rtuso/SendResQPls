@@ -5,6 +5,7 @@ import { Search, RefreshCw, Download, ChevronLeft, ChevronRight } from 'lucide-r
 import type { Incident, Status } from '../types';
 import { getIncidents } from '../api/client';
 import { getNearestBarangay } from '../data/balayan-data';
+import { normalizeIncidentType } from '../utils/normalizeIncidentType';
 
 const STATUS_STYLE: Record<Status, { bg: string; color: string }> = {
   PENDING:    { bg: '#FEF3C7', color: '#92400E' },
@@ -61,7 +62,7 @@ export default function Requests() {
 
   const filtered = incidents.filter(inc => {
     const mStatus = filterStatus === 'ALL' || inc.status === filterStatus;
-    const mType   = filterType   === 'ALL' || (inc.aiDetectedType || '').toLowerCase().includes(filterType.toLowerCase());
+    const mType   = filterType   === 'ALL' || normalizeIncidentType(inc.aiDetectedType) === filterType;
     const mSearch = search === '' ||
       inc.id.toLowerCase().includes(search.toLowerCase()) ||
       (inc.aiDetectedType || '').toLowerCase().includes(search.toLowerCase()) ||
@@ -159,7 +160,8 @@ export default function Requests() {
                   <tbody>
                     {paged.map((inc, idx) => {
                       const ss = STATUS_STYLE[inc.status] || STATUS_STYLE.PENDING;
-                      const emoji = TYPE_ICON[inc.aiDetectedType || ''] || '⚠️';
+                      const normalized = normalizeIncidentType(inc.aiDetectedType);
+                      const emoji = TYPE_ICON[normalized] || '⚠️';
                       return (
                         <tr
                           key={inc.id}

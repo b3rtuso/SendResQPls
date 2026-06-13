@@ -10,6 +10,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import type { Incident, Status } from '../types';
 import { getIncidents, getIncidentStats } from '../api/client';
 import { getNearestBarangay } from '../data/balayan-data';
+import { normalizeIncidentType } from '../utils/normalizeIncidentType';
 
 const chartData = [
   { month: 'Jan', Fire: 12, Flood: 8, Accident: 4 },
@@ -152,7 +153,7 @@ export default function Dashboard() {
     }
     const counts: Record<string, number> = {};
     incidents.forEach(inc => {
-      const type = inc.aiDetectedType || 'Other';
+      const type = normalizeIncidentType(inc.aiDetectedType);
       counts[type] = (counts[type] || 0) + 1;
     });
     return Object.entries(counts).map(([name, value]) => ({
@@ -418,7 +419,8 @@ export default function Dashboard() {
                   <tbody>
                     {filteredIncidents.slice(0, 8).map((inc, idx) => {
                       const ss = STATUS_STYLE[inc.status] || STATUS_STYLE.PENDING;
-                      const ti = TYPE_ICON[inc.aiDetectedType || ''] || { emoji: '⚠️', color: '#64748B' };
+                      const normalized = normalizeIncidentType(inc.aiDetectedType);
+                      const ti = TYPE_ICON[normalized] || { emoji: '⚠️', color: '#64748B' };
                       return (
                         <tr key={inc.id} style={{ borderBottom: '1px solid #F8FAFC', background: idx % 2 === 0 ? 'white' : '#FAFBFC' }}
                           onMouseEnter={e => e.currentTarget.style.background = '#EFF6FF'}

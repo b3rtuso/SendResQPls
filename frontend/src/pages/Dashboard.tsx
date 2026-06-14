@@ -11,15 +11,7 @@ import type { Incident, Status } from '../types';
 import { getIncidents, getIncidentStats } from '../api/client';
 import { getNearestBarangay } from '../data/balayan-data';
 import { normalizeIncidentType } from '../utils/normalizeIncidentType';
-
-const chartData = [
-  { month: 'Jan', Fire: 12, Flood: 8, Accident: 4 },
-  { month: 'Feb', Fire: 15, Flood: 5, Accident: 6 },
-  { month: 'Mar', Fire: 10, Flood: 12, Accident: 5 },
-  { month: 'Apr', Fire: 8,  Flood: 18, Accident: 3 },
-  { month: 'May', Fire: 14, Flood: 10, Accident: 7 },
-  { month: 'Jun', Fire: 20, Flood: 6,  Accident: 4 },
-];
+import { dashboardChartData } from '../data/mdrrmo-data';
 
 const DEPARTMENTS = [
   { label: 'BFP',         sub: 'Bureau of Fire Protection', icon: Flame,       color: '#EF4444', bg: '#FEF2F2', tel: 'tel:(043) 211-6387' },
@@ -41,7 +33,9 @@ const TYPE_ICON: Record<string, { emoji: string; color: string }> = {
   'Fire':               { emoji: '🔥', color: '#DC2626' },
   'Flood':              { emoji: '🌊', color: '#3B82F6' },
   'Medical':            { emoji: '🏥', color: '#22C55E' },
-  'Accident':           { emoji: '🚗', color: '#F59E0B' },
+  'Trauma':             { emoji: '🩹', color: '#F59E0B' },
+  'Accident':           { emoji: '🚗', color: '#3B82F6' },
+  'Crime':              { emoji: '🚨', color: '#8B5CF6' },
   'Typhoon':            { emoji: '🌀', color: '#8B5CF6' },
   'Landslide':          { emoji: '⛰️', color: '#78716C' },
 };
@@ -50,9 +44,11 @@ const DONUT_COLORS: Record<string, string> = {
   'Fire': '#EF4444',
   'Flood': '#3B82F6',
   'Medical': '#22C55E',
-  'Accident': '#F59E0B',
+  'Accident': '#3B82F6',
+  'Trauma': '#F59E0B',
   'Typhoon': '#8B5CF6',
   'Landslide': '#78716C',
+  'Crime': '#8B5CF6',
   'Other': '#94A3B8',
 };
 
@@ -287,19 +283,27 @@ export default function Dashboard() {
             <div className="card-body">
               <div className="chart-container" style={{ height: '300px' }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} barCategoryGap="35%">
+                  <BarChart data={dashboardChartData} barCategoryGap="35%">
                     <defs>
-                      <linearGradient id="fireGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#EF4444" />
-                        <stop offset="100%" stopColor="#991B1B" />
+                      <linearGradient id="medicalGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#22C55E" />
+                        <stop offset="100%" stopColor="#16A34A" />
                       </linearGradient>
-                      <linearGradient id="floodGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#3B82F6" />
-                        <stop offset="100%" stopColor="#1D4ED8" />
+                      <linearGradient id="traumaGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#F59E0B" />
+                        <stop offset="100%" stopColor="#B45309" />
                       </linearGradient>
                       <linearGradient id="accidentGrad" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="#F59E0B" />
                         <stop offset="100%" stopColor="#B45309" />
+                      </linearGradient>
+                      <linearGradient id="fireGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#EF4444" />
+                        <stop offset="100%" stopColor="#991B1B" />
+                      </linearGradient>
+                      <linearGradient id="crimeGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#8B5CF6" />
+                        <stop offset="100%" stopColor="#6D28D9" />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
@@ -307,9 +311,11 @@ export default function Dashboard() {
                     <YAxis tick={{ fontSize: 12, fill: '#94A3B8' }} axisLine={false} tickLine={false} />
                     <Tooltip content={<CustomTooltip />} />
                     <Legend />
-                    <Bar dataKey="Fire" fill="url(#fireGrad)" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="Flood" fill="url(#floodGrad)" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="Medical" fill="url(#medicalGrad)" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="Trauma" fill="url(#traumaGrad)" radius={[4, 4, 0, 0]} />
                     <Bar dataKey="Accident" fill="url(#accidentGrad)" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="Fire" fill="url(#fireGrad)" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="Crime" fill="url(#crimeGrad)" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

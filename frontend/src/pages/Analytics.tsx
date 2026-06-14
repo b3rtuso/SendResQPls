@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import Header from '../components/Header';
 import {
-  Line, AreaChart, Area, BarChart, Bar,
+  Line, LineChart, AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+  PieChart, Pie, Cell,
 } from 'recharts';
-import { TrendingUp, FileText, Download, MapPin } from 'lucide-react';
+import { TrendingUp, FileText, Download, MapPin, BarChart3, Calendar } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -13,6 +14,11 @@ import {
   BALAYAN_CENTER, BALAYAN_BOUNDS, BARANGAYS, INCIDENT_TYPES,
   type Barangay,
 } from '../data/balayan-data';
+import {
+  forecastData, distributionData, monthlyDetails, reportData, yearlySummary,
+  incidentTrendsData, yearlyTotals, topLocations,
+  TYPE_COLORS, downloadReport, generateFullReport,
+} from '../data/mdrrmo-data';
 
 // Fix Leaflet default icon issue with bundlers
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -21,53 +27,6 @@ L.Icon.Default.mergeOptions({
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
-
-// ---- Existing hardcoded data (kept) ----
-const forecastData = [
-  { month: 'Jan', total: 18, predicted: 16, resolved: 12 },
-  { month: 'Feb', total: 15, predicted: 17, resolved: 10 },
-  { month: 'Mar', total: 20, predicted: 19, resolved: 14 },
-  { month: 'Apr', total: 17, predicted: 20, resolved: 13 },
-  { month: 'May', total: 22, predicted: 21, resolved: 16 },
-  { month: 'Jun', total: 19, predicted: 23, resolved: 15 },
-  { month: 'Jul', total: null, predicted: 25, resolved: null },
-  { month: 'Aug', total: null, predicted: 28, resolved: null },
-  { month: 'Sep', total: null, predicted: 26, resolved: null },
-  { month: 'Oct', total: null, predicted: 24, resolved: null },
-  { month: 'Nov', total: null, predicted: 27, resolved: null },
-  { month: 'Dec', total: null, predicted: 22, resolved: null },
-];
-
-const distributionData = [
-  { month: 'Jul', total: 18, completed: 12 },
-  { month: 'Aug', total: 17, completed: 14 },
-  { month: 'Sep', total: 15, completed: 11 },
-  { month: 'Oct', total: 16, completed: 13 },
-  { month: 'Nov', total: 19, completed: 15 },
-  { month: 'Dec', total: 14, completed: 10 },
-];
-
-const monthlyDetails = [
-  { month: 'Jan', type: 'Fire', typeClass: 'fire', desc: 'Increased fire hazards due to dry weather and holiday fireworks remnants.' },
-  { month: 'Feb', type: 'Medical', typeClass: 'medical', desc: 'Spike in respiratory issues during colder nights.' },
-  { month: 'Mar', type: 'Fire', typeClass: 'fire', desc: 'Peak of dry season; highest risk of residential fires.' },
-  { month: 'Apr', type: 'Fire', typeClass: 'fire', desc: 'Continued dry season and intense heatwaves.' },
-  { month: 'May', type: 'Accident', typeClass: 'accident', desc: 'Increased travel during summer vacations leading to vehicular accidents.' },
-  { month: 'Jun', type: 'Flood', typeClass: 'flood', desc: 'Onset of the rainy season and early monsoons.' },
-  { month: 'Jul', type: 'Typhoon', typeClass: 'typhoon', desc: 'Peak typhoon season bringing heavy rains and winds.' },
-  { month: 'Aug', type: 'Flood', typeClass: 'flood', desc: 'Continuous heavy monsoon rains resulting in widespread flooding.' },
-  { month: 'Sep', type: 'Typhoon', typeClass: 'typhoon', desc: 'Late-season typhoons combined with saturated ground leading to severe storms.' },
-  { month: 'Oct', type: 'Landslide', typeClass: 'landslide', desc: 'Soil saturation from prolonged rainy season causes ground instability.' },
-  { month: 'Nov', type: 'Typhoon', typeClass: 'typhoon', desc: 'Unexpected late-year strong typhoons often hit during this period.' },
-  { month: 'Dec', type: 'Fire', typeClass: 'fire', desc: 'Holiday season activities, electrical overloads, and fireworks.' },
-];
-
-const reportData = [
-  { id: 'RPT-001', title: 'Monthly Incident Summary — April 2026', generated: '2026-05-01', type: 'Monthly' },
-  { id: 'RPT-002', title: 'Fire Incident Deep Dive — Q1 2026', generated: '2026-04-15', type: 'Quarterly' },
-  { id: 'RPT-003', title: 'Flood Response Metrics', generated: '2026-04-10', type: 'Custom' },
-  { id: 'RPT-004', title: 'Annual Performance Report 2025', generated: '2026-01-05', type: 'Annual' },
-];
 
 const tooltipStyle = {
   background: 'var(--bg-card)',
@@ -138,10 +97,20 @@ function buildPopupContent(brgy: Barangay, incidentType: string): string {
   `;
 }
 
+// ---- Pie data for type distribution ----
+const typeDistribution = [
+  { name: 'Medical', value: 587, color: TYPE_COLORS.Medical },
+  { name: 'Trauma', value: 616, color: TYPE_COLORS.Trauma },
+  { name: 'Accident', value: 44, color: TYPE_COLORS.Accident },
+  { name: 'Crime', value: 10, color: TYPE_COLORS.Crime },
+  { name: 'Fire', value: 2, color: TYPE_COLORS.Fire },
+];
+
 // ---- Main Component ----
 export default function Analytics() {
   const [tab, setTab] = useState<'map' | 'forecast' | 'reports'>('map');
   const [selectedType, setSelectedType] = useState('fire');
+  const [reportFilter, setReportFilter] = useState('All Types');
 
   // Compute stats for current incident type
   const riskStats = useMemo(() => {
@@ -158,6 +127,10 @@ export default function Analytics() {
   }, [selectedType]);
 
   const currentIncident = INCIDENT_TYPES.find(t => t.id === selectedType);
+
+  const filteredReports = reportFilter === 'All Types'
+    ? reportData
+    : reportData.filter(r => r.type === reportFilter);
 
   return (
     <>
@@ -285,18 +258,21 @@ export default function Analytics() {
           </div>
         )}
 
-        {/* ============ FORECAST TAB (existing) ============ */}
+        {/* ============ FORECAST TAB ============ */}
         {tab === 'forecast' && (
           <div className="fade-in">
-            <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
-              <div className="stat-card"><div className="stat-info"><h3>This Month Predicted</h3><div className="stat-value">21</div><div className="stat-change up">↑ Based on trend analysis</div></div><div className="stat-icon purple"><TrendingUp size={22} /></div></div>
-              <div className="stat-card"><div className="stat-info"><h3>Peak Month (Predicted)</h3><div className="stat-value">Aug</div><div className="stat-change up">28 incidents forecasted</div></div><div className="stat-icon red"><TrendingUp size={22} /></div></div>
-              <div className="stat-card"><div className="stat-info"><h3>YoY Growth</h3><div className="stat-value">+18%</div><div className="stat-change up">↑ Compared to 2025</div></div><div className="stat-icon blue"><TrendingUp size={22} /></div></div>
+            {/* Stat Cards */}
+            <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+              <div className="stat-card"><div className="stat-info"><h3>YTD Total (2026)</h3><div className="stat-value">{yearlySummary.totalCurrentYear}</div><div className="stat-change up">Jan – May actual data</div></div><div className="stat-icon blue"><BarChart3 size={22} /></div></div>
+              <div className="stat-card"><div className="stat-info"><h3>Peak Month</h3><div className="stat-value">{yearlySummary.peakMonth}</div><div className="stat-change up">{yearlySummary.peakMonthCount} incidents recorded</div></div><div className="stat-icon red"><TrendingUp size={22} /></div></div>
+              <div className="stat-card"><div className="stat-info"><h3>Full Year Projected</h3><div className="stat-value">{yearlySummary.predictedTotal}</div><div className="stat-change down">↓ {Math.abs(yearlySummary.yoyGrowth)}% vs 2024</div></div><div className="stat-icon purple"><TrendingUp size={22} /></div></div>
+              <div className="stat-card"><div className="stat-info"><h3>Total Records</h3><div className="stat-value">1,260</div><div className="stat-change up">2023–2026 data</div></div><div className="stat-icon green"><Calendar size={22} /></div></div>
             </div>
 
+            {/* Forecast + Requests Over Time */}
             <div className="grid-2" style={{ marginTop: 20 }}>
               <div className="card">
-                <div className="card-header"><h3>Incident Forecast</h3></div>
+                <div className="card-header"><h3>2026 Incident Forecast</h3></div>
                 <div className="card-body">
                   <div className="chart-container" style={{ height: 300 }}>
                     <ResponsiveContainer width="100%" height="100%">
@@ -306,7 +282,7 @@ export default function Analytics() {
                         <YAxis tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
                         <Tooltip contentStyle={tooltipStyle} />
                         <Legend />
-                        <Area type="monotone" dataKey="total" stroke="#3B82F6" fill="rgba(59, 130, 246, 0.1)" strokeWidth={2} name="Total" connectNulls={false} />
+                        <Area type="monotone" dataKey="total" stroke="#3B82F6" fill="rgba(59, 130, 246, 0.1)" strokeWidth={2} name="Actual Total" connectNulls={false} />
                         <Line type="monotone" dataKey="predicted" stroke="#8B5CF6" strokeWidth={2} strokeDasharray="6 4" name="Predicted Forecast" dot={false} />
                         <Area type="monotone" dataKey="resolved" stroke="#22C55E" fill="rgba(34, 197, 94, 0.08)" strokeWidth={2} name="Resolved" connectNulls={false} />
                       </AreaChart>
@@ -335,6 +311,83 @@ export default function Analytics() {
               </div>
             </div>
 
+            {/* Year-Over-Year Trends + Type Distribution Pie */}
+            <div className="grid-2" style={{ marginTop: 20 }}>
+              <div className="card">
+                <div className="card-header"><h3>Year-Over-Year Incident Trends</h3></div>
+                <div className="card-body">
+                  <div className="chart-container" style={{ height: 300 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={incidentTrendsData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                        <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
+                        <YAxis tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
+                        <Tooltip contentStyle={tooltipStyle} />
+                        <Legend />
+                        <Line type="monotone" dataKey="y2023" stroke="#94A3B8" strokeWidth={2} name="2023" dot={{ r: 3 }} strokeDasharray="4 4" connectNulls={false} />
+                        <Line type="monotone" dataKey="y2024" stroke="#3B82F6" strokeWidth={2} name="2024" dot={false} />
+                        <Line type="monotone" dataKey="y2025" stroke="#F59E0B" strokeWidth={2} name="2025" dot={false} />
+                        <Line type="monotone" dataKey="y2026" stroke="#22C55E" strokeWidth={2.5} name="2026" dot={{ r: 4, strokeWidth: 2 }} connectNulls={false} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
+
+              <div className="card">
+                <div className="card-header"><h3>Incident Type Distribution (All Years)</h3></div>
+                <div className="card-body" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 16, alignItems: 'center' }}>
+                  <div className="chart-container" style={{ height: 260 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={typeDistribution} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={55} outerRadius={95} paddingAngle={3}>
+                          {typeDistribution.map((entry, i) => (
+                            <Cell key={i} fill={entry.color} stroke="none" />
+                          ))}
+                        </Pie>
+                        <Tooltip contentStyle={tooltipStyle} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div>
+                    {typeDistribution.map(t => (
+                      <div key={t.name} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                        <div style={{ width: 12, height: 12, borderRadius: 3, background: t.color, flexShrink: 0 }} />
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{t.name}</div>
+                          <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{t.value} incidents ({((t.value / 1260) * 100).toFixed(1)}%)</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Yearly Totals Bar Chart */}
+            <div className="card" style={{ marginTop: 20 }}>
+              <div className="card-header"><h3>Yearly Incident Totals by Category</h3></div>
+              <div className="card-body">
+                <div className="chart-container" style={{ height: 280 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={yearlyTotals} barCategoryGap="30%">
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                      <XAxis dataKey="year" tick={{ fontSize: 12, fill: 'var(--text-secondary)' }} />
+                      <YAxis tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
+                      <Tooltip contentStyle={tooltipStyle} />
+                      <Legend />
+                      <Bar dataKey="Medical" fill={TYPE_COLORS.Medical} radius={[3, 3, 0, 0]} stackId="a" />
+                      <Bar dataKey="Trauma" fill={TYPE_COLORS.Trauma} radius={[0, 0, 0, 0]} stackId="a" />
+                      <Bar dataKey="Accident" fill={TYPE_COLORS.Accident} radius={[0, 0, 0, 0]} stackId="a" />
+                      <Bar dataKey="Fire" fill={TYPE_COLORS.Fire} radius={[0, 0, 0, 0]} stackId="a" />
+                      <Bar dataKey="Crime" fill={TYPE_COLORS.Crime} radius={[3, 3, 0, 0]} stackId="a" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+
+            {/* Monthly Forecast Details */}
             <div className="card" style={{ marginTop: 20 }}>
               <div className="card-header"><h3>Monthly Incident Forecast Details</h3></div>
               <div className="card-body">
@@ -354,29 +407,75 @@ export default function Analytics() {
           </div>
         )}
 
-        {/* ============ REPORTS TAB (existing) ============ */}
+        {/* ============ REPORTS TAB ============ */}
         {tab === 'reports' && (
           <div className="fade-in">
+            {/* Stat cards for reports */}
+            <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: 20 }}>
+              <div className="stat-card"><div className="stat-info"><h3>Total Reports</h3><div className="stat-value">{reportData.length}</div><div className="stat-change up">Available for download</div></div><div className="stat-icon blue"><FileText size={22} /></div></div>
+              <div className="stat-card"><div className="stat-info"><h3>Data Coverage</h3><div className="stat-value">2023–2026</div><div className="stat-change up">4 years of data</div></div><div className="stat-icon purple"><Calendar size={22} /></div></div>
+              <div className="stat-card"><div className="stat-info"><h3>Total Records</h3><div className="stat-value">1,260</div><div className="stat-change up">MDRRMO incident reports</div></div><div className="stat-icon green"><BarChart3 size={22} /></div></div>
+            </div>
+
             <div className="filters-bar">
-              <select className="filter-select"><option>All Types</option><option>Monthly</option><option>Quarterly</option><option>Annual</option><option>Custom</option></select>
+              <select
+                className="filter-select"
+                value={reportFilter}
+                onChange={e => setReportFilter(e.target.value)}
+              >
+                <option>All Types</option>
+                <option>Monthly</option>
+                <option>Quarterly</option>
+                <option>Annual</option>
+              </select>
               <div style={{ flex: 1 }} />
-              <button className="btn btn-primary btn-sm"><FileText size={14} /> Generate New Report</button>
+              <button className="btn btn-primary btn-sm" onClick={() => generateFullReport()}>
+                <Download size={14} /> Export Full Report (CSV)
+              </button>
             </div>
             <div className="card">
               <table className="data-table">
                 <thead><tr><th>Report ID</th><th>Title</th><th>Type</th><th>Generated</th><th>Action</th></tr></thead>
                 <tbody>
-                  {reportData.map((r) => (
+                  {filteredReports.map((r) => (
                     <tr key={r.id}>
                       <td style={{ fontWeight: 600 }}>{r.id}</td>
                       <td>{r.title}</td>
-                      <td><span className="badge reviewing">{r.type}</span></td>
+                      <td><span className={`badge ${r.type === 'Annual' ? 'resolved' : r.type === 'Monthly' ? 'reviewing' : 'dispatched'}`}>{r.type}</span></td>
                       <td>{r.generated}</td>
-                      <td><button className="btn btn-outline btn-sm"><Download size={14} /> Download</button></td>
+                      <td><button className="btn btn-outline btn-sm" onClick={() => downloadReport(r.id)}><Download size={14} /> Download CSV</button></td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            {/* Top Locations Table */}
+            <div className="card" style={{ marginTop: 20 }}>
+              <div className="card-header">
+                <h3>Top Incident Locations (All Years)</h3>
+              </div>
+              <div className="card-body">
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+                  {topLocations.map((loc, i) => (
+                    <div key={loc.name} style={{
+                      display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
+                      background: i < 3 ? 'rgba(239, 68, 68, 0.04)' : 'var(--bg-secondary)',
+                      borderRadius: 10, border: i < 3 ? '1px solid rgba(239, 68, 68, 0.12)' : '1px solid var(--border)',
+                    }}>
+                      <div style={{
+                        width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 12, fontWeight: 800, color: 'white',
+                        background: i === 0 ? '#EF4444' : i === 1 ? '#F59E0B' : i === 2 ? '#3B82F6' : '#94A3B8',
+                      }}>{i + 1}</div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600 }}>{loc.name}</div>
+                      </div>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: i < 3 ? '#EF4444' : 'var(--text-primary)' }}>{loc.count}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -384,3 +483,4 @@ export default function Analytics() {
     </>
   );
 }
+

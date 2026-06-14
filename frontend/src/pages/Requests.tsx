@@ -18,6 +18,7 @@ const STATUS_STYLE: Record<Status, { bg: string; color: string }> = {
 const TYPE_ICON: Record<string, string> = {
   Fire: '🔥', Flood: '🌊', Medical: '🏥',
   Accident: '🚗', Typhoon: '🌀', Landslide: '⛰️',
+  Trauma: '🩹', Crime: '🚨',
 };
 
 const STATUSES: (Status | 'ALL')[] = ['ALL', 'PENDING', 'REVIEWING', 'DISPATCHED', 'RESOLVED', 'REJECTED'];
@@ -119,7 +120,7 @@ export default function Requests() {
             onChange={e => setFilterType(e.target.value)}
             style={{ padding: '10px 14px', border: '1.5px solid #E2E8F0', borderRadius: 10, fontSize: 13, color: '#374151', background: '#F8FAFC', fontFamily: 'inherit', cursor: 'pointer', outline: 'none' }}
           >
-            {['ALL', 'Fire', 'Flood', 'Medical', 'Accident', 'Typhoon', 'Landslide'].map(t => (
+            {['ALL', 'Fire', 'Flood', 'Medical', 'Trauma', 'Accident', 'Crime', 'Typhoon', 'Landslide'].map(t => (
               <option key={t} value={t}>{t === 'ALL' ? 'All Types' : `${TYPE_ICON[t] || ''} ${t}`}</option>
             ))}
           </select>

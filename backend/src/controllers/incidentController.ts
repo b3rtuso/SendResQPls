@@ -6,6 +6,26 @@ import { performReverseGeocode } from '../services/geocodingService';
 import { syncDepartmentStatuses } from './departmentController';
 import { messaging } from '../config/firebase';
 
+// ─── SSE: Admin real-time new-incident notifications ──────────────────────────
+// Stores all connected admin browser clients
+const sseClients = new Set<Response>();
+
+/** Register a new SSE connection (called from route handler) */
+export const addSseClient = (res: Response) => sseClients.add(res);
+
+/** Remove an SSE client when they disconnect */
+export const removeSseClient = (res: Response) => sseClients.delete(res);
+
+/** Broadcast a JSON event to all connected admin SSE clients */
+export const broadcastSseEvent = (event: string, data: object) => {
+  const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+  sseClients.forEach(client => {
+    try { client.write(payload); } catch { sseClients.delete(client); }
+  });
+  console.log(`📡 SSE broadcast '${event}' → ${sseClients.size} admin client(s)`);
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
 const getTagalogStatus = (status: string) => {
   switch (status) {
     case 'PENDING': return 'Naghihintay ng review';
@@ -156,6 +176,46 @@ export const reportIncident = async (req: Request, res: Response) => {
     });
 
     console.log(`✅ New incident reported: ${incident.id} | Type: ${assessment.incidentType} | Dept: ${recommended}`);
+
+    // ── Notify all admin devices via FCM push notification ──────────────────
+    if (messaging) {
+      try {
+        const admins = await prisma.user.findMany({
+          where: { role: 'ADMIN', pushToken: { not: null } },
+          select: { pushToken: true },
+        });
+        const adminTokens = admins.map(a => a.pushToken!).filter(Boolean);
+        if (adminTokens.length > 0) {
+          await messaging.sendEachForMulticast({
+            tokens: adminTokens,
+            notification: {
+              title: '🚨 Bagong Emergency Report!',
+              body: `${assessment.incidentType} na na-detect sa Balayan. I-review na agad!`,
+            },
+            data: {
+              incidentId: incident.id,
+              type: 'NEW_INCIDENT',
+              dept: recommended,
+            },
+            android: {
+              notification: { sound: 'default', priority: 'high' },
+            },
+          });
+          console.log(`📱 Admin push sent to ${adminTokens.length} device(s)`);
+        }
+      } catch (adminPushErr: any) {
+        console.error(`⚠️ Admin push notification failed: ${adminPushErr.message}`);
+      }
+    }
+
+    // ── Broadcast SSE event to admin web dashboard clients ──────────────────
+    broadcastSseEvent('new_incident', {
+      id: incident.id,
+      aiDetectedType: assessment.incidentType,
+      aiRecommendedDept: recommended,
+      status: 'PENDING',
+      createdAt: incident.createdAt,
+    });
 
     // Return the full incident so the mobile app can show it in notifications/history
     res.status(201).json({

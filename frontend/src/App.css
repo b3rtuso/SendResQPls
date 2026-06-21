@@ -16,6 +16,10 @@
   0%, 100% { box-shadow: 0 6px 24px rgba(220,38,38,0.35), 0 0 0 0 rgba(220,38,38,0.3); }
   60% { box-shadow: 0 8px 32px rgba(220,38,38,0.5), 0 0 0 10px rgba(220,38,38,0); }
 }
+@keyframes pulse-emergency {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.12); opacity: 0.85; }
+}
 
 
 /* ===== GLOBAL BUTTON INTERACTION ===== */

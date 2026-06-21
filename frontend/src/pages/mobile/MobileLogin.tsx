@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, EyeOff, Eye } from 'lucide-react';
 import { login as apiLogin } from '../../api/client';
+import { setupPushNotifications } from '../../utils/pushNotificationHelper';
+
 
 export default function MobileLogin() {
   const navigate = useNavigate();
@@ -26,6 +28,12 @@ export default function MobileLogin() {
       localStorage.setItem('userEmail', res.data.user?.email || '');
       localStorage.setItem('userPhone', res.data.user?.phoneNumber || '');
       localStorage.setItem('userRole', res.data.user?.role || 'CITIZEN');
+
+      // Register FCM push token for ALL users (citizens and admins)
+      // Must run here so admins (who skip MobileHome) also get their token saved
+      setupPushNotifications().catch(err =>
+        console.warn('[Login] Push notification setup failed:', err)
+      );
 
       if (res.data.role === 'ADMIN') {
         navigate('/');

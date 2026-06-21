@@ -120,7 +120,11 @@ export default function RequestDetails() {
     setSaving(true);
     try {
       await updateIncidentStatus(id!, { status });
-      showToast('success', `Status updated to ${status}`, `Incident ${id?.slice(0, 8)}... has been marked as ${status}.`);
+      showToast(
+        'success',
+        `Status updated to ${status} 📱`,
+        `Incident ${id?.slice(0, 8)}... marked as ${status}. Push notification sent to the reporter's mobile app.`
+      );
       // Update local state
       setIncident((prev) => prev ? { ...prev, status } : prev);
     } catch {

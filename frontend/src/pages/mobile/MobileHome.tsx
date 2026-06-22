@@ -106,6 +106,37 @@ export default function MobileHome() {
     }
   }, [userId]);
 
+  // Request location permission and track grant status
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      setLocStatus('unavailable');
+      return;
+    }
+    if (navigator.permissions) {
+      navigator.permissions.query({ name: 'geolocation' }).then(result => {
+        if (result.state === 'granted') setLocStatus('granted');
+        else if (result.state === 'denied') setLocStatus('denied');
+        else {
+          navigator.geolocation.getCurrentPosition(
+            () => setLocStatus('granted'),
+            () => setLocStatus('denied'),
+            { timeout: 10000, enableHighAccuracy: true }
+          );
+        }
+        result.onchange = () => {
+          if (result.state === 'granted') setLocStatus('granted');
+          else if (result.state === 'denied') setLocStatus('denied');
+        };
+      });
+    } else {
+      navigator.geolocation.getCurrentPosition(
+        () => setLocStatus('granted'),
+        () => setLocStatus('denied'),
+        { timeout: 10000, enableHighAccuracy: true }
+      );
+    }
+  }, []);
+
   // Auto-dismiss the green location banner after 4s
   useEffect(() => {
     if (locStatus === 'granted') {

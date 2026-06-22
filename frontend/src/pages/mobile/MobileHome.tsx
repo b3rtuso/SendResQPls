@@ -2,8 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Phone, AlertTriangle, Shield, Droplets, Flame, Heart, Bell, X, CheckCircle2, ChevronDown, MapPin, MapPinOff } from 'lucide-react';
 import BottomNav from '../../components/BottomNav';
-import { getMyIncidents } from '../../api/client';
+import FcmBannerOverlay from '../../components/FcmBannerOverlay';
+import { getMyIncidents, cachedGet } from '../../api/client';
 import { setupPushNotifications } from '../../utils/pushNotificationHelper';
+
 
 const hotlines = [
   { name: 'National Emergency', number: '911', color: '#DC2626' },
@@ -55,10 +57,16 @@ export default function MobileHome() {
   const [locStatus, setLocStatus] = useState<LocStatus>('idle');
   const [showLocBanner, setShowLocBanner] = useState(true);
 
-  const checkForUpdates = async () => {
+  // Single unified fetch — replaces the separate init() + checkForUpdates() double-call
+  const checkForUpdates = async (isFirstLoad = false) => {
     if (!userId) return;
     try {
-      const res = await getMyIncidents(userId);
+      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const url = `/incidents/my/${userId}`;
+      // Use cache on first load so navigating back feels instant
+      const res = isFirstLoad
+        ? await cachedGet(API_BASE + url, 20000)
+        : await getMyIncidents(userId);
       const incidents = res.data || [];
       const stored: Record<string, string> = JSON.parse(localStorage.getItem(STATUS_KEY) || '{}');
       const newNotifs: NotifItem[] = [];
@@ -84,57 +92,12 @@ export default function MobileHome() {
     } catch { /* silent */ }
   };
 
-  // Request location permission on mount
   useEffect(() => {
-    if (!navigator.geolocation) {
-      setLocStatus('unavailable');
-      return;
-    }
-    // Check if already granted via Permissions API (non-blocking)
-    if (navigator.permissions) {
-      navigator.permissions.query({ name: 'geolocation' }).then(result => {
-        if (result.state === 'granted') {
-          setLocStatus('granted');
-        } else if (result.state === 'denied') {
-          setLocStatus('denied');
-        } else {
-          // 'prompt' — trigger the dialog now
-          navigator.geolocation.getCurrentPosition(
-            () => setLocStatus('granted'),
-            () => setLocStatus('denied'),
-            { timeout: 10000, enableHighAccuracy: true }
-          );
-        }
-        // Watch for permission changes
-        result.onchange = () => {
-          if (result.state === 'granted') setLocStatus('granted');
-          else if (result.state === 'denied') setLocStatus('denied');
-        };
-      });
-    } else {
-      // Fallback: just request directly
-      navigator.geolocation.getCurrentPosition(
-        () => setLocStatus('granted'),
-        () => setLocStatus('denied'),
-        { timeout: 10000, enableHighAccuracy: true }
-      );
-    }
-  }, []);
-
-  useEffect(() => {
-    const init = async () => {
-      if (!userId) return;
-      try {
-        const res = await getMyIncidents(userId);
-        const existing: Record<string, string> = JSON.parse(localStorage.getItem(STATUS_KEY) || '{}');
-        (res.data || []).forEach((inc: any) => { if (!existing[inc.id]) existing[inc.id] = inc.status; });
-        localStorage.setItem(STATUS_KEY, JSON.stringify(existing));
-      } catch { /* silent */ }
-    };
-    init();
-    pollRef.current = setInterval(checkForUpdates, 30000);
+    checkForUpdates(true); // First load: uses cache, no duplicate
+    pollRef.current = setInterval(() => checkForUpdates(false), 30000); // Poll every 30s
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, [userId]);
+
 
   // Request push notifications setup on mount
   useEffect(() => {
@@ -143,7 +106,7 @@ export default function MobileHome() {
     }
   }, [userId]);
 
-  // Auto-dismiss the green banner after 4s
+  // Auto-dismiss the green location banner after 4s
   useEffect(() => {
     if (locStatus === 'granted') {
       const t = setTimeout(() => setShowLocBanner(false), 4000);
@@ -158,6 +121,7 @@ export default function MobileHome() {
 
   return (
     <div className="mobile-shell">
+      <FcmBannerOverlay />
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }}>
 
         {/* ── Header ─────────────────────────────────── */}
@@ -394,6 +358,9 @@ export default function MobileHome() {
 
       </div>
       <BottomNav />
+
+      {/* ── FCM Foreground Banner (Instagram-style heads-up) ── */}
+      <FcmBannerOverlay />
     </div>
   );
 }

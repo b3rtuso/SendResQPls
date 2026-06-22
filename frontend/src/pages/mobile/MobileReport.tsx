@@ -4,6 +4,7 @@ import { ChevronLeft, AlertTriangle, Camera, Loader } from 'lucide-react';
 import { reportIncident } from '../../api/client';
 import { isWithinBalayan } from '../../data/balayan-data';
 import BottomNav from '../../components/BottomNav';
+import FcmBannerOverlay from '../../components/FcmBannerOverlay';
 import Toast, { type ToastType } from '../../components/Toast';
 
 interface ToastState {
@@ -190,6 +191,7 @@ export default function MobileReport() {
         <p className="report-note">* Kailangan ang location at photo para mapadala ang alert</p>
       </div>
       <BottomNav />
+      <FcmBannerOverlay />
     </div>
   );
 }

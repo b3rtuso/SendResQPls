@@ -4,6 +4,7 @@ import { AlertCircle, MapPin, RefreshCw, ChevronLeft } from 'lucide-react';
 import { getMyIncidents, getIncidents } from '../../api/client';
 import type { Incident, Status } from '../../types';
 import BottomNav from '../../components/BottomNav';
+import FcmBannerOverlay from '../../components/FcmBannerOverlay';
 import { getNearestBarangay } from '../../data/balayan-data';
 
 const badgeClass: Record<Status, string> = {
@@ -254,6 +255,7 @@ export default function MobileHistory() {
         )}
       </div>
       <BottomNav />
+      <FcmBannerOverlay />
     </div>
   );
 }

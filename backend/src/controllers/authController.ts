@@ -67,7 +67,7 @@ export const verifyCode = async (req: Request, res: Response) => {
 export const register = async (req: Request, res: Response) => {
   try {
     const { name, email, password, phoneNumber, role } = req.body;
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 8); // 8 rounds = ~80ms, still secure
     const newUser = await prisma.user.create({
       data: { name, email, passwordHash: hashedPassword, phoneNumber: phoneNumber || null, role: role || 'CITIZEN' }
     });

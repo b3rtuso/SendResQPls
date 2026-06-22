@@ -5,7 +5,7 @@ console.log('[API] Using base URL:', API_BASE);
 
 const api = axios.create({
   baseURL: API_BASE,
-  timeout: 15000,
+  timeout: 10000, // 10s — fail faster, retry handles transient errors
 });
 
 // Attach JWT token to every request
@@ -16,6 +16,47 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// ── Retry once on network error or 5xx ──────────────────────────────────────
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const config = error.config;
+    // Only retry once, only on network errors or server errors (5xx)
+    if (!config || config._retried) return Promise.reject(error);
+    const status = error.response?.status;
+    const isNetworkError = !error.response;
+    const isServerError = status >= 500;
+    if (isNetworkError || isServerError) {
+      config._retried = true;
+      await new Promise((r) => setTimeout(r, 800)); // wait 800ms then retry
+      return api(config);
+    }
+    return Promise.reject(error);
+  }
+);
+
+// ── Simple in-memory GET cache (20s TTL) ─────────────────────────────────────
+// Prevents re-fetching data the user just loaded when navigating between pages
+const _cache = new Map<string, { data: any; expiresAt: number }>();
+
+export function cachedGet(url: string, ttlMs = 20000) {
+  const hit = _cache.get(url);
+  if (hit && Date.now() < hit.expiresAt) {
+    return Promise.resolve({ data: hit.data });
+  }
+  return api.get(url).then((res) => {
+    _cache.set(url, { data: res.data, expiresAt: Date.now() + ttlMs });
+    return res;
+  });
+}
+
+export function invalidateCache(pattern?: string) {
+  if (!pattern) { _cache.clear(); return; }
+  _cache.forEach((_, key) => { if (key.includes(pattern)) _cache.delete(key); });
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 
 // === AUTH ===
 export const login = (email: string, password: string) =>

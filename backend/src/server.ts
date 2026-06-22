@@ -13,6 +13,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// ── Health check — ping this with UptimeRobot every 5 min to prevent cold starts ──
+app.get('/health', (_req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/incidents', incidentRoutes);
@@ -28,7 +33,7 @@ async function seedDefaultAdmin() {
 
     if (!existingAdmin) {
       const defaultPassword = 'MdrrmoAdmin2026!';
-      const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+      const hashedPassword = await bcrypt.hash(defaultPassword, 8); // 8 rounds for faster boot
       
       await prisma.user.create({
         data: {

@@ -304,11 +304,13 @@ export const updateIncidentStatus = async (req: Request, res: Response) => {
               department: assignedDepartment || updated.assignedDepartment || '',
             },
             android: {
+              priority: 'high', // Ensures heads-up banner even when screen is on
               notification: {
                 sound: 'default',
+                priority: 'high',
                 clickAction: 'FCM_PLUGIN_ACTIVITY',
-              }
-            }
+              },
+            },
           });
           console.log(`📱 Push notification sent to user ${updated.reporter.id}`);
         }

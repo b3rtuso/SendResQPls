@@ -123,7 +123,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchData();
-    const iv = setInterval(fetchData, 10000);
+    const iv = setInterval(fetchData, 60000); // 60s — SSE handles real-time alerts
     return () => clearInterval(iv);
   }, []);
 

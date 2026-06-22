@@ -10,6 +10,7 @@ import {
   reverseGeocode,
   addSseClient,
   removeSseClient,
+  testPushNotification,
 } from '../controllers/incidentController';
 
 
@@ -47,6 +48,10 @@ router.get('/sse', (req, res) => {
 
 // User's own incidents (for mobile history) — must come before /:id
 router.get('/my/:userId', getMyIncidents);
+
+// ── Test push notification (for debugging) ────────────────────────────────────
+// POST /api/incidents/test-push  { "userId": "..." }
+router.post('/test-push', testPushNotification);
 
 // List all incidents (supports ?search= and ?status= query params)
 router.get('/', getIncidents);

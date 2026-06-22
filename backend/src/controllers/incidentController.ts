@@ -345,3 +345,49 @@ export const reverseGeocode = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Failed to reverse geocode location", details: error.message });
   }
 };
+
+// POST /api/incidents/test-push — Send a real FCM push to a user (debugging)
+export const testPushNotification = async (req: Request, res: Response) => {
+  const { userId } = req.body;
+  if (!userId) return res.status(400).json({ error: 'userId required' });
+
+  if (!messaging) {
+    return res.status(503).json({ error: 'Firebase messaging not initialized — check firebase-credentials.json' });
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, name: true, pushToken: true },
+    });
+
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    if (!user.pushToken) {
+      return res.status(400).json({
+        error: 'User has no pushToken saved',
+        fix: 'The user must log into the APK at least once after push permissions are granted',
+        userId: user.id,
+        name: user.name,
+      });
+    }
+
+    await messaging.send({
+      token: user.pushToken,
+      notification: {
+        title: '🔔 Test Notification',
+        body: 'SendResqPls push notifications are working!',
+      },
+      data: { type: 'TEST' },
+      android: {
+        priority: 'high',
+        notification: { sound: 'default', priority: 'high' },
+      },
+    });
+
+    res.json({ success: true, message: `Push sent to ${user.name}`, tokenPreview: user.pushToken.slice(0, 20) + '...' });
+  } catch (err: any) {
+    console.error('❌ test-push error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+};

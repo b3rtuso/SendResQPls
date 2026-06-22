@@ -1,19 +1,6 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
-
-async function main() {
-  const users = await prisma.user.findMany({
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      pushToken: true
-    }
-  });
-  console.log('--- USER PUSH TOKENS IN DATABASE ---');
-  console.log(JSON.stringify(users, null, 2));
-}
-
-main()
-  .catch(err => console.error(err))
-  .finally(() => prisma.$disconnect());
+const { Pool } = require('pg');
+require('dotenv/config');
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+pool.query(`SELECT id, name, role, "pushToken" IS NOT NULL as has_token, LEFT("pushToken", 30) as token_preview FROM "User" ORDER BY role`)
+  .then(r => { console.log(JSON.stringify(r.rows, null, 2)); pool.end(); })
+  .catch(e => { console.error(e.message); pool.end(); });

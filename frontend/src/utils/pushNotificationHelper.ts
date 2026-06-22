@@ -13,50 +13,66 @@ export interface FcmNotificationPayload {
   type?: string;
 }
 
-export async function setupPushNotifications() {
+/** Save push token to backend with up to 3 retries */
+async function saveTokenToBackend(token: string, attempt = 1): Promise<void> {
+  try {
+    await updateProfile({ pushToken: token });
+    console.log(`✅ [Push] Token saved to backend (attempt ${attempt})`);
+  } catch (err: any) {
+    if (attempt < 3) {
+      const delay = attempt * 1500; // 1.5s, 3s
+      console.warn(`⚠️ [Push] Token save failed, retrying in ${delay}ms... (${err.message})`);
+      await new Promise(r => setTimeout(r, delay));
+      return saveTokenToBackend(token, attempt + 1);
+    }
+    console.error(`❌ [Push] Token save failed after 3 attempts: ${err.message}`);
+  }
+}
+
+export async function setupPushNotifications(): Promise<void> {
   // Only execute on native platforms (Android/iOS)
   if (!Capacitor.isNativePlatform()) {
-    console.log('[PushNotifications] Skipped - Not running on a native device.');
+    console.log('[Push] Skipped — not running on a native device.');
     return;
   }
 
   try {
+    // Remove all previous listeners first to prevent duplicates on re-login
+    await PushNotifications.removeAllListeners();
+
     // 1. Check permissions
     let permStatus = await PushNotifications.checkPermissions();
-    
+    console.log(`[Push] Permission status: ${permStatus.receive}`);
+
     if (permStatus.receive === 'prompt') {
       permStatus = await PushNotifications.requestPermissions();
+      console.log(`[Push] After request: ${permStatus.receive}`);
     }
 
     if (permStatus.receive !== 'granted') {
-      console.warn('[PushNotifications] Permission not granted.');
+      console.warn('[Push] ❌ Permission not granted — user will not receive notifications.');
       return;
     }
 
-    // 2. Register for push notifications
+    // 2. Register with FCM
+    console.log('[Push] Registering with FCM...');
     await PushNotifications.register();
 
-    // 3. Handle device registration token (sent by APNS/FCM)
+    // 3. Handle FCM token — save to backend with retry
     PushNotifications.addListener('registration', async (token) => {
-      console.log('[PushNotifications] Token generated:', token.value);
-      try {
-        await updateProfile({ pushToken: token.value });
-        console.log('[PushNotifications] Token successfully saved to backend.');
-      } catch (err: any) {
-        console.error('[PushNotifications] Failed to save token to backend:', err.message);
-      }
+      console.log(`[Push] ✅ FCM token received: ${token.value.slice(0, 20)}...`);
+      await saveTokenToBackend(token.value);
     });
 
-    // 4. Handle registration errors
+    // 4. Registration errors
     PushNotifications.addListener('registrationError', (error) => {
-      console.error('[PushNotifications] Registration error:', error.error);
+      console.error('[Push] ❌ Registration error:', error.error);
     });
 
-    // 5. ── App is OPEN (foreground): dispatch a custom event so the UI shows a banner ──
-    // Android does NOT auto-show a heads-up notification when the app is in foreground.
-    // We fire a CustomEvent so MobileHome (or any screen) can catch it and show a banner.
+    // 5. App is OPEN (foreground) — dispatch custom event so UI shows a banner
+    // Android does NOT auto-show a heads-up notification in foreground.
     PushNotifications.addListener('pushNotificationReceived', (notification) => {
-      console.log('[PushNotifications] Foreground notification:', notification);
+      console.log('[Push] Foreground notification received:', notification.title);
       const payload: FcmNotificationPayload = {
         title: notification.title || 'SendResqPls',
         body: notification.body || '',
@@ -69,22 +85,21 @@ export async function setupPushNotifications() {
       );
     });
 
-    // 6. ── User TAPS notification from status bar (app was background/closed) ──
-    // Navigate them to the right screen based on the notification data.
+    // 6. User TAPS notification from status bar (app was background/closed)
     PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
-      console.log('[PushNotifications] Tapped:', action);
+      console.log('[Push] Notification tapped:', action.notification?.title);
       const data = action.notification?.data || {};
 
       if (data.type === 'NEW_INCIDENT' && data.incidentId) {
-        // Admin tapped a new-report notification → open that request
         window.location.href = `/requests/${data.incidentId}`;
       } else if (data.incidentId) {
-        // Citizen tapped a status-update notification → show history
         window.location.href = '/mobile/history';
       }
     });
 
+    console.log('[Push] ✅ All listeners registered.');
+
   } catch (error: any) {
-    console.error('[PushNotifications] Setup error:', error.message);
+    console.error('[Push] ❌ Setup error:', error.message);
   }
 }

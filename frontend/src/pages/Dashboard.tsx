@@ -107,14 +107,19 @@ export default function Dashboard() {
       setIncidents(incRes.data);
       if (statsRes) {
         const s = statsRes.data;
-        setStats({ total: s.total, pending: s.pending, dispatched: s.dispatched, resolved: s.resolved });
+        const today = new Date().toDateString();
+        const resolvedToday = incRes.data.filter(
+          (i: Incident) => i.status === 'RESOLVED' && new Date(i.updatedAt).toDateString() === today
+        ).length;
+        setStats({ total: s.total, pending: s.pending, dispatched: s.dispatched, resolved: resolvedToday });
       } else {
         const d = incRes.data;
+        const today = new Date().toDateString();
         setStats({
-          total: d.length,
+          total:      d.length,
           pending:    d.filter((i: Incident) => i.status === 'PENDING').length,
           dispatched: d.filter((i: Incident) => i.status === 'DISPATCHED').length,
-          resolved:   d.filter((i: Incident) => i.status === 'RESOLVED').length,
+          resolved:   d.filter((i: Incident) => i.status === 'RESOLVED' && new Date(i.updatedAt).toDateString() === today).length,
         });
       }
     } catch { setIncidents([]); }

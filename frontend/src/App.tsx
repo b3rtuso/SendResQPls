@@ -58,6 +58,9 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* === DEFAULT LANDING: redirect / to admin login === */}
+        <Route path="/" element={<Navigate to="/admin/login" replace />} />
+
         {/* === ADMIN LOGIN (public) === */}
         <Route path="/admin/login" element={<AdminLogin />} />
 
@@ -82,13 +85,15 @@ function App() {
                 <Sidebar />
                 <main className="main-content">
                   <Routes>
-                    <Route path="/" element={<Dashboard />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/requests" element={<Requests />} />
                     <Route path="/requests/:id" element={<RequestDetails />} />
                     <Route path="/call-logs" element={<CallLogs />} />
                     <Route path="/analytics" element={<Analytics />} />
                     <Route path="/departments" element={<Departments />} />
                     <Route path="/settings" element={<SettingsPage />} />
+                    {/* Fallback inside admin: go to dashboard */}
+                    <Route path="*" element={<Navigate to="/dashboard" replace />} />
                   </Routes>
                 </main>
               </div>

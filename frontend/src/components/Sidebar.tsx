@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 
 const navItems = [
-  { to: '/',            icon: LayoutDashboard, label: 'Dashboard'          },
+  { to: '/dashboard',   icon: LayoutDashboard, label: 'Dashboard'          },
   { to: '/requests',    icon: FileText,         label: 'Requests'           },
   { to: '/call-logs',   icon: Phone,            label: 'Call Logs'          },
   { to: '/analytics',  icon: BarChart3,        label: 'Analytics'          },
@@ -25,7 +25,7 @@ export default function Sidebar() {
     localStorage.removeItem('userName');
     localStorage.removeItem('userEmail');
     localStorage.removeItem('userRole');
-    navigate('/login');
+    navigate('/admin/login');
   };
 
   return (

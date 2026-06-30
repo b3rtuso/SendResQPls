@@ -291,12 +291,22 @@ export default function Header({ title, subtitle }: HeaderProps) {
                     </div>
                   ) : (
                     notifications.map((n, i) => (
-                      <div key={n.id} style={{
-                        display: 'flex', alignItems: 'flex-start', gap: 10,
-                        padding: '10px 16px',
-                        borderTop: i === 0 ? 'none' : '1px solid var(--border-light)',
-                        background: n.isNew ? 'rgba(59,130,246,0.04)' : 'transparent',
-                      }}>
+                      <a
+                        key={n.id}
+                        href={`/requests/${n.id}`}
+                        onClick={() => setShowPanel(false)}
+                        style={{
+                          display: 'flex', alignItems: 'flex-start', gap: 10,
+                          padding: '10px 16px',
+                          borderTop: i === 0 ? 'none' : '1px solid var(--border-light)',
+                          background: n.isNew ? 'rgba(59,130,246,0.04)' : 'transparent',
+                          textDecoration: 'none',
+                          cursor: 'pointer',
+                          transition: 'background 0.15s',
+                        }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(37,99,235,0.06)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = n.isNew ? 'rgba(59,130,246,0.04)' : 'transparent')}
+                      >
                         <AlertCircle size={16} color={statusColor(n.status)} style={{ marginTop: 2, flexShrink: 0 }} />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>
@@ -309,15 +319,14 @@ export default function Header({ title, subtitle }: HeaderProps) {
                             )}
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <span style={{
-                              fontSize: 11, fontWeight: 600, color: statusColor(n.status),
-                            }}>
+                            <span style={{ fontSize: 11, fontWeight: 600, color: statusColor(n.status) }}>
                               {statusLabel(n.status)}
                             </span>
                             <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>• {n.time}</span>
                           </div>
                         </div>
-                      </div>
+                        <span style={{ fontSize: 11, color: '#94A3B8', flexShrink: 0, alignSelf: 'center' }}>→</span>
+                      </a>
                     ))
                   )}
                 </div>

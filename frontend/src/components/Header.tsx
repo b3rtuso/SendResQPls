@@ -1,6 +1,6 @@
-import { Search, Bell, X, AlertCircle, AlertTriangle } from 'lucide-react';
+import { Search, Bell, X, AlertCircle, AlertTriangle, HelpCircle, CheckCircle, XCircle } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { getIncidents } from '../api/client';
+import { getIncidents, updateIncidentStatus } from '../api/client';
 
 interface HeaderProps {
   title: string;
@@ -21,6 +21,12 @@ interface NewReportBanner {
   dept: string;
 }
 
+interface UnrecognizedIncident {
+  id: string;
+  type: string;
+  confidence: string;
+}
+
 const SEEN_KEY = 'admin_seen_incident_ids';
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -29,6 +35,8 @@ export default function Header({ title, subtitle }: HeaderProps) {
   const [showPanel, setShowPanel] = useState(false);
   const [unseenCount, setUnseenCount] = useState(0);
   const [newReportBanner, setNewReportBanner] = useState<NewReportBanner | null>(null);
+  const [unrecognizedModal, setUnrecognizedModal] = useState<UnrecognizedIncident | null>(null);
+  const [decidingIncident, setDecidingIncident] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const bannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sseRef = useRef<EventSource | null>(null);
@@ -73,13 +81,11 @@ export default function Header({ title, subtitle }: HeaderProps) {
       sse.addEventListener('new_incident', (e: MessageEvent) => {
         try {
           const data = JSON.parse(e.data);
-          // Show animated banner
           showBanner({
             id: data.id,
             type: data.aiDetectedType || 'Emergency',
             dept: data.aiRecommendedDept || 'MDRRMO',
           });
-          // Add to notification list immediately (optimistic)
           const newItem: NotifItem = {
             id: data.id,
             type: data.aiDetectedType || 'Emergency',
@@ -90,6 +96,28 @@ export default function Header({ title, subtitle }: HeaderProps) {
           setNotifications(prev => [newItem, ...prev].slice(0, 20));
           setUnseenCount(prev => prev + 1);
         } catch { /* ignore malformed events */ }
+      });
+
+      // Listen for unrecognized incident — show admin decision modal
+      sse.addEventListener('unrecognized_incident', (e: MessageEvent) => {
+        try {
+          const data = JSON.parse(e.data);
+          setUnrecognizedModal({
+            id: data.id,
+            type: data.aiDetectedType || 'Unknown',
+            confidence: data.aiConfidence || 'low',
+          });
+          // Also add to notification list
+          const newItem: NotifItem = {
+            id: data.id,
+            type: `⚠️ ${data.aiDetectedType || 'Unrecognized'}`,
+            status: 'REVIEWING',
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            isNew: true,
+          };
+          setNotifications(prev => [newItem, ...prev].slice(0, 20));
+          setUnseenCount(prev => prev + 1);
+        } catch { /* ignore */ }
       });
 
       sse.onerror = () => {
@@ -152,11 +180,149 @@ export default function Header({ title, subtitle }: HeaderProps) {
     }
   };
 
+  /** Handle admin decision on unrecognized incident: reject or keep for review */
+  const handleDecision = async (action: 'reject' | 'keep') => {
+    if (!unrecognizedModal) return;
+    setDecidingIncident(true);
+    try {
+      if (action === 'reject') {
+        await updateIncidentStatus(unrecognizedModal.id, { status: 'REJECTED', adminNotes: 'Rejected by admin — AI could not recognize the incident and admin determined it is not a valid emergency.' });
+      } else {
+        // Keep at REVIEWING — admin will handle it manually from Requests page
+        await updateIncidentStatus(unrecognizedModal.id, { adminNotes: 'Flagged for manual review — AI could not classify this incident. Admin will assess.' });
+      }
+      // Navigate to incident if keeping for review
+      if (action === 'keep') {
+        window.location.href = `/requests/${unrecognizedModal.id}`;
+      }
+    } catch (e) {
+      console.error('Failed to process decision:', e);
+    } finally {
+      setDecidingIncident(false);
+      setUnrecognizedModal(null);
+    }
+  };
+
   const userName  = localStorage.getItem('userName')  || 'MDRRMO Admin';
+
   const initials   = userName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
   return (
     <>
+      {/* ── Unrecognized Incident Decision Modal ─────────────────────────── */}
+      {unrecognizedModal && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 10000,
+          background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: 20,
+        }}>
+          <div style={{
+            background: 'white', borderRadius: 20, maxWidth: 480, width: '100%',
+            boxShadow: '0 32px 80px rgba(0,0,0,0.4)',
+            overflow: 'hidden',
+            animation: 'slideDown 0.3s cubic-bezier(0.16,1,0.3,1)',
+          }}>
+            {/* Modal header */}
+            <div style={{
+              background: 'linear-gradient(135deg, #F59E0B, #D97706)',
+              padding: '20px 24px',
+              display: 'flex', alignItems: 'center', gap: 12,
+            }}>
+              <div style={{
+                width: 44, height: 44, borderRadius: '50%',
+                background: 'rgba(255,255,255,0.2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
+              }}>
+                <HelpCircle size={24} color="white" />
+              </div>
+              <div>
+                <div style={{ color: 'white', fontWeight: 800, fontSize: 16 }}>
+                  ⚠️ AI Could Not Recognize Incident
+                </div>
+                <div style={{ color: 'rgba(255,255,255,0.85)', fontSize: 12, marginTop: 2 }}>
+                  Admin decision required
+                </div>
+              </div>
+            </div>
+
+            {/* Modal body */}
+            <div style={{ padding: '20px 24px' }}>
+              <div style={{
+                background: '#FFFBEB', border: '1px solid #FDE68A',
+                borderRadius: 12, padding: '14px 16px', marginBottom: 20,
+              }}>
+                <div style={{ fontSize: 13, color: '#92400E', marginBottom: 8, fontWeight: 600 }}>
+                  Incident Details
+                </div>
+                <div style={{ fontSize: 13, color: '#78350F', lineHeight: 1.6 }}>
+                  <div><strong>AI Type:</strong> {unrecognizedModal.type}</div>
+                  <div><strong>AI Confidence:</strong> <span style={{
+                    color: '#DC2626', fontWeight: 700, textTransform: 'capitalize',
+                  }}>{unrecognizedModal.confidence}</span></div>
+                  <div><strong>ID:</strong> {unrecognizedModal.id.slice(0, 12)}...</div>
+                </div>
+              </div>
+
+              <p style={{ fontSize: 14, color: '#374151', lineHeight: 1.65, marginBottom: 20 }}>
+                The AI system <strong>could not confidently identify</strong> this incident. 
+                Please review the photo and decide whether to <strong style={{ color: '#DC2626' }}>reject</strong> it as a false report, 
+                or <strong style={{ color: '#2563EB' }}>keep it for review</strong> to assess manually.
+              </p>
+
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button
+                  onClick={() => handleDecision('reject')}
+                  disabled={decidingIncident}
+                  style={{
+                    flex: 1, padding: '12px', borderRadius: 12,
+                    background: decidingIncident ? '#E5E7EB' : '#FEF2F2',
+                    color: decidingIncident ? '#9CA3AF' : '#DC2626',
+                    border: '1.5px solid #FECACA',
+                    fontWeight: 700, fontSize: 14, cursor: decidingIncident ? 'not-allowed' : 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    transition: 'all 0.15s', fontFamily: 'inherit',
+                  }}
+                >
+                  <XCircle size={16} />
+                  {decidingIncident ? 'Processing...' : 'Reject Report'}
+                </button>
+                <button
+                  onClick={() => handleDecision('keep')}
+                  disabled={decidingIncident}
+                  style={{
+                    flex: 1, padding: '12px', borderRadius: 12,
+                    background: decidingIncident ? '#E5E7EB' : 'linear-gradient(135deg, #2563EB, #1D4ED8)',
+                    color: 'white',
+                    border: 'none',
+                    fontWeight: 700, fontSize: 14, cursor: decidingIncident ? 'not-allowed' : 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    boxShadow: decidingIncident ? 'none' : '0 4px 14px rgba(37,99,235,0.35)',
+                    transition: 'all 0.15s', fontFamily: 'inherit',
+                  }}
+                >
+                  <CheckCircle size={16} />
+                  {decidingIncident ? 'Processing...' : 'Keep for Review'}
+                </button>
+              </div>
+
+              <button
+                onClick={() => setUnrecognizedModal(null)}
+                disabled={decidingIncident}
+                style={{
+                  width: '100%', marginTop: 10, padding: '8px',
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: '#94A3B8', fontSize: 12, fontFamily: 'inherit',
+                }}
+              >
+                Decide later (incident stays in Reviewing)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Real-time New Report Banner ──────────────────────────────────── */}
       {newReportBanner && (
         <div

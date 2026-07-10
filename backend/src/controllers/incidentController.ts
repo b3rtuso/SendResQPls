@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/db';
-import { runAIAnalysis } from '../services/aiService';
+import { runAIAnalysis, isRecognizedIncident } from '../services/aiService';
 import { sendStatusNotification } from '../services/emailService';
 import { performReverseGeocode } from '../services/geocodingService';
 import { syncDepartmentStatuses } from './departmentController';
@@ -152,6 +152,8 @@ export const reportIncident = async (req: Request, res: Response) => {
 
     // Run AI classification on the uploaded image
     const assessment = await runAIAnalysis(imageUrl);
+    const aiRecognized: boolean = assessment.recognized ?? isRecognizedIncident(assessment.incidentType);
+    const aiConfidence: string  = assessment.confidence || (aiRecognized ? 'medium' : 'low');
 
     // Map AI suggestion to a valid Department enum value
     let recommended: any = "RESCUE"; // Default fallback
@@ -162,7 +164,11 @@ export const reportIncident = async (req: Request, res: Response) => {
     else if (aiSuggestion.includes("MEDICAL") || aiSuggestion.includes("AMBULANCE")) recommended = "MEDICAL";
     else if (aiSuggestion.includes("ENGINEERING") || aiSuggestion.includes("ROAD")) recommended = "ENGINEERING";
 
-    // Save to database — this is what shows up in the admin Requests page
+    // If AI couldn't recognize: start at REVIEWING so admin MUST decide
+    // If AI recognized: start at PENDING (normal flow)
+    const initialStatus = aiRecognized ? 'PENDING' : 'REVIEWING';
+
+    // Save to database
     const incident = await prisma.incident.create({
       data: {
         reporterId: userId,
@@ -170,12 +176,13 @@ export const reportIncident = async (req: Request, res: Response) => {
         longitude: parseFloat(longitude),
         photoUrl: imageUrl,
         aiDetectedType: assessment.incidentType,
-        aiRecommendedDept: recommended,
-        status: 'PENDING'
+        aiRecommendedDept: aiRecognized ? recommended : undefined,
+        status: initialStatus,
+        adminNotes: aiRecognized ? undefined : `⚠️ AI could not recognize this incident (confidence: ${aiConfidence}). Admin review required.`,
       }
     });
 
-    console.log(`✅ New incident reported: ${incident.id} | Type: ${assessment.incidentType} | Dept: ${recommended}`);
+    console.log(`✅ New incident: ${incident.id} | Type: ${assessment.incidentType} | Recognized: ${aiRecognized} | Status: ${initialStatus}`);
 
     // ── Notify all admin devices via FCM push notification ──────────────────
     if (messaging) {
@@ -184,22 +191,22 @@ export const reportIncident = async (req: Request, res: Response) => {
           where: { role: 'ADMIN', pushToken: { not: null } },
           select: { pushToken: true },
         });
-        const adminTokens = admins.map(a => a.pushToken!).filter(Boolean);
+        const adminTokens = admins.map((a: any) => a.pushToken!).filter(Boolean);
         if (adminTokens.length > 0) {
           await messaging.sendEachForMulticast({
             tokens: adminTokens,
             notification: {
-              title: '🚨 Bagong Emergency Report!',
-              body: `${assessment.incidentType} na na-detect sa Balayan. I-review na agad!`,
+              title: aiRecognized ? '🚨 Bagong Emergency Report!' : '⚠️ Hindi Nakilala ang Incident!',
+              body: aiRecognized
+                ? `${assessment.incidentType} na na-detect sa Balayan. I-review na agad!`
+                : `May bagong report na hindi nakilala ng AI. Kailangan ng admin decision — Reject o I-review?`,
             },
             data: {
               incidentId: incident.id,
-              type: 'NEW_INCIDENT',
+              type: aiRecognized ? 'NEW_INCIDENT' : 'UNRECOGNIZED_INCIDENT',
               dept: recommended,
             },
-            android: {
-              notification: { sound: 'default', priority: 'high' },
-            },
+            android: { notification: { sound: 'default', priority: 'high' } },
           });
           console.log(`📱 Admin push sent to ${adminTokens.length} device(s)`);
         }
@@ -209,19 +216,32 @@ export const reportIncident = async (req: Request, res: Response) => {
     }
 
     // ── Broadcast SSE event to admin web dashboard clients ──────────────────
-    broadcastSseEvent('new_incident', {
-      id: incident.id,
-      aiDetectedType: assessment.incidentType,
-      aiRecommendedDept: recommended,
-      status: 'PENDING',
-      createdAt: incident.createdAt,
-    });
+    if (aiRecognized) {
+      broadcastSseEvent('new_incident', {
+        id: incident.id,
+        aiDetectedType: assessment.incidentType,
+        aiRecommendedDept: recommended,
+        status: 'PENDING',
+        createdAt: incident.createdAt,
+      });
+    } else {
+      // Special event: prompts admin to decide Reject or Review
+      broadcastSseEvent('unrecognized_incident', {
+        id: incident.id,
+        aiDetectedType: assessment.incidentType,
+        aiConfidence,
+        status: 'REVIEWING',
+        createdAt: incident.createdAt,
+      });
+    }
 
-    // Return the full incident so the mobile app can show it in notifications/history
     res.status(201).json({
       success: true,
-      message: "Emergency report submitted successfully",
+      message: aiRecognized
+        ? "Emergency report submitted successfully"
+        : "Report submitted. Admin has been notified to review this incident.",
       incident,
+      aiRecognized,
     });
   
   } catch (error: any) {

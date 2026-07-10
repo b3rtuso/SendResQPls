@@ -3,15 +3,45 @@ import axios from "axios";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
+// Known incident types the AI should recognize
+const KNOWN_INCIDENT_TYPES = [
+  'fire', 'flood', 'accident', 'medical', 'trauma', 'crime',
+  'landslide', 'typhoon', 'earthquake', 'rescue', 'emergency',
+  'shooting', 'robbery', 'assault', 'drowning', 'explosion',
+  'structural', 'road', 'vehicle', 'injury', 'collapse'
+];
+
+/** Returns true if the AI incident type is recognizable */
+export const isRecognizedIncident = (incidentType: string): boolean => {
+  if (!incidentType) return false;
+  const lower = incidentType.toLowerCase();
+  // Generic/fallback responses are treated as unrecognized
+  if (lower.includes('pending review') || lower.includes('unknown') || lower.includes('unclear')) return false;
+  return KNOWN_INCIDENT_TYPES.some(keyword => lower.includes(keyword));
+};
+
 export const runAIAnalysis = async (imageUrl: string) => {
   try {
-    // 2026 Model Name: gemini-3-flash-preview
     const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
     const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer' });
     const imageData = Buffer.from(imageResponse.data).toString("base64");
 
-    const prompt = `Analyze this disaster image. Return JSON: {"incidentType": "...", "recommendedDept": "..."}`;
+    const prompt = `You are an emergency incident classifier for MDRRMO Balayan, Batangas Philippines.
+Analyze this image and determine if it shows a real emergency incident.
+
+Return ONLY a JSON object with this exact structure:
+{
+  "incidentType": "<specific type or 'Unrecognized'>",
+  "recommendedDept": "<BFP|PNP|MEDICAL|ENGINEERING|RESCUE|UNKNOWN>",
+  "confidence": "<high|medium|low>",
+  "recognized": <true|false>
+}
+
+Rules:
+- If the image clearly shows fire/flood/accident/crime/medical emergency/trauma → recognized: true
+- If the image is unclear, not an emergency, a selfie, a random photo, or unrelated → recognized: false, incidentType: "Unrecognized"
+- confidence: "high" if very clear, "medium" if somewhat clear, "low" if unclear`;
 
     const result = await model.generateContent([
       prompt,
@@ -20,16 +50,23 @@ export const runAIAnalysis = async (imageUrl: string) => {
 
     const text = result.response.text();
     const jsonMatch = text.match(/\{.*\}/s);
-    return jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(text);
+    const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(text);
+
+    // Normalize the recognized flag
+    if (parsed.recognized === undefined) {
+      parsed.recognized = isRecognizedIncident(parsed.incidentType);
+    }
+
+    return parsed;
 
   } catch (error: any) {
-    // IMPORTANT: Log this so you can see it in the terminal!
     console.error("❌ Gemini AI Service Error:", error.message);
-    
-    // THESIS FALLBACK: Return a generic response so the database save still works
+    // Fallback: treat as unrecognized so admin can decide
     return {
       incidentType: "Emergency (Pending Review)",
-      recommendedDept: "MDRRMO Main Dispatch"
+      recommendedDept: "RESCUE",
+      confidence: "low",
+      recognized: false,
     };
   }
 };

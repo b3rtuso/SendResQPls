@@ -241,9 +241,35 @@ export const updateIncidentStatus = async (req: Request, res: Response) => {
     const { status, adminNotes, assignedDepartment } = req.body;
 
     const data: any = {};
-    if (status) data.status = status;
     if (adminNotes) data.adminNotes = adminNotes;
     if (assignedDepartment) data.assignedDepartment = assignedDepartment;
+
+    // ── One-way status progression guard ─────────────────────────────────────
+    if (status) {
+      const STATUS_ORDER = ['PENDING', 'REVIEWING', 'DISPATCHED', 'RESOLVED'];
+      const current = await prisma.incident.findUnique({ where: { id }, select: { status: true } });
+      if (!current) return res.status(404).json({ error: 'Incident not found' });
+
+      const currentIdx = STATUS_ORDER.indexOf(current.status);
+      const newIdx     = STATUS_ORDER.indexOf(status);
+      const isTerminal = current.status === 'RESOLVED' || current.status === 'REJECTED';
+
+      if (isTerminal) {
+        return res.status(400).json({
+          error: `Incident is already ${current.status} and cannot be changed.`,
+        });
+      }
+
+      // Allow REJECTED from any non-terminal state; block backward moves
+      if (status !== 'REJECTED' && newIdx !== -1 && newIdx <= currentIdx) {
+        return res.status(400).json({
+          error: `Cannot move status backward from ${current.status} to ${status}. Status can only move forward.`,
+        });
+      }
+
+      data.status = status;
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     const updated = await prisma.incident.update({
       where: { id },

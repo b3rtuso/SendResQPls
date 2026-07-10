@@ -42,6 +42,19 @@ const emergencyMarkerIcon = L.divIcon({
 
 const allStatuses: Status[] = ['PENDING', 'REVIEWING', 'DISPATCHED', 'RESOLVED', 'REJECTED'];
 
+// One-way progression order (cannot go backwards)
+const STATUS_ORDER: Status[] = ['PENDING', 'REVIEWING', 'DISPATCHED', 'RESOLVED'];
+
+/** Returns which statuses are allowed from the current status */
+function getAvailableStatuses(current: Status): Status[] {
+  // If already at a terminal state, nothing is available
+  if (current === 'RESOLVED' || current === 'REJECTED') return [];
+  const idx = STATUS_ORDER.indexOf(current);
+  // Can only move forward (next steps) + REJECTED from any non-terminal state
+  const forward = STATUS_ORDER.slice(idx + 1);
+  return [...forward, 'REJECTED'];
+}
+
 const deptNames: Record<string, string> = {
   BFP: 'BFP (Bureau of Fire Protection)',
   PNP: 'PNP (Philippine National Police)',
@@ -433,13 +446,58 @@ export default function RequestDetails() {
             <div className="card">
               <div className="card-header"><h3>Update Status</h3></div>
               <div className="card-body">
+                <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 14 }}>
+                  Status can only move <strong>forward</strong> — once updated it cannot be reversed.
+                </p>
                 <div className="status-grid">
-                  {allStatuses.map((s) => (
-                    <button key={s} className={`status-btn ${currentStatus === s ? 'active' : ''}`} onClick={() => handleStatusUpdate(s)} disabled={saving}>
-                      {s}
-                    </button>
-                  ))}
+                  {allStatuses.map((s) => {
+                    const isCurrent   = currentStatus === s;
+                    const available   = getAvailableStatuses(currentStatus);
+                    const isAvailable = available.includes(s);
+                    const isPast      = !isCurrent && !isAvailable;
+                    const isTerminal  = currentStatus === 'RESOLVED' || currentStatus === 'REJECTED';
+
+                    return (
+                      <button
+                        key={s}
+                        className={`status-btn ${isCurrent ? 'active' : ''}`}
+                        onClick={() => isAvailable && !saving && handleStatusUpdate(s)}
+                        disabled={saving || isPast || isCurrent || isTerminal}
+                        title={
+                          isCurrent   ? `Current status: ${s}` :
+                          isPast      ? `Cannot go back to ${s}` :
+                          isTerminal  ? 'Incident is closed' :
+                          `Update to ${s}`
+                        }
+                        style={{
+                          opacity:   isPast || isTerminal ? 0.35 : 1,
+                          cursor:    isPast || isTerminal || isCurrent ? 'not-allowed' : 'pointer',
+                          position:  'relative',
+                          filter:    isPast ? 'grayscale(0.6)' : 'none',
+                        }}
+                      >
+                        {isPast && (
+                          <span style={{ marginRight: 4, fontSize: 11 }}>🔒</span>
+                        )}
+                        {isCurrent && (
+                          <span style={{ marginRight: 4, fontSize: 11 }}>●</span>
+                        )}
+                        {s}
+                      </button>
+                    );
+                  })}
                 </div>
+                {(currentStatus === 'RESOLVED' || currentStatus === 'REJECTED') && (
+                  <div style={{
+                    marginTop: 12, padding: '10px 14px',
+                    background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)',
+                    borderRadius: 10, fontSize: 13, color: 'var(--text-secondary)',
+                    display: 'flex', alignItems: 'center', gap: 8,
+                  }}>
+                    <CheckCircle2 size={15} color="#22C55E" />
+                    This incident is <strong>closed</strong> — status is locked and cannot be changed.
+                  </div>
+                )}
                 <div className="form-group" style={{ marginTop: 16 }}>
                   <label>Admin Notes</label>
                   <textarea

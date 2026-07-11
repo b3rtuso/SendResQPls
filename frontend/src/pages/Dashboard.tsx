@@ -236,50 +236,64 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* ── Stat Cards ───────────────────────────────────── */}
-        <div className="stats-grid fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 18, marginBottom: 24 }}>
-          {STAT_CARDS.map(({ label, value, accent, bg, glow, activeGlow, filter, icon: Icon }) => {
+        {/* ── Stat Cards ─────────────────────────────────── */}
+        <div className="stats-grid fade-in">
+          {STAT_CARDS.map(({ label, value, accent, bg, activeGlow, filter, icon: Icon }) => {
             const isActive = statusFilter === filter;
             return (
               <div
                 key={label}
-                className={`stat-card-clickable ${isActive ? 'active' : ''}`}
                 onClick={() => handleStatCardClick(filter as Status | 'ALL')}
                 style={{
-                  background: 'white',
+                  background: isActive ? bg : 'white',
                   borderRadius: 14,
-                  padding: '22px 22px',
+                  padding: '22px',
                   borderLeft: `4px solid ${accent}`,
-                  boxShadow: '0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  '--glow-color': glow,
-                  '--active-bg': bg,
-                  '--active-border': accent,
-                  '--active-glow': activeGlow,
-                } as any}
+                  boxShadow: isActive
+                    ? `0 0 0 2px ${accent}30, 0 4px 20px ${activeGlow}`
+                    : '0 1px 4px rgba(0,0,0,0.05)',
+                  border: `1px solid ${isActive ? accent + '40' : '#F1F5F9'}`,
+                  borderLeftWidth: 4,
+                  borderLeftColor: accent,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s cubic-bezier(0.16,1,0.3,1)',
+                  transform: isActive ? 'translateY(-2px)' : 'none',
+                }}
               >
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                   <div>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+                    <div style={{
+                      fontSize: 10.5, fontWeight: 700, color: '#94A3B8',
+                      textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8,
+                    }}>
                       {label}
                     </div>
-                    <div style={{ fontSize: 38, fontWeight: 900, color: '#0F172A', lineHeight: 1, letterSpacing: '-1px' }}>
-                      {loading ? '—' : value}
+                    <div style={{
+                      fontSize: 36, fontWeight: 900, color: '#0F172A',
+                      lineHeight: 1, letterSpacing: '-1px',
+                    }}>
+                      {value}
                     </div>
                   </div>
                   <div style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 10,
-                    background: bg,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                    width: 42, height: 42, borderRadius: 10,
+                    background: isActive ? `${accent}20` : bg,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0,
+                    transition: 'background 0.2s',
                   }}>
-                    <Icon size={22} style={{ color: accent }} />
+                    <Icon size={20} style={{ color: accent }} />
                   </div>
                 </div>
+                {isActive && (
+                  <div style={{
+                    marginTop: 10, fontSize: 11, fontWeight: 700,
+                    color: accent, display: 'flex', alignItems: 'center', gap: 4,
+                  }}>
+                    <span style={{ width: 5, height: 5, borderRadius: '50%', background: accent, display: 'inline-block' }} />
+                    Filtering by {label}
+                  </div>
+                )}
               </div>
             );
           })}
@@ -420,71 +434,81 @@ export default function Dashboard() {
             </div>
             {loading && filteredIncidents.length === 0 ? (
               <div style={{ padding: 48, textAlign: 'center', color: '#94A3B8' }}>
-                <RefreshCw size={24} style={{ animation: 'spin 1s linear infinite', display: 'inline-block' }} />
-                <div style={{ marginTop: 8, fontSize: 13 }}>Loading incidents…</div>
+                <RefreshCw size={22} style={{ animation: 'spin 0.8s linear infinite', display: 'inline-block', marginBottom: 10 }} />
+                <div style={{ fontSize: 13 }}>Loading incidents…</div>
               </div>
             ) : filteredIncidents.length === 0 ? (
-              <div style={{ padding: 48, textAlign: 'center', color: '#94A3B8' }}>
-                <div style={{ fontSize: 36, marginBottom: 8 }}>📋</div>
-                <div style={{ fontSize: 14, fontWeight: 600 }}>No reports match filter</div>
-                <div style={{ fontSize: 13, marginTop: 4 }}>Try clearing the status filter to see other items.</div>
+              <div style={{ padding: 48, textAlign: 'center' }}>
+                <div style={{
+                  width: 48, height: 48, borderRadius: 12, background: '#F1F5F9',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  margin: '0 auto 12px',
+                }}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#475569' }}>No reports match filter</div>
+                <div style={{ fontSize: 12.5, marginTop: 4, color: '#94A3B8' }}>Clear the status filter to see all items.</div>
               </div>
             ) : (
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                   <thead>
-                    <tr style={{ background: '#F8FAFC' }}>
+                    <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #F1F5F9' }}>
                       {['ID', 'Type', 'Location', 'Status', 'Time', 'Action'].map(h => (
-                        <th key={h} style={{ padding: '12px 18px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>{h}</th>
+                        <th key={h} style={{ padding: '11px 18px', textAlign: 'left', fontSize: 10.5, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.07em', whiteSpace: 'nowrap' }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredIncidents.slice(0, 8).map((inc, idx) => {
+                    {filteredIncidents.slice(0, 8).map((inc) => {
                       const ss = STATUS_STYLE[inc.status] || STATUS_STYLE.PENDING;
                       const normalized = normalizeIncidentType(inc.aiDetectedType);
                       const ti = TYPE_ICON[normalized] || { emoji: '⚠️', color: '#64748B' };
                       return (
-                        <tr key={inc.id} style={{ borderBottom: '1px solid #F8FAFC', background: idx % 2 === 0 ? 'white' : '#FAFBFC' }}
-                          onMouseEnter={e => e.currentTarget.style.background = '#EFF6FF'}
-                          onMouseLeave={e => e.currentTarget.style.background = idx % 2 === 0 ? 'white' : '#FAFBFC'}
+                        <tr
+                          key={inc.id}
+                          style={{ borderBottom: '1px solid #F8FAFC', cursor: 'pointer', transition: 'background 0.1s' }}
+                          onMouseEnter={e => e.currentTarget.style.background = '#F5F8FF'}
+                          onMouseLeave={e => e.currentTarget.style.background = ''}
+                          onClick={() => navigate(`/requests/${inc.id}`)}
                         >
-                          <td style={{ padding: '14px 18px', fontFamily: 'monospace', fontSize: 11, color: '#94A3B8', whiteSpace: 'nowrap' }}>
+                          <td style={{ padding: '13px 18px', fontFamily: 'monospace', fontSize: 10.5, color: '#94A3B8', whiteSpace: 'nowrap' }}>
                             #{inc.id.slice(0, 8).toUpperCase()}
                           </td>
-                          <td style={{ padding: '14px 18px', whiteSpace: 'nowrap' }}>
+                          <td style={{ padding: '13px 18px', whiteSpace: 'nowrap' }}>
                             <span style={{ marginRight: 6 }}>{ti.emoji}</span>
                             <span style={{ fontWeight: 600, color: '#1E293B' }}>{inc.aiDetectedType || 'Unknown'}</span>
                           </td>
-                          <td style={{ padding: '14px 18px', color: '#475569', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          <td style={{ padding: '13px 18px', color: '#475569', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {inc.latitude && inc.longitude
                               ? getNearestBarangay(inc.latitude, inc.longitude).split(',')[0]
                               : '—'}
                           </td>
-                          <td style={{ padding: '14px 18px' }}>
+                          <td style={{ padding: '13px 18px' }}>
                             <span style={{
-                              padding: '4px 10px', borderRadius: 20,
+                              padding: '3px 9px', borderRadius: 6,
                               background: ss.bg, color: ss.color,
-                              fontSize: 10, fontWeight: 700, letterSpacing: '0.06em',
+                              fontSize: 10, fontWeight: 800, letterSpacing: '0.06em',
+                              textTransform: 'uppercase',
                             }}>
                               {ss.label}
                             </span>
                           </td>
-                          <td style={{ padding: '14px 18px', color: '#94A3B8', fontStyle: 'italic', whiteSpace: 'nowrap' }}>
+                          <td style={{ padding: '13px 18px', color: '#94A3B8', fontSize: 12, whiteSpace: 'nowrap' }}>
                             {timeAgo(inc.createdAt)}
                           </td>
-                          <td style={{ padding: '14px 18px' }}>
+                          <td style={{ padding: '13px 18px' }}>
                             <button
-                              onClick={() => navigate(`/requests/${inc.id}`)}
+                              onClick={e => { e.stopPropagation(); navigate(`/requests/${inc.id}`); }}
                               style={{
-                                padding: '6px 14px', borderRadius: 7,
-                                background: '#2563EB', color: 'white',
-                                border: 'none', fontSize: 12, fontWeight: 700,
+                                padding: '5px 12px', borderRadius: 7,
+                                background: 'var(--primary-bg)', color: 'var(--primary)',
+                                border: '1px solid rgba(37,99,235,0.2)', fontSize: 11.5, fontWeight: 700,
                                 cursor: 'pointer', fontFamily: 'inherit',
-                                transition: 'background 0.15s',
+                                transition: 'all 0.15s',
                               }}
-                              onMouseEnter={e => e.currentTarget.style.background = '#1D4ED8'}
-                              onMouseLeave={e => e.currentTarget.style.background = '#2563EB'}
+                              onMouseEnter={e => { e.currentTarget.style.background = 'var(--primary)'; e.currentTarget.style.color = 'white'; }}
+                              onMouseLeave={e => { e.currentTarget.style.background = 'var(--primary-bg)'; e.currentTarget.style.color = 'var(--primary)'; }}
                             >
                               View
                             </button>
@@ -548,10 +572,6 @@ export default function Dashboard() {
         </div>
 
       </div>
-      <style>{`
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
-        @keyframes spin  { to { transform: rotate(360deg); } }
-      `}</style>
     </>
   );
 }

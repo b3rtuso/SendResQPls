@@ -5,11 +5,11 @@ import { ShieldAlert, Mail, Lock, Eye, EyeOff, AlertTriangle, CheckCircle } from
 
 export default function AdminLogin() {
   const navigate = useNavigate();
-  const [email, setEmail]       = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleLogin = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -20,10 +20,10 @@ export default function AdminLogin() {
       const { token, role, user } = res.data;
       if (role !== 'ADMIN') { setError('Access denied. This portal is for MDRRMO administrators only.'); return; }
       localStorage.setItem('token', token);
-      localStorage.setItem('userId',    user?.id    || '');
-      localStorage.setItem('userName',  user?.name  || 'Admin');
+      localStorage.setItem('userId', user?.id || '');
+      localStorage.setItem('userName', user?.name || 'Admin');
       localStorage.setItem('userEmail', user?.email || '');
-      localStorage.setItem('userRole',  role);
+      localStorage.setItem('userRole', role);
       navigate('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.error || 'Invalid email or password.');
@@ -207,11 +207,24 @@ export default function AdminLogin() {
         .al-inp-pass { padding-right:44px; }
 
         .al-eye {
-          position:absolute; right:11px; top:50%; transform:translateY(-50%);
-          background:none; border:none; cursor:pointer; color:#9CA3AF;
-          display:flex; padding:4px; border-radius:6px; transition:color .15s;
-        }
-        .al-eye:hover { color:#475569; }
+            position: absolute;
+            top: 30%;
+            right: 12px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #9CA3AF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+            border-radius: 6px;
+            transition: color .15s;
+                }
+
+        .al-eye:hover {
+            color: #6B7280;
+                      }
 
         .al-btn {
           width:100%; padding:14px;
@@ -362,7 +375,7 @@ export default function AdminLogin() {
                     aria-label={showPass ? 'Hide password' : 'Show password'}
                     tabIndex={-1}
                   >
-                    {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
+                    {showPass ? <Eye size={15} /> : <EyeOff size={15} />}
                   </button>
                 </div>
               </div>

@@ -208,7 +208,7 @@ export default function AdminLogin() {
 
         .al-eye {
             position: absolute;
-            top: 30%;
+            top: 26%;
             right: 12px;
             background: none;
             border: none;

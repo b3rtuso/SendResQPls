@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
+import PageLoader from '../components/PageLoader';
 import Toast, { type ToastType } from '../components/Toast';
 import { ArrowLeft, Brain, MapPin, Camera, User, Clock, ExternalLink, X, Phone, Building2, CheckCircle2 } from 'lucide-react';
 import { updateIncidentStatus, getIncident as fetchIncident, reverseGeocode } from '../api/client';
@@ -186,10 +187,9 @@ export default function RequestDetails() {
   if (loading) {
     return (
       <>
-        <Header title="Loading..." subtitle="Fetching incident details" />
-        <div className="page-content" style={{ textAlign: 'center', padding: 80 }}>
-          <div className="spin" style={{ display: 'inline-block' }}><Clock size={32} /></div>
-          <p style={{ marginTop: 16, color: 'var(--text-muted)' }}>Loading incident from database...</p>
+        <Header title="Incident Details" subtitle="Loading incident record" />
+        <div className="page-content">
+          <PageLoader message="Loading incident from database..." />
         </div>
       </>
     );
@@ -199,10 +199,16 @@ export default function RequestDetails() {
     return (
       <>
         <Header title="Not Found" subtitle="Incident could not be loaded" />
-        <div className="page-content" style={{ textAlign: 'center', padding: 80 }}>
-          <p style={{ fontSize: 48, marginBottom: 16 }}>❌</p>
-          <h3>Incident not found</h3>
-          <p style={{ color: 'var(--text-muted)', marginTop: 8, marginBottom: 20 }}>The incident ID may be invalid or the database is unreachable.</p>
+        <div className="page-content" style={{ textAlign: 'center', padding: '64px 0' }}>
+          <div style={{
+            width: 56, height: 56, borderRadius: 14, background: 'var(--danger-bg)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 16px',
+          }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6 }}>Incident not found</h3>
+          <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 20, maxWidth: 320, margin: '0 auto 20px' }}>The incident ID may be invalid or the database is unreachable.</p>
           <button className="btn btn-primary" onClick={() => navigate('/requests')}>Back to Requests</button>
         </div>
       </>

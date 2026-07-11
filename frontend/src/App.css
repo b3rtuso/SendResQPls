@@ -137,11 +137,22 @@ button:active:not(:disabled) {
 }
 
 .mobile-home-header {
-  padding: 56px 24px 32px;
-  background: linear-gradient(160deg, #1E3A5F 0%, #1D4ED8 60%, #2563EB 100%);
+  padding: 60px 24px 40px;
+  background: linear-gradient(155deg, #0F1F38 0%, #1E3A5F 40%, #2563EB 100%);
   color: white;
   position: relative;
   overflow: hidden;
+  box-shadow: 0 6px 24px rgba(15,31,56,0.35);
+}
+
+.mobile-home-header::before {
+  content: '';
+  position: absolute;
+  top: -80px; right: -60px;
+  width: 200px; height: 200px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 50%;
+  pointer-events: none;
 }
 
 .mobile-home-header::after {
@@ -149,20 +160,20 @@ button:active:not(:disabled) {
   position: absolute;
   bottom: -1px;
   left: 0; right: 0;
-  height: 28px;
+  height: 24px;
   background: #F1F5F9;
-  border-radius: 28px 28px 0 0;
+  border-radius: 24px 24px 0 0;
 }
 
 .mobile-home-header .header-top {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 20px;
+  margin-bottom: 22px;
 }
 
 .mobile-home-header .greeting {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   opacity: 0.7;
   letter-spacing: 0.3px;
@@ -194,35 +205,40 @@ button:active:not(:disabled) {
 
 .sos-card {
   margin: 20px 20px 0;
-  padding: 36px 24px;
-  background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
-  border-radius: 22px;
+  padding: 38px 24px 32px;
+  background: linear-gradient(150deg, #EF4444 0%, #DC2626 45%, #B91C1C 100%);
+  border-radius: 20px;
   text-align: center;
   color: white;
   cursor: pointer;
   animation: sosPulse 2.4s ease-in-out infinite;
   position: relative;
   overflow: hidden;
-  -webkit-tap-highlight-color: rgba(255,255,255,0.15);
+  -webkit-tap-highlight-color: rgba(255,255,255,0.1);
   user-select: none;
-  box-shadow: 0 8px 32px rgba(185, 28, 28, 0.45), 0 2px 8px rgba(0,0,0,0.15);
+  box-shadow:
+    0 12px 40px rgba(185,28,28,0.45),
+    0 4px 12px rgba(0,0,0,0.18),
+    inset 0 1px 0 rgba(255,255,255,0.18);
+  border: 1px solid rgba(255,255,255,0.12);
 }
 
 .sos-card::before {
   content: '';
   position: absolute;
-  inset: 0;
-  border-radius: 22px;
-  border: 1.5px solid rgba(255,255,255,0.22);
+  top: -60px; right: -60px;
+  width: 180px; height: 180px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 50%;
   pointer-events: none;
 }
 
 .sos-card::after {
   content: '';
   position: absolute;
-  top: -40px; right: -40px;
-  width: 120px; height: 120px;
-  background: rgba(255,255,255,0.07);
+  bottom: -40px; left: -30px;
+  width: 110px; height: 110px;
+  background: rgba(0,0,0,0.08);
   border-radius: 50%;
   pointer-events: none;
 }
@@ -423,10 +439,10 @@ button:active:not(:disabled) {
 }
 
 .upload-zone {
-  background: linear-gradient(135deg, rgba(220, 38, 38, 0.04), rgba(37, 99, 235, 0.04));
-  border: 2px dashed #D1D5DB;
-  border-radius: 20px;
-  padding: 40px 24px;
+  background: #F8FAFF;
+  border: 2px dashed #BFDBFE;
+  border-radius: 16px;
+  padding: 36px 20px;
   text-align: center;
   cursor: pointer;
   transition: all var(--transition);
@@ -435,7 +451,11 @@ button:active:not(:disabled) {
 
 .upload-zone:hover {
   border-color: var(--primary);
-  background: rgba(37, 99, 235, 0.04);
+  background: rgba(37, 99, 235, 0.03);
+}
+
+.upload-zone:active {
+  transform: scale(0.99);
 }
 
 .upload-zone .cam-icon {
@@ -515,21 +535,27 @@ button:active:not(:disabled) {
 .history-card {
   background: white;
   border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 20px;
+  border-radius: 14px;
+  padding: 18px;
+  transition: all var(--transition);
+  border-left: 3px solid var(--border);
+}
+
+.history-card:active {
+  transform: scale(0.99);
 }
 
 .history-card-top {
   display: flex;
   align-items: flex-start;
-  gap: 14px;
-  margin-bottom: 14px;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
 .history-card-top .incident-dot {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
   background: #FEF3C7;
   display: flex;
   align-items: center;
@@ -538,13 +564,13 @@ button:active:not(:disabled) {
 }
 
 .history-card-top .incident-info h4 {
-  font-size: 15px;
+  font-size: 14.5px;
   font-weight: 700;
   color: var(--text-primary);
 }
 
 .history-card-top .incident-info .location {
-  font-size: 12px;
+  font-size: 11.5px;
   color: var(--text-secondary);
   display: flex;
   align-items: center;
@@ -556,84 +582,88 @@ button:active:not(:disabled) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 12px;
+  padding-top: 10px;
   border-top: 1px solid var(--border-light);
 }
 
 .history-card-bottom .reported-on {
-  font-size: 11px;
+  font-size: 10.5px;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.4px;
   color: var(--text-muted);
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .history-card-bottom .reported-date {
-  font-size: 13px;
+  font-size: 12.5px;
   color: var(--text-primary);
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .history-card-bottom .mobile-badge {
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 10.5px;
+  font-weight: 800;
   letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 
 .mobile-badge.pending {
   background: #FEF3C7;
-  color: #D97706;
+  color: #B45309;
   border: 1px solid #FDE68A;
 }
 
 .mobile-badge.dispatched {
   background: var(--primary-bg);
-  color: var(--primary);
-  border: 1px solid var(--primary-light);
+  color: var(--primary-dark);
+  border: 1px solid rgba(37,99,235,0.2);
 }
 
 .mobile-badge.resolved {
   background: var(--success-bg);
-  color: var(--success);
-  border: 1px solid #86EFAC;
+  color: #047857;
+  border: 1px solid var(--success-border);
 }
 
 /* ===== MOBILE PROFILE ===== */
 .profile-header-card {
-  background: linear-gradient(135deg, #2563EB 0%, #1E3A5F 100%);
+  background: linear-gradient(150deg, #1E3A5F 0%, #2563EB 60%, #1D4ED8 100%);
   margin: 0 -24px;
-  padding: 40px 24px 32px;
+  padding: 44px 24px 36px;
   text-align: center;
   color: white;
+  box-shadow: 0 8px 32px rgba(30,58,95,0.35);
 }
 
 .profile-header-card .profile-avatar {
-  width: 88px;
-  height: 88px;
+  width: 84px;
+  height: 84px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.15);
-  border: 3px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.18);
+  border: 2.5px solid rgba(255, 255, 255, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32px;
+  font-size: 30px;
   font-weight: 800;
   margin: 0 auto 16px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
 }
 
 .profile-header-card h2 {
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 800;
   color: white;
   margin-bottom: 4px;
+  letter-spacing: -0.3px;
 }
 
 .profile-header-card .phone-text {
-  font-size: 14px;
-  opacity: 0.75;
-  margin-bottom: 12px;
+  font-size: 13.5px;
+  opacity: 0.72;
+  margin-bottom: 14px;
 }
 
 .profile-header-card .verified-badge {
@@ -641,25 +671,27 @@ button:active:not(:disabled) {
   align-items: center;
   gap: 6px;
   background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.2);
   padding: 6px 16px;
   border-radius: 20px;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
 }
 
 .settings-list {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  margin-top: 24px;
+  gap: 0;
+  margin-top: 20px;
 }
 
 .settings-item {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 18px 0;
+  gap: 14px;
+  padding: 16px 4px;
   border-bottom: 1px solid var(--border-light);
   cursor: pointer;
   transition: all var(--transition);
@@ -667,27 +699,41 @@ button:active:not(:disabled) {
   color: inherit;
 }
 
-.settings-item:hover {
+.settings-item:active {
+  background: var(--primary-bg);
+  border-radius: 10px;
   padding-left: 8px;
 }
 
 .settings-item .settings-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
   background: var(--bg-body);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--text-secondary);
   flex-shrink: 0;
+  transition: all var(--transition);
+}
+
+.settings-item:active .settings-icon {
+  background: var(--primary-bg);
+  color: var(--primary);
 }
 
 .settings-item .settings-text {
   flex: 1;
-  font-size: 15px;
+  font-size: 14.5px;
   font-weight: 600;
   color: var(--text-primary);
+}
+
+.settings-item .settings-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 1px;
 }
 
 .settings-item .chevron {

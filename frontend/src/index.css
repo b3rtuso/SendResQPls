@@ -115,6 +115,17 @@ body {
 .fade-in-2 { animation: fadeUp 0.3s 0.08s ease both; }
 .fade-in-3 { animation: fadeUp 0.3s 0.16s ease both; }
 
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.spin { animation: spin 0.8s linear infinite; display: inline-block; }
+
+@keyframes skeletonShimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+
 /* Clickable cards */
 .card-clickable {
   cursor: pointer;
@@ -621,33 +632,40 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 7px;
   padding: 9px 18px;
   border-radius: var(--radius-md);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   font-family: var(--font);
   cursor: pointer;
   transition: all var(--transition);
-  border: 1px solid transparent;
+  border: 1.5px solid transparent;
   white-space: nowrap;
   letter-spacing: 0.01em;
+  line-height: 1;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 .btn:active:not(:disabled) {
-  transform: scale(0.97);
+  transform: scale(0.97) translateY(1px);
 }
 
 .btn-primary {
   background: var(--primary);
   color: white;
   border-color: var(--primary);
-  box-shadow: 0 1px 3px rgba(79, 70, 229, 0.3);
+  box-shadow: var(--shadow-primary);
 }
 
 .btn-primary:hover:not(:disabled) {
   background: var(--primary-dark);
-  box-shadow: var(--shadow-primary);
+  box-shadow: 0 6px 20px rgba(37,99,235,0.40);
   transform: translateY(-1px);
 }
 
@@ -666,26 +684,50 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 .btn-danger {
   background: var(--danger);
   color: white;
-  box-shadow: 0 1px 3px rgba(239,68,68,0.3);
+  border-color: var(--danger);
+  box-shadow: 0 2px 8px rgba(239,68,68,0.28);
 }
 
 .btn-danger:hover:not(:disabled) {
   background: #DC2626;
-  box-shadow: 0 4px 12px rgba(239,68,68,0.35);
+  box-shadow: 0 6px 16px rgba(239,68,68,0.38);
+  transform: translateY(-1px);
 }
 
 .btn-success {
   background: var(--success);
   color: white;
+  border-color: var(--success);
+  box-shadow: 0 2px 8px rgba(16,185,129,0.28);
+}
+
+.btn-success:hover:not(:disabled) {
+  background: #059669;
+  box-shadow: 0 6px 16px rgba(16,185,129,0.38);
+  transform: translateY(-1px);
 }
 
 .btn-purple {
   background: var(--purple);
   color: white;
+  border-color: var(--purple);
 }
 
 .btn-purple:hover:not(:disabled) {
   background: #7C3AED;
+  box-shadow: 0 6px 16px rgba(139,92,246,0.38);
+  transform: translateY(-1px);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-muted);
+  border-color: transparent;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--bg-body);
+  color: var(--text-secondary);
 }
 
 .btn-sm {
@@ -694,8 +736,8 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 }
 
 .btn-lg {
-  padding: 11px 24px;
-  font-size: 14px;
+  padding: 12px 26px;
+  font-size: 14.5px;
 }
 
 /* ===== STATUS UPDATE GRID ===== */
@@ -731,33 +773,51 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 
 /* ===== FORMS ===== */
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 
 .form-group label {
   display: block;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
   color: var(--text-secondary);
   margin-bottom: 6px;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .form-control {
   width: 100%;
   padding: 10px 14px;
-  border: 1px solid var(--border);
+  border: 1.5px solid var(--border);
   border-radius: var(--radius-md);
-  font-size: 13px;
+  font-size: 13.5px;
   font-family: var(--font);
   color: var(--text-primary);
+  background: #FAFBFF;
+  transition: all var(--transition);
+  line-height: 1.5;
+}
+
+.form-control::placeholder { color: var(--text-muted); }
+
+.form-control:hover:not(:disabled) {
+  border-color: var(--border-dark);
   background: var(--bg-card);
-  transition: border-color var(--transition);
 }
 
 .form-control:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px var(--primary-bg);
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.10);
+  background: var(--bg-card);
+}
+
+.form-control:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--bg-body);
 }
 
 .form-row {

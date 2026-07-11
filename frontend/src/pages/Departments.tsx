@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import Header from '../components/Header';
+import { CardSkeleton } from '../components/PageLoader';
 import {
   Phone, Mail, Users, Search, ShieldCheck, Flame,
   Stethoscope, HardHat, Anchor, Copy, Check, Info, ShieldAlert,
-  Plus, Edit2, Trash2, Clock,
+  Plus, Edit2, Trash2,
 } from 'lucide-react';
 import type { DepartmentInfo } from '../types';
 import {
@@ -258,13 +259,12 @@ export default function Departments() {
           </div>
         </div>
 
-        {/* Loading Spinner */}
+        {/* Loading Skeleton */}
         {loading ? (
-          <div style={{ padding: 80, textAlign: 'center', color: 'var(--text-secondary)' }}>
-            <div className="spin" style={{ display: 'inline-block', animation: 'spin 1s linear infinite' }}>
-              <Clock size={32} />
-            </div>
-            <p style={{ marginTop: 16 }}>Loading responding units...</p>
+          <div className="dept-grid">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <CardSkeleton key={i} rows={5} />
+            ))}
           </div>
         ) : (
           /* ── Department Grid ──────────────────────────────── */

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Header from '../components/Header';
+import PageLoader from '../components/PageLoader';
 import Toast, { type ToastType } from '../components/Toast';
 import { 
   Save, Download, RefreshCw, Shield, Eye, EyeOff, 
@@ -268,10 +269,12 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', height: '80vh', flexDirection: 'column', gap: 16 }}>
-        <Loader2 size={36} className="spin" style={{ color: 'var(--primary)' }} />
-        <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>Syncing administrative preferences...</span>
-      </div>
+      <>
+        <Header title="Settings" subtitle="Manage your account and system preferences" />
+        <div className="page-content">
+          <PageLoader message="Syncing administrative preferences..." />
+        </div>
+      </>
     );
   }
 

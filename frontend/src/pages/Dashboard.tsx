@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
+import PageLoader from '../components/PageLoader';
 import {
   AlertTriangle, Clock, Truck, CheckCircle,
   RefreshCw, ArrowRight, Phone, Flame,
@@ -169,6 +170,17 @@ export default function Dashboard() {
     { label: 'Dispatched',      value: stats.dispatched, accent: '#8B5CF6', bg: 'rgba(139, 92, 246, 0.05)', glow: 'rgba(139, 92, 246, 0.15)', activeGlow: 'rgba(139, 92, 246, 0.3)', filter: 'DISPATCHED', icon: Truck         },
     { label: 'Resolved Today',  value: stats.resolved,   accent: '#22C55E', bg: 'rgba(34, 197, 94, 0.05)', glow: 'rgba(34, 197, 94, 0.15)', activeGlow: 'rgba(34, 197, 94, 0.3)', filter: 'RESOLVED', icon: CheckCircle   },
   ];
+
+  if (loading && incidents.length === 0) {
+    return (
+      <>
+        <Header title="Dashboard" subtitle="Real-time overview of disaster incidents" />
+        <div className="page-content">
+          <PageLoader message="Syncing incident data..." />
+        </div>
+      </>
+    );
+  }
 
   return (
     <>

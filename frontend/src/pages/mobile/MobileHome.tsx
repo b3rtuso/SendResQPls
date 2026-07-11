@@ -325,68 +325,73 @@ export default function MobileHome() {
         <div style={{ padding: '20px 20px 0' }}>
           <div className="sos-card" onClick={() => navigate('/mobile/report')}>
             <div style={{
-              width: 64, height: 64, margin: '0 auto 14px', borderRadius: '50%',
-              background: 'rgba(255,255,255,0.15)', border: '2px solid rgba(255,255,255,0.3)',
+              width: 60, height: 60, margin: '0 auto 14px', borderRadius: '50%',
+              background: 'rgba(255,255,255,0.15)', border: '1.5px solid rgba(255,255,255,0.28)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
+              backdropFilter: 'blur(4px)',
             }}>
-              <AlertTriangle size={30} />
+              <AlertTriangle size={28} />
             </div>
-            <h2>🚨 SEND EMERGENCY ALERT</h2>
-            <p style={{ fontSize: 13, opacity: 0.85, marginTop: 4 }}>
+            <h2 style={{ letterSpacing: '1.5px', fontSize: 20 }}>SEND EMERGENCY ALERT</h2>
+            <p style={{ fontSize: 12.5, opacity: 0.82, marginTop: 6, letterSpacing: '0.1px' }}>
               I-tap para makapag-report kaagad ng emergency sa MDRRMO
             </p>
             <div className="tap-hint">
-              <span className="tap-arrow"><ChevronDown size={13} /></span>
-              TAP NOW
-              <span className="tap-arrow"><ChevronDown size={13} /></span>
+              <span className="tap-arrow"><ChevronDown size={12} /></span>
+              TAP TO REPORT
+              <span className="tap-arrow"><ChevronDown size={12} /></span>
             </div>
           </div>
         </div>
 
         {/* ── Emergency Hotlines ─────────────────────────── */}
         <div style={{ padding: '24px 20px 0' }}>
-          <h3 style={{ fontSize: 16, fontWeight: 800, color: '#0F172A', marginBottom: 14 }}>Emergency Hotlines</h3>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <h3 style={{ fontSize: 13, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>Emergency Hotlines</h3>
+          </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             {hotlines.map(h => (
               <a key={h.number} href={`tel:${h.number}`} style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
-                padding: '18px 12px', borderRadius: 16, background: 'white',
-                border: '1.5px solid #E2E8F0', textDecoration: 'none',
-                transition: 'all 0.15s', cursor: 'pointer',
+                padding: '16px 10px', borderRadius: 14, background: 'white',
+                border: '1px solid #E2E8F0', textDecoration: 'none',
+                transition: 'all 0.15s', cursor: 'pointer', position: 'relative', overflow: 'hidden',
               }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: h.color, borderRadius: '14px 14px 0 0' }} />
                 <div style={{
-                  width: 44, height: 44, borderRadius: 12,
-                  background: `${h.color}12`, display: 'flex',
-                  alignItems: 'center', justifyContent: 'center', marginBottom: 10,
+                  width: 40, height: 40, borderRadius: 11,
+                  background: `${h.color}15`, display: 'flex',
+                  alignItems: 'center', justifyContent: 'center', marginBottom: 8,
                 }}>
-                  <Phone size={20} color={h.color} />
+                  <Phone size={18} color={h.color} />
                 </div>
-                <div style={{ fontSize: 12, color: '#64748B', fontWeight: 600, marginBottom: 2, textAlign: 'center' }}>{h.name}</div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: '#0F172A' }}>{h.number}</div>
+                <div style={{ fontSize: 10.5, color: '#94A3B8', fontWeight: 700, marginBottom: 3, textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{h.name}</div>
+                <div style={{ fontSize: 17, fontWeight: 900, color: '#0F172A', letterSpacing: '-0.3px' }}>{h.number}</div>
               </a>
             ))}
           </div>
         </div>
 
         {/* ── Safety Tips ─────────────────────────────────── */}
-        <div style={{ padding: '24px 20px 24px' }}>
-          <h3 style={{ fontSize: 16, fontWeight: 800, color: '#0F172A', marginBottom: 14 }}>Safety Tips</h3>
+        <div style={{ padding: '24px 20px 28px' }}>
+          <h3 style={{ fontSize: 13, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Safety Tips</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {safetyTips.map(t => (
               <div key={t.title} style={{
-                display: 'flex', gap: 14, padding: '16px',
-                background: t.bg, borderRadius: 16, alignItems: 'flex-start',
+                display: 'flex', gap: 14, padding: '14px 16px',
+                background: 'white', borderRadius: 14, alignItems: 'flex-start',
+                border: '1px solid #E2E8F0',
+                borderLeft: `3px solid ${t.color}`,
               }}>
                 <div style={{
-                  width: 40, height: 40, borderRadius: 12, background: 'white',
+                  width: 38, height: 38, borderRadius: 10, background: t.bg,
                   display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
                 }}>
-                  <t.icon size={20} color={t.color} />
+                  <t.icon size={18} color={t.color} />
                 </div>
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', marginBottom: 3 }}>{t.title}</div>
-                  <div style={{ fontSize: 12, color: '#64748B', lineHeight: 1.5 }}>{t.tip}</div>
+                  <div style={{ fontSize: 13.5, fontWeight: 700, color: '#0F172A', marginBottom: 3 }}>{t.title}</div>
+                  <div style={{ fontSize: 12, color: '#64748B', lineHeight: 1.55 }}>{t.tip}</div>
                 </div>
               </div>
             ))}

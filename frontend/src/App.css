@@ -56,121 +56,19 @@ button:active:not(:disabled) {
 
 /* ===== MOBILE AUTH SCREENS ===== */
 .mobile-auth {
-  min-height: 100vh;
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  align-items: stretch;   /* children fill full width */
-  justify-content: center;
-  padding: 40px clamp(20px, 6vw, 36px); /* responsive side padding */
-  padding-top: max(40px, env(safe-area-inset-top, 40px));
-  padding-bottom: max(40px, env(safe-area-inset-bottom, 40px));
-  background: #FFFFFF;
+  background: #F1F5F9;
   box-sizing: border-box;
   width: 100%;
 }
 
-.mobile-auth .auth-logo {
-  width: 100px;
-  height: 100px;
-  background: linear-gradient(135deg, #1E3A5F, #2563EB);
-  border-radius: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 28px;
-  font-weight: 800;
-  margin-bottom: 24px;
-  box-shadow: 0 8px 32px rgba(30, 58, 95, 0.25);
-}
-
-.mobile-auth h1 {
-  font-size: 28px;
-  font-weight: 800;
-  color: var(--text-primary);
-  margin-bottom: 8px;
-  text-align: center;
-}
-
-.mobile-auth .auth-subtitle {
-  font-size: 14px;
-  color: var(--text-secondary);
-  text-align: center;
-  margin-bottom: 32px;
-}
-
-.mobile-auth .input-group {
-  width: 100%;
-  margin-bottom: 20px;
-}
-
-.mobile-auth .input-group label {
-  display: block;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 8px;
-}
-
-.mobile-auth .input-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  border: 1.5px solid var(--border);
-  border-radius: 12px;
-  padding: 14px 16px;
-  transition: border-color var(--transition);
-  background: #FAFAFA;
-}
-
-.mobile-auth .input-wrapper:focus-within {
-  border-color: var(--primary);
-  background: white;
-}
-
-.mobile-auth .input-wrapper input {
-  flex: 1;
-  min-width: 0;          /* prevents flex children from overflowing */
-  border: none;
-  background: none;
-  outline: none;
-  font-size: 15px;
-  font-family: var(--font);
-  color: var(--text-primary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.mobile-auth .input-wrapper input::placeholder {
-  font-size: 13px;
-  color: var(--text-muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.mobile-auth .input-wrapper .input-icon {
-  color: var(--text-muted);
-  flex-shrink: 0;
-}
-
-.mobile-auth .input-wrapper .toggle-pass {
-  cursor: pointer;
-  color: var(--text-muted);
-  background: none;
-  border: none;
-  padding: 0;
-}
-
-.mobile-auth .forgot-link {
-  display: block;
-  text-align: right;
-  font-size: 13px;
-  color: var(--primary);
-  font-weight: 600;
-  text-decoration: none;
-  margin-bottom: 24px;
+/* Auth input focus-within helper */
+.input-wrapper-focus {
+  border-color: var(--primary) !important;
+  background: #fff !important;
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.10) !important;
 }
 
 .mobile-auth .auth-btn {
@@ -178,7 +76,7 @@ button:active:not(:disabled) {
   padding: 16px;
   border: none;
   border-radius: 14px;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   font-family: var(--font);
   cursor: pointer;
@@ -187,44 +85,48 @@ button:active:not(:disabled) {
   justify-content: center;
   gap: 10px;
   transition: all var(--transition);
+  letter-spacing: 0.01em;
 }
 
 .auth-btn.login {
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
   color: white;
+  box-shadow: 0 4px 16px rgba(37,99,235,0.38);
 }
 
-.auth-btn.login:hover {
-  background: var(--primary-dark);
-  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
+.auth-btn.login:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 22px rgba(37,99,235,0.46);
 }
+
+.auth-btn.login:active:not(:disabled) { transform: scale(0.98); }
+.auth-btn.login:disabled { background: #94A3B8; box-shadow: none; cursor: not-allowed; }
 
 .auth-btn.signup {
   background: #DC2626;
   color: white;
+  box-shadow: 0 4px 14px rgba(220,38,38,0.32);
 }
 
-.auth-btn.signup:hover {
+.auth-btn.signup:hover:not(:disabled) {
   background: #B91C1C;
-  box-shadow: 0 6px 20px rgba(220, 38, 38, 0.35);
+  box-shadow: 0 6px 20px rgba(220,38,38,0.42);
+  transform: translateY(-1px);
 }
 
 .mobile-auth .auth-footer {
-  margin-top: 24px;
-  font-size: 14px;
+  margin-top: 20px;
+  font-size: 13.5px;
   color: var(--text-secondary);
   text-align: center;
 }
 
 .mobile-auth .auth-footer a {
   color: var(--primary);
-  font-weight: 600;
+  font-weight: 700;
   text-decoration: none;
 }
 
-.auth-btn.signup .auth-footer a {
-  color: #DC2626;
-}
 
 /* ===== MOBILE HOME ===== */
 .mobile-home {

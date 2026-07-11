@@ -157,53 +157,59 @@ export default function MobileHome() {
 
         {/* ── Header ─────────────────────────────────── */}
         <div style={{
-          background: 'linear-gradient(135deg, #1E3A5F 0%, #2563EB 100%)',
-          padding: '12px 16px',
-          display: 'flex', alignItems: 'center', gap: 10,
+          background: 'linear-gradient(160deg, #1E3A5F 0%, #1D4ED8 65%, #2563EB 100%)',
+          padding: '52px 20px 20px',
           position: 'sticky', top: 0, zIndex: 20,
+          borderRadius: '0 0 24px 24px',
+          boxShadow: '0 4px 20px rgba(30,58,95,0.35)',
         }}>
-          <img src="/logo.jpg" alt="SRQ" style={{ width: 34, height: 34, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }} />
-
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', lineHeight: 1 }}>Kamusta,</div>
-            <div style={{ fontSize: 15, fontWeight: 800, color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {userName}
+          {/* Top row: logo + actions */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+            <img src="/logo.jpg" alt="SRQ" style={{ width: 36, height: 36, borderRadius: 10, objectFit: 'cover', flexShrink: 0, border: '1.5px solid rgba(255,255,255,0.25)' }} />
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.55)', letterSpacing: '0.5px', textTransform: 'uppercase', lineHeight: 1 }}>SendResQPls</div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', lineHeight: 1.3, marginTop: 1 }}>MDRRMO Balayan, Batangas</div>
+            </div>
+            {/* Bell */}
+            <button
+              onClick={handleBellClick}
+              style={{
+                width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
+                background: 'rgba(255,255,255,0.13)', border: '1.5px solid rgba(255,255,255,0.22)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', color: 'white', position: 'relative',
+                backdropFilter: 'blur(4px)',
+              }}
+              aria-label="Mga Notification"
+            >
+              <Bell size={17} />
+              {unseenCount > 0 && (
+                <span style={{
+                  position: 'absolute', top: -3, right: -3,
+                  minWidth: 17, height: 17, borderRadius: 9,
+                  background: '#EF4444', fontSize: 10, fontWeight: 800,
+                  color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  border: '2px solid #1E3A5F', padding: '0 3px',
+                }}>
+                  {unseenCount > 9 ? '9+' : unseenCount}
+                </span>
+              )}
+            </button>
+            {/* Avatar */}
+            <div style={{
+              width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
+              background: 'rgba(255,255,255,0.18)', border: '1.5px solid rgba(255,255,255,0.3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontWeight: 800, fontSize: 13, color: 'white',
+              backdropFilter: 'blur(4px)',
+            }}>
+              {initials}
             </div>
           </div>
-
-          {/* Bell */}
-          <button
-            onClick={handleBellClick}
-            style={{
-              width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-              background: 'rgba(255,255,255,0.15)', border: '1.5px solid rgba(255,255,255,0.25)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', color: 'white', position: 'relative',
-            }}
-            aria-label="Mga Notification"
-          >
-            <Bell size={17} />
-            {unseenCount > 0 && (
-              <span style={{
-                position: 'absolute', top: -3, right: -3,
-                minWidth: 17, height: 17, borderRadius: 9,
-                background: '#EF4444', fontSize: 10, fontWeight: 800,
-                color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                border: '2px solid #1E3A5F', padding: '0 3px',
-              }}>
-                {unseenCount > 9 ? '9+' : unseenCount}
-              </span>
-            )}
-          </button>
-
-          {/* Avatar */}
-          <div style={{
-            width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
-            background: 'rgba(255,255,255,0.18)', border: '1.5px solid rgba(255,255,255,0.35)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: 800, fontSize: 12, color: 'white',
-          }}>
-            {initials}
+          {/* Greeting row */}
+          <div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 2 }}>Kamusta,</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: 'white', letterSpacing: '-0.3px', lineHeight: 1.1 }}>{userName}</div>
           </div>
         </div>
 

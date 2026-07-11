@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
-import PageLoader from '../components/PageLoader';
+import { RequestDetailsSkeleton } from '../components/PageLoader';
 import Toast, { type ToastType } from '../components/Toast';
 import { ArrowLeft, Brain, MapPin, Camera, User, Clock, ExternalLink, X, Phone, Building2, CheckCircle2 } from 'lucide-react';
 import { updateIncidentStatus, getIncident as fetchIncident, reverseGeocode } from '../api/client';
@@ -188,9 +188,7 @@ export default function RequestDetails() {
     return (
       <>
         <Header title="Incident Details" subtitle="Loading incident record" />
-        <div className="page-content">
-          <PageLoader message="Loading incident from database..." />
-        </div>
+        <RequestDetailsSkeleton />
       </>
     );
   }

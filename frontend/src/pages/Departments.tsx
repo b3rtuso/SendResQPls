@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import Header from '../components/Header';
-import { CardSkeleton } from '../components/PageLoader';
+import { DepartmentsSkeleton } from '../components/PageLoader';
 import {
   Phone, Mail, Users, Search, ShieldCheck, Flame,
   Stethoscope, HardHat, Anchor, Copy, Check, Info, ShieldAlert,
@@ -261,12 +261,9 @@ export default function Departments() {
 
         {/* Loading Skeleton */}
         {loading ? (
-          <div className="dept-grid">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <CardSkeleton key={i} rows={5} />
-            ))}
-          </div>
+          <DepartmentsSkeleton count={5} />
         ) : (
+
           /* ── Department Grid ──────────────────────────────── */
           <div className="dept-grid fade-in">
             {filteredDepartments.map((dept) => {

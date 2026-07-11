@@ -362,7 +362,7 @@ export default function AdminLogin() {
                     aria-label={showPass ? 'Hide password' : 'Show password'}
                     tabIndex={-1}
                   >
-                    {showPass ? <Eye size={15} /> : <EyeOff size={15} />}
+                    {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
                 </div>
               </div>

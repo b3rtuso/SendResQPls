@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
-import PageLoader from '../components/PageLoader';
+import { DashboardSkeleton } from '../components/PageLoader';
 import {
   AlertTriangle, Clock, Truck, CheckCircle,
   RefreshCw, ArrowRight, Phone, Flame,
@@ -175,9 +175,7 @@ export default function Dashboard() {
     return (
       <>
         <Header title="Dashboard" subtitle="Real-time overview of disaster incidents" />
-        <div className="page-content">
-          <PageLoader message="Syncing incident data..." />
-        </div>
+        <DashboardSkeleton />
       </>
     );
   }
@@ -433,9 +431,20 @@ export default function Dashboard() {
               </div>
             </div>
             {loading && filteredIncidents.length === 0 ? (
-              <div style={{ padding: 48, textAlign: 'center', color: '#94A3B8' }}>
-                <RefreshCw size={22} style={{ animation: 'spin 0.8s linear infinite', display: 'inline-block', marginBottom: 10 }} />
-                <div style={{ fontSize: 13 }}>Loading incidents…</div>
+              <div style={{ padding: '32px 24px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {[0,1,2,3,4].map(i => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '6px 0' }}>
+                    {['72px','110px','140px','90px','70px','60px'].map((w, j) => (
+                      <div key={j} style={{
+                        width: w, height: 12, borderRadius: 4, flexShrink: 0,
+                        background: 'linear-gradient(90deg,#F1F5F9 25%,#E8EEF5 50%,#F1F5F9 75%)',
+                        backgroundSize: '200% 100%',
+                        animation: 'skeletonShimmer 1.4s ease infinite',
+                        animationDelay: `${i * 0.08}s`,
+                      }} />
+                    ))}
+                  </div>
+                ))}
               </div>
             ) : filteredIncidents.length === 0 ? (
               <div style={{ padding: 48, textAlign: 'center' }}>

@@ -6,6 +6,7 @@ import type { Incident, Status } from '../../types';
 import BottomNav from '../../components/BottomNav';
 import FcmBannerOverlay from '../../components/FcmBannerOverlay';
 import { getNearestBarangay } from '../../data/balayan-data';
+import { MobileHistorySkeleton } from '../../components/PageLoader';
 
 const badgeClass: Record<Status, string> = {
   PENDING: 'pending',
@@ -196,10 +197,7 @@ export default function MobileHistory() {
         </div>
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 60, color: 'var(--text-muted)' }}>
-            <div className="spin" style={{ display: 'inline-block' }}><RefreshCw size={28} /></div>
-            <p style={{ marginTop: 12 }}>Kinukuha ang mga report...</p>
-          </div>
+          <MobileHistorySkeleton count={5} />
         ) : (
           <div className="history-list">
             {incidents.map((inc) => {

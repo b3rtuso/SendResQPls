@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
-import { TableRowSkeleton } from '../components/PageLoader';
+import { RequestsTableSkeleton } from '../components/PageLoader';
 import { Search, RefreshCw, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Incident, Status } from '../types';
 import { getIncidents } from '../api/client';
@@ -142,13 +142,7 @@ export default function Requests() {
         {/* ── Table ───────────────────────────────────────── */}
         <div className="fade-in" style={{ background: 'white', borderRadius: 14, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', border: '1px solid #F1F5F9', animationDelay: '0.1s' }}>
           {loading ? (
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <tbody>
-                {Array.from({ length: 7 }).map((_, i) => (
-                  <TableRowSkeleton key={i} cols={7} />
-                ))}
-              </tbody>
-            </table>
+            <RequestsTableSkeleton />
           ) : (
             <>
               <div style={{ overflowX: 'auto' }}>

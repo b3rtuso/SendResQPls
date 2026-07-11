@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import Header from '../components/Header';
-import PageLoader from '../components/PageLoader';
+import { SettingsSkeleton } from '../components/PageLoader';
 import Toast, { type ToastType } from '../components/Toast';
 import { 
   Save, Download, RefreshCw, Shield, Eye, EyeOff, 
@@ -271,9 +271,7 @@ export default function SettingsPage() {
     return (
       <>
         <Header title="Settings" subtitle="Manage your account and system preferences" />
-        <div className="page-content">
-          <PageLoader message="Syncing administrative preferences..." />
-        </div>
+        <SettingsSkeleton />
       </>
     );
   }

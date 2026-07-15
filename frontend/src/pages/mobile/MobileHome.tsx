@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Phone, AlertTriangle, Shield, Droplets, Flame, Heart, Bell, X, CheckCircle2, ChevronDown, MapPin, MapPinOff } from 'lucide-react';
+import { Phone, AlertTriangle, Shield, Droplets, Flame, Heart, Bell, ChevronDown, MapPin, MapPinOff, X } from 'lucide-react';
 import BottomNav from '../../components/BottomNav';
 import FcmBannerOverlay from '../../components/FcmBannerOverlay';
 import { getMyIncidents, cachedGet } from '../../api/client';
 import { setupPushNotifications } from '../../utils/pushNotificationHelper';
+import { getStoredNotifications, saveNotifications, type StoredNotif } from './MobileNotifications';
 
 
 const hotlines = [
@@ -21,25 +22,7 @@ const safetyTips = [
   { icon: Heart, color: '#EC4899', bg: '#FDF2F8', title: 'First Aid', tip: 'Ipitin ang sugat ng malinis na tela para mapigilan ang pagdurugo. Huwag galawin ang nasugatan hanggang wala pang dumarating na tulong.' },
 ];
 
-interface NotifItem {
-  id: string;
-  type: string;
-  status: string;
-  time: string;
-}
-
 const STATUS_KEY = 'srq_last_statuses';
-
-function getStatusLabel(status: string): string {
-  switch (status) {
-    case 'PENDING': return 'Naghihintay ng review';
-    case 'REVIEWING': return 'Nire-review ng MDRRMO';
-    case 'DISPATCHED': return 'Na-dispatch na ang responder!';
-    case 'RESOLVED': return 'Resolved na ang iyong report';
-    case 'REJECTED': return 'Hindi na-approve ang report';
-    default: return status;
-  }
-}
 
 export default function MobileHome() {
   const navigate = useNavigate();
@@ -47,8 +30,6 @@ export default function MobileHome() {
   const initials = userName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
   const userId = localStorage.getItem('userId');
 
-  const [notifications, setNotifications] = useState<NotifItem[]>([]);
-  const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [unseenCount, setUnseenCount] = useState(0);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -57,19 +38,23 @@ export default function MobileHome() {
   const [locStatus, setLocStatus] = useState<LocStatus>('idle');
   const [showLocBanner, setShowLocBanner] = useState(true);
 
-  // Single unified fetch — replaces the separate init() + checkForUpdates() double-call
+  // Sync unread count from localStorage on mount
+  useEffect(() => {
+    setUnseenCount(getStoredNotifications().filter(n => !n.read).length);
+  }, []);
+
+  // Unified polling — writes new notifications to localStorage for the notifications page
   const checkForUpdates = async (isFirstLoad = false) => {
     if (!userId) return;
     try {
       const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
       const url = `/incidents/my/${userId}`;
-      // Use cache on first load so navigating back feels instant
       const res = isFirstLoad
         ? await cachedGet(API_BASE + url, 20000)
         : await getMyIncidents(userId);
       const incidents = res.data || [];
       const stored: Record<string, string> = JSON.parse(localStorage.getItem(STATUS_KEY) || '{}');
-      const newNotifs: NotifItem[] = [];
+      const newNotifs: StoredNotif[] = [];
 
       incidents.forEach((inc: any) => {
         const prev = stored[inc.id];
@@ -79,6 +64,7 @@ export default function MobileHome() {
             type: inc.aiDetectedType || 'Emergency',
             status: inc.status,
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            read: false,
           });
         }
         stored[inc.id] = inc.status;
@@ -86,8 +72,9 @@ export default function MobileHome() {
 
       localStorage.setItem(STATUS_KEY, JSON.stringify(stored));
       if (newNotifs.length > 0) {
-        setNotifications(prev => [...newNotifs, ...prev].slice(0, 20));
-        setUnseenCount(prev => prev + newNotifs.length);
+        const existing = getStoredNotifications();
+        saveNotifications([...newNotifs, ...existing].slice(0, 30));
+        setUnseenCount(c => c + newNotifs.length);
       }
     } catch { /* silent */ }
   };
@@ -145,11 +132,6 @@ export default function MobileHome() {
     }
   }, [locStatus]);
 
-  const handleBellClick = () => {
-    setShowNotifPanel(v => !v);
-    setUnseenCount(0);
-  };
-
   return (
     <div className="mobile-shell">
       <FcmBannerOverlay />
@@ -170,9 +152,9 @@ export default function MobileHome() {
               <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.55)', letterSpacing: '0.5px', textTransform: 'uppercase', lineHeight: 1 }}>SendResQPls</div>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', lineHeight: 1.3, marginTop: 1 }}>MDRRMO Balayan, Batangas</div>
             </div>
-            {/* Bell */}
+            {/* Bell → navigates to notifications page */}
             <button
-              onClick={handleBellClick}
+              onClick={() => navigate('/mobile/notifications')}
               style={{
                 width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
                 background: 'rgba(255,255,255,0.13)', border: '1.5px solid rgba(255,255,255,0.22)',
@@ -180,16 +162,16 @@ export default function MobileHome() {
                 cursor: 'pointer', color: 'white', position: 'relative',
                 backdropFilter: 'blur(4px)',
               }}
-              aria-label="Mga Notification"
+              aria-label="Notifications"
             >
               <Bell size={17} />
               {unseenCount > 0 && (
                 <span style={{
                   position: 'absolute', top: -3, right: -3,
-                  minWidth: 17, height: 17, borderRadius: 9,
-                  background: '#EF4444', fontSize: 10, fontWeight: 800,
+                  minWidth: 16, height: 16, borderRadius: 8,
+                  background: '#EF4444', fontSize: 9, fontWeight: 800,
                   color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  border: '2px solid #1E3A5F', padding: '0 3px',
+                  border: '1.5px solid #1E3A5F', padding: '0 3px',
                 }}>
                   {unseenCount > 9 ? '9+' : unseenCount}
                 </span>
@@ -213,111 +195,47 @@ export default function MobileHome() {
           </div>
         </div>
 
-        {/* ── Location Status Banner ───────────────────────── */}
-        {showLocBanner && locStatus === 'denied' && (
+        {/* ── Location Banner (clean minimal pill) ────────── */}
+        {showLocBanner && (locStatus === 'denied' || locStatus === 'unavailable') && (
           <div style={{
+            margin: '12px 16px 0',
             display: 'flex', alignItems: 'center', gap: 10,
-            padding: '10px 16px',
+            padding: '10px 14px',
             background: '#FFF7ED',
-            borderBottom: '1px solid #FED7AA',
-            animation: 'slideDown 0.25s ease',
+            border: '1px solid #FED7AA',
+            borderRadius: 12,
+            animation: 'slideDown 0.22s ease',
           }}>
-            <MapPinOff size={18} color="#EA580C" style={{ flexShrink: 0 }} />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#9A3412' }}>Location hindi available</div>
-              <div style={{ fontSize: 11, color: '#C2410C' }}>I-enable ang location sa settings para makapag-send ng alert.</div>
+            <MapPinOff size={16} color="#F97316" style={{ flexShrink: 0 }} />
+            <div style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#9A3412' }}>
+              {locStatus === 'denied' ? 'I-enable ang location para sa emergency reports' : 'GPS not supported sa device na ito'}
             </div>
             <button
               onClick={() => setShowLocBanner(false)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9A3412', padding: 0, flexShrink: 0 }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#C2410C', padding: 2, flexShrink: 0, display: 'flex' }}
             >
-              <X size={15} />
-            </button>
-          </div>
-        )}
-
-        {showLocBanner && locStatus === 'unavailable' && (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 10,
-            padding: '10px 16px',
-            background: '#FFF7ED',
-            borderBottom: '1px solid #FED7AA',
-          }}>
-            <MapPinOff size={18} color="#EA580C" style={{ flexShrink: 0 }} />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#9A3412' }}>GPS not supported</div>
-              <div style={{ fontSize: 11, color: '#C2410C' }}>Ang device mo ay hindi sumusuporta ng location.</div>
-            </div>
-            <button onClick={() => setShowLocBanner(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9A3412', padding: 0 }}>
-              <X size={15} />
+              <X size={14} />
             </button>
           </div>
         )}
 
         {showLocBanner && locStatus === 'granted' && (
           <div style={{
-            display: 'flex', alignItems: 'center', gap: 10,
-            padding: '8px 16px',
+            margin: '12px 16px 0',
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '8px 14px',
             background: '#F0FDF4',
-            borderBottom: '1px solid #BBF7D0',
-            animation: 'slideDown 0.25s ease',
+            border: '1px solid #BBF7D0',
+            borderRadius: 12,
+            animation: 'slideDown 0.22s ease',
           }}>
-            <MapPin size={16} color="#16A34A" style={{ flexShrink: 0 }} />
-            <div style={{ flex: 1, fontSize: 12, fontWeight: 600, color: '#15803D' }}>
-              ✓ Location ready — pwede ka nang mag-send ng emergency reports
+            <MapPin size={14} color="#16A34A" style={{ flexShrink: 0 }} />
+            <div style={{ flex: 1, fontSize: 12.5, fontWeight: 600, color: '#15803D' }}>
+              Location ready
             </div>
-            <button onClick={() => setShowLocBanner(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#15803D', padding: 0 }}>
-              <X size={14} />
+            <button onClick={() => setShowLocBanner(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#16A34A', padding: 2, flexShrink: 0, display: 'flex' }}>
+              <X size={13} />
             </button>
-          </div>
-        )}
-
-        {/* ── Notification Panel ─────────────────────────── */}
-        {showNotifPanel && (
-          <div style={{
-            position: 'sticky', top: 58, zIndex: 19,
-            background: 'white', borderBottom: '1px solid #E5E7EB',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-            maxHeight: 270, overflowY: 'auto',
-            animation: 'slideDown 0.2s ease',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px 8px' }}>
-              <span style={{ fontWeight: 700, fontSize: 14, color: '#0F172A' }}>🔔 Notifications</span>
-              <div style={{ display: 'flex', gap: 10 }}>
-                {notifications.length > 0 && (
-                  <button onClick={() => { setNotifications([]); setShowNotifPanel(false); }}
-                    style={{ fontSize: 11, color: '#DC2626', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-                    Clear all
-                  </button>
-                )}
-                <button onClick={() => setShowNotifPanel(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280' }}>
-                  <X size={16} />
-                </button>
-              </div>
-            </div>
-
-            {notifications.length === 0 ? (
-              <div style={{ padding: '20px 16px', textAlign: 'center', color: '#9CA3AF', fontSize: 13 }}>
-                <Bell size={26} style={{ marginBottom: 6, opacity: 0.35 }} />
-                <div>Wala pang bagong update</div>
-              </div>
-            ) : (
-              notifications.map((n, i) => (
-                <div key={`${n.id}-${i}`} style={{
-                  display: 'flex', alignItems: 'flex-start', gap: 10,
-                  padding: '10px 16px',
-                  borderTop: i === 0 ? 'none' : '1px solid #F3F4F6',
-                }}>
-                  <CheckCircle2 size={17} color="#22C55E" style={{ marginTop: 2, flexShrink: 0 }} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: '#0F172A' }}>
-                      {n.type} — {getStatusLabel(n.status)}
-                    </div>
-                    <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>{n.time}</div>
-                  </div>
-                </div>
-              ))
-            )}
           </div>
         )}
 

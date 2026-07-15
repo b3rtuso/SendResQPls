@@ -54,12 +54,12 @@ export default function MobileOnboarding({ onDone }: { onDone: () => void }) {
 
   const handleGetStarted = () => {
     localStorage.setItem(ONBOARDING_KEY, '1');
-    navigate('/mobile/signup');
+    navigate('/mobile/login');
   };
 
   const handleSignIn = () => {
     localStorage.setItem(ONBOARDING_KEY, '1');
-    navigate('/mobile/login');
+    navigate('/mobile/signup');
   };
 
   const slide = slides[current];
@@ -72,21 +72,25 @@ export default function MobileOnboarding({ onDone }: { onDone: () => void }) {
       display: 'flex', flexDirection: 'column', alignItems: 'center',
       justifyContent: 'space-between', padding: '48px 28px 40px',
       boxSizing: 'border-box', transition: 'background 0.5s ease',
-      fontFamily: "'Inter', sans-serif",
+      fontFamily: "'Inter', sans-serif", overflowX: 'hidden',
     }}>
       <style>{`
-        @keyframes onboardingFadeIn {
+        @keyframes onboardingSwipe {
           from {
             opacity: 0;
-            transform: translateY(16px);
+            transform: translateX(30px);
           }
           to {
             opacity: 1;
-            transform: translateY(0);
+            transform: translateX(0);
           }
         }
         .onboarding-transition {
-          animation: onboardingFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          animation: onboardingSwipe 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
         }
       `}</style>
 
@@ -160,7 +164,7 @@ export default function MobileOnboarding({ onDone }: { onDone: () => void }) {
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               fontFamily: "'Inter', sans-serif",
             }}>
-              <LogIn size={18} /> Already have an account? Sign In
+              <LogIn size={18} /> Create an Account
             </button>
           </div>
         ) : (

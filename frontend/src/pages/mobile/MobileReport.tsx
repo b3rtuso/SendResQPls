@@ -80,7 +80,7 @@ export default function MobileReport() {
 
       showToast(
         'success',
-        'Emergency Report Sent! 🚑',
+        'Emergency Report Sent!',
         `AI-classified as: ${incident?.aiDetectedType || 'Processing...'} — Routed to ${incident?.aiRecommendedDept || 'MDRRMO'}`
       );
 
@@ -146,7 +146,7 @@ export default function MobileReport() {
 
         <div className="report-hero">
           <div className="alert-icon"><AlertTriangle size={28} /></div>
-          <h2>Need Help? 🙋</h2>
+          <h2>Need Help?</h2>
           <p>Take a picture of the situation and share your location. Our AI will classify the emergency and dispatch the appropriate response team immediately.</p>
         </div>
 
@@ -172,7 +172,7 @@ export default function MobileReport() {
               <p>Tap to take or upload a photo</p>
             </>
           )}
-          {photo && !preview && <p className="file-name">📷 {photo.name}</p>}
+          {photo && !preview && <p className="file-name">{photo.name}</p>}
         </div>
 
         <button className="sos-btn" onClick={handleSend} disabled={!photo || sending}>
@@ -184,7 +184,7 @@ export default function MobileReport() {
           ) : (
             <>
               <AlertTriangle size={20} />
-              🚨 SEND EMERGENCY ALERT
+              SEND EMERGENCY ALERT
             </>
           )}
         </button>

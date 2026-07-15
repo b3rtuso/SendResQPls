@@ -139,16 +139,16 @@ export default function MobileSignup() {
             MDRRMO Balayan, Batangas
           </div>
           <h1 style={{ color: 'white', fontSize: 26, fontWeight: 900, letterSpacing: '-0.5px', lineHeight: 1.15, margin: 0 }}>
-            Gawa tayo ng<br />
-            <span style={{ color: '#93C5FD' }}>Account 🙌</span>
+            Create an<br />
+            <span style={{ color: '#93C5FD' }}>Account</span>
           </h1>
         </div>
       </div>
 
       {/* Floating form card */}
-      <div className="ms-form-card mobile-auth">
+      <div className="ms-form-card">
         <p style={{ fontSize: 13, color: '#64748B', margin: '0 0 20px', lineHeight: 1.55 }}>
-          Mag-register na para makapag-report agad ng emergency.
+          Register now to report emergencies immediately.
         </p>
 
         {toast.show && (
@@ -163,15 +163,15 @@ export default function MobileSignup() {
 
         <form autoComplete="on" onSubmit={(e) => e.preventDefault()} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div className="input-group">
-            <label>Buong Pangalan</label>
+            <label>Full Name</label>
             <div className="input-wrapper">
               <User size={18} className="input-icon" />
-              <input autoComplete="name" placeholder="Juan Dela Cruz" value={form.name} onChange={(e) => update('name', e.target.value)} />
+              <input autoComplete="name" placeholder="John Doe" value={form.name} onChange={(e) => update('name', e.target.value)} />
             </div>
           </div>
 
           <div className="input-group">
-            <label>Numero ng Telepono</label>
+            <label>Phone Number</label>
             <div className="input-wrapper">
               <Phone size={18} className="input-icon" />
               <input type="tel" autoComplete="tel" placeholder="+63 900 000 0000" value={form.phone} onChange={(e) => update('phone', e.target.value.replace(/[^0-9+ ]/g, ''))} />
@@ -187,7 +187,7 @@ export default function MobileSignup() {
                 <input
                   type="email"
                   autoComplete="email"
-                  placeholder="juan@halimbawa.com"
+                  placeholder="john@example.com"
                   value={form.email}
                   onChange={(e) => {
                     update('email', e.target.value);
@@ -239,7 +239,7 @@ export default function MobileSignup() {
                   <input
                     type="text"
                     autoComplete="one-time-code"
-                    placeholder="I-enter ang code"
+                    placeholder="Enter the code"
                     value={codeInput}
                     onChange={(e) => setCodeInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     maxLength={6}
@@ -290,13 +290,13 @@ export default function MobileSignup() {
             disabled={loading || !verified}
             style={{ marginTop: 8, opacity: !verified ? 0.5 : 1 }}
           >
-            {loading ? 'Ginagawa...' : 'Create Account'}
+            {loading ? 'Creating...' : 'Create Account'}
           </button>
         </form>
 
         <p className="auth-footer" style={{ marginTop: 24 }}>
-          May account ka na?{' '}
-          <a href="#" onClick={(e) => { e.preventDefault(); navigate('/mobile/login'); }}>Mag-login</a>
+          Already have an account?{' '}
+          <a href="#" onClick={(e) => { e.preventDefault(); navigate('/mobile/login'); }}>Log In</a>
         </p>
       </div>
     </div>

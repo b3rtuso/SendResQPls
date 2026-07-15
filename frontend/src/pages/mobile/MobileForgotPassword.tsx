@@ -39,13 +39,12 @@ export default function MobileForgotPassword() {
         </button>
 
         <img src="/logo.jpg" alt="SRQ Logo" style={{ width: 80, height: 80, borderRadius: 20, boxShadow: '0 8px 32px rgba(0,0,0,0.15)', objectFit: 'cover', marginBottom: 8, display: 'block', marginLeft: 'auto', marginRight: 'auto' }} />
-        <h1>Forgot Password? 🔑</h1>
+        <h1>Forgot Password?</h1>
         <p className="auth-subtitle">Enter the email address registered to your account to receive a reset link.</p>
 
         {sent ? (
           <div style={{ background: '#F0FDF4', border: '1.5px solid #22C55E', borderRadius: 12, padding: '20px 16px', textAlign: 'center', marginTop: 16 }}>
-            <div style={{ fontSize: 32, marginBottom: 8 }}>📧</div>
-            <div style={{ fontWeight: 700, color: '#15803D', marginBottom: 4 }}>Reset link sent! 📧</div>
+            <div style={{ fontWeight: 700, color: '#15803D', marginBottom: 4 }}>Reset link sent!</div>
             <div style={{ fontSize: 13, color: '#166534' }}>
               Please check your inbox or spam folder for <strong>{email}</strong>. The link will expire in 30 minutes.
             </div>

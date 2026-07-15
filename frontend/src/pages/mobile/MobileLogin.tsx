@@ -108,7 +108,7 @@ export default function MobileLogin() {
             MDRRMO Balayan, Batangas
           </div>
           <h1 style={{ color: 'white', fontSize: 26, fontWeight: 900, letterSpacing: '-0.5px', lineHeight: 1.15, margin: 0 }}>
-            Mag-login sa<br />
+            Log in to<br />
             <span style={{ color: '#93C5FD' }}>SendResQPls</span>
           </h1>
         </div>

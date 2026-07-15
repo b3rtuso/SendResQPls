@@ -37,13 +37,13 @@ export default function MobileResetPassword() {
     <div className="mobile-shell">
       <div className="mobile-auth">
         <img src="/logo.jpg" alt="SRQ Logo" style={{ width: 80, height: 80, borderRadius: 20, boxShadow: '0 8px 32px rgba(0,0,0,0.15)', objectFit: 'cover', marginBottom: 8 }} />
-        <h1>Reset Password 🔒</h1>
+        <h1>Reset Password</h1>
         <p className="auth-subtitle">Enter your new password below.</p>
 
         {done ? (
           <div style={{ background: '#F0FDF4', border: '1.5px solid #22C55E', borderRadius: 12, padding: '24px 16px', textAlign: 'center', marginTop: 16 }}>
             <CheckCircle size={40} color="#22C55E" style={{ marginBottom: 12 }} />
-            <div style={{ fontWeight: 700, color: '#15803D', marginBottom: 4 }}>Password Updated! 🎉</div>
+            <div style={{ fontWeight: 700, color: '#15803D', marginBottom: 4 }}>Password Updated!</div>
             <div style={{ fontSize: 13, color: '#166534', marginBottom: 16 }}>You can now log in using your new password.</div>
             <button onClick={() => navigate('/mobile/login')} style={{
               padding: '10px 24px', background: '#22C55E', color: 'white',

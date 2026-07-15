@@ -244,7 +244,6 @@ export default function MobileHistory() {
             })}
             {incidents.length === 0 && (
               <div style={{ textAlign: 'center', padding: 60, color: 'var(--text-muted)' }}>
-                <p style={{ fontSize: 48, marginBottom: 12 }}>📋</p>
                 <h3 style={{ fontWeight: 700, marginBottom: 4, color: 'var(--text-primary)' }}>No reports yet</h3>
                 <p>Your submitted emergency alerts will appear here</p>
               </div>

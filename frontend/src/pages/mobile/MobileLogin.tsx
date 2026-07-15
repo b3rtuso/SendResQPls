@@ -72,7 +72,7 @@ export default function MobileLogin() {
           border-radius: 50%;
         }
         .ml-form-card {
-          margin: -20px 20px 0;
+          margin: 16px 20px 30px;
           background: #fff;
           border-radius: 22px;
           padding: 28px 24px;

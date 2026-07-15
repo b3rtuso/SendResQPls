@@ -119,7 +119,7 @@ export default function MobileSignup() {
           border-radius: 50%;
         }
         .ms-form-card {
-          margin: -20px 20px 30px;
+          margin: 16px 20px 30px;
           background: #fff;
           border-radius: 22px;
           padding: 28px 24px;

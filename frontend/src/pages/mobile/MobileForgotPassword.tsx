@@ -12,7 +12,7 @@ export default function MobileForgotPassword() {
 
   const handleSubmit = async () => {
     if (!email || !email.includes('@')) {
-      setError('Enter ng valid email address mo.');
+      setError('Please enter a valid email address.');
       return;
     }
     setLoading(true);
@@ -21,7 +21,7 @@ export default function MobileForgotPassword() {
       await forgotPassword(email);
       setSent(true);
     } catch {
-      setError('May nangyaring error. Try mo ulit.');
+      setError('An error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -35,25 +35,25 @@ export default function MobileForgotPassword() {
           border: 'none', color: '#2563EB', fontWeight: 600, cursor: 'pointer',
           fontSize: 14, marginBottom: 24, padding: 0,
         }}>
-          <ArrowLeft size={16} /> Bumalik sa Login
+          <ArrowLeft size={16} /> Back to Login
         </button>
 
         <img src="/logo.jpg" alt="SRQ Logo" style={{ width: 80, height: 80, borderRadius: 20, boxShadow: '0 8px 32px rgba(0,0,0,0.15)', objectFit: 'cover', marginBottom: 8, display: 'block', marginLeft: 'auto', marginRight: 'auto' }} />
         <h1>Forgot Password? 🔑</h1>
-        <p className="auth-subtitle">I-enter ang email na ginamit sa pag-register ng account, mag-se-send kami ng reset link.</p>
+        <p className="auth-subtitle">Enter the email address registered to your account to receive a reset link.</p>
 
         {sent ? (
           <div style={{ background: '#F0FDF4', border: '1.5px solid #22C55E', borderRadius: 12, padding: '20px 16px', textAlign: 'center', marginTop: 16 }}>
             <div style={{ fontSize: 32, marginBottom: 8 }}>📧</div>
-            <div style={{ fontWeight: 700, color: '#15803D', marginBottom: 4 }}>Sent na ang reset link! 📧</div>
+            <div style={{ fontWeight: 700, color: '#15803D', marginBottom: 4 }}>Reset link sent! 📧</div>
             <div style={{ fontSize: 13, color: '#166534' }}>
-              Paki-check ang inbox mo or spam folder ng <strong>{email}</strong>. Mag-e-expire ang link pagkalipas ng 30 minuto.
+              Please check your inbox or spam folder for <strong>{email}</strong>. The link will expire in 30 minutes.
             </div>
             <button onClick={() => navigate('/mobile/login')} style={{
               marginTop: 16, padding: '10px 24px', background: '#22C55E', color: 'white',
               border: 'none', borderRadius: 10, fontWeight: 700, cursor: 'pointer',
             }}>
-              Balik sa Login
+              Back to Login
             </button>
           </div>
         ) : (

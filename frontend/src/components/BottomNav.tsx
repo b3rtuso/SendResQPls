@@ -5,7 +5,7 @@ import { getStoredNotifications } from '../pages/mobile/MobileNotifications';
 const tabs = [
   { to: '/mobile',               icon: Home,       label: 'Home',    end: true,  isReport: false, isBell: false },
   { to: '/mobile/report',        icon: PlusCircle, label: 'Report',  end: false, isReport: true,  isBell: false },
-  { to: '/mobile/notifications', icon: Bell,       label: 'Alerts',  end: false, isReport: false, isBell: true  },
+  { to: '/mobile/notifications', icon: Bell,       label: 'Notifications',  end: false, isReport: false, isBell: true  },
   { to: '/mobile/history',       icon: Clock,      label: 'History', end: false, isReport: false, isBell: false },
   { to: '/mobile/profile',       icon: User,       label: 'Profile', end: false, isReport: false, isBell: false },
 ];

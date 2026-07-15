@@ -14,7 +14,7 @@ export default function MobileLogin() {
   const [focusField, setFocusField] = useState<'email'|'pass'|null>(null);
 
   const handleLogin = async () => {
-    if (!email || !password) { setError('Fill in muna ang email at password mo.'); return; }
+    if (!email || !password) { setError('Please fill in your email and password.'); return; }
     setLoading(true); setError('');
     try {
       const res = await apiLogin(email, password);
@@ -27,7 +27,7 @@ export default function MobileLogin() {
       setupPushNotifications().catch(err => console.warn('[Login] Push notification setup failed:', err));
       if (res.data.role === 'ADMIN') { navigate('/'); } else { navigate('/mobile'); }
     } catch {
-      setError('Mali ang email o password. Try mo ulit.');
+      setError('Incorrect email or password. Please try again.');
     } finally { setLoading(false); }
   };
 
@@ -175,26 +175,26 @@ export default function MobileLogin() {
             onClick={() => navigate('/mobile/forgot-password')}
             style={{ background: 'none', border: 'none', color: '#2563EB', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
           >
-            Nakalimutan ang password?
+            Forgot password?
           </button>
         </div>
 
         {/* Login button */}
         <button className="ml-auth-btn" onClick={handleLogin} disabled={loading}>
           {loading
-            ? <><span className="ml-spin" /> Sandali lang...</>
-            : <>Mag-Login <ArrowRight size={16} /></>
+            ? <><span className="ml-spin" /> Please wait...</>
+            : <>Log In <ArrowRight size={16} /></>
           }
         </button>
 
         {/* Footer */}
         <p style={{ textAlign: 'center', marginTop: 20, fontSize: 13.5, color: '#64748B' }}>
-          Wala pang account?{' '}
+          Don't have an account?{' '}
           <button
             onClick={() => navigate('/mobile/signup')}
             style={{ background: 'none', border: 'none', color: '#2563EB', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13.5, padding: 0 }}
           >
-            Mag-register na!
+            Sign up now!
           </button>
         </p>
       </div>

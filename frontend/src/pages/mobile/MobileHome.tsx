@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Phone, AlertTriangle, Shield, Droplets, Flame, Heart, Bell, ChevronDown, MapPin, MapPinOff, X } from 'lucide-react';
+import { Phone, AlertTriangle, Shield, Droplets, Flame, Heart, ChevronDown, MapPin, MapPinOff, X } from 'lucide-react';
 import BottomNav from '../../components/BottomNav';
 import FcmBannerOverlay from '../../components/FcmBannerOverlay';
 import { getMyIncidents, cachedGet } from '../../api/client';
@@ -16,10 +16,10 @@ const hotlines = [
 ];
 
 const safetyTips = [
-  { icon: Shield, color: '#2563EB', bg: '#EFF6FF', title: 'Manatiling Kalmado', tip: 'Deep breaths lang. Pag nagpanic, mas mahirap mag-isip nang maayos.' },
-  { icon: Droplets, color: '#0EA5E9', bg: '#F0F9FF', title: 'Baha Safety', tip: 'Pumunta agad sa mataas na lugar. Huwag lumakad o magmaneho sa baha.' },
-  { icon: Flame, color: '#EF4444', bg: '#FEF2F2', title: 'Fire Safety', tip: 'Lumayo sa usok. Takpan ang ilong ng basang tela at lumabas agad.' },
-  { icon: Heart, color: '#EC4899', bg: '#FDF2F8', title: 'First Aid', tip: 'Ipitin ang sugat ng malinis na tela para mapigilan ang pagdurugo. Huwag galawin ang nasugatan hanggang wala pang dumarating na tulong.' },
+  { icon: Shield, color: '#2563EB', bg: '#EFF6FF', title: 'Stay Calm', tip: 'Take deep breaths. Panicking makes it harder to think clearly.' },
+  { icon: Droplets, color: '#0EA5E9', bg: '#F0F9FF', title: 'Flood Safety', tip: 'Move to high ground immediately. Do not walk or drive through floodwaters.' },
+  { icon: Flame, color: '#EF4444', bg: '#FEF2F2', title: 'Fire Safety', tip: 'Stay away from smoke. Cover your nose with a damp cloth and evacuate immediately.' },
+  { icon: Heart, color: '#EC4899', bg: '#FDF2F8', title: 'First Aid', tip: 'Apply pressure to wounds with a clean cloth to stop bleeding. Do not move injured persons unless necessary.' },
 ];
 
 const STATUS_KEY = 'srq_last_statuses';
@@ -30,18 +30,12 @@ export default function MobileHome() {
   const initials = userName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
   const userId = localStorage.getItem('userId');
 
-  const [unseenCount, setUnseenCount] = useState(0);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Location permission state
   type LocStatus = 'idle' | 'granted' | 'denied' | 'unavailable';
   const [locStatus, setLocStatus] = useState<LocStatus>('idle');
   const [showLocBanner, setShowLocBanner] = useState(true);
-
-  // Sync unread count from localStorage on mount
-  useEffect(() => {
-    setUnseenCount(getStoredNotifications().filter(n => !n.read).length);
-  }, []);
 
   // Unified polling — writes new notifications to localStorage for the notifications page
   const checkForUpdates = async (isFirstLoad = false) => {
@@ -74,7 +68,6 @@ export default function MobileHome() {
       if (newNotifs.length > 0) {
         const existing = getStoredNotifications();
         saveNotifications([...newNotifs, ...existing].slice(0, 30));
-        setUnseenCount(c => c + newNotifs.length);
       }
     } catch { /* silent */ }
   };
@@ -138,7 +131,7 @@ export default function MobileHome() {
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }}>
 
         {/* ── Header ─────────────────────────────────── */}
-        <div style={{
+        <div className="mobile-home-header" style={{
           background: 'linear-gradient(160deg, #1E3A5F 0%, #1D4ED8 65%, #2563EB 100%)',
           padding: '52px 20px 20px',
           position: 'sticky', top: 0, zIndex: 20,
@@ -146,51 +139,31 @@ export default function MobileHome() {
           boxShadow: '0 4px 20px rgba(30,58,95,0.35)',
         }}>
           {/* Top row: logo + actions */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+          <div className="header-top" style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
             <img src="/logo.jpg" alt="SRQ" style={{ width: 36, height: 36, borderRadius: 10, objectFit: 'cover', flexShrink: 0, border: '1.5px solid rgba(255,255,255,0.25)' }} />
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.55)', letterSpacing: '0.5px', textTransform: 'uppercase', lineHeight: 1 }}>SendResQPls</div>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', lineHeight: 1.3, marginTop: 1 }}>MDRRMO Balayan, Batangas</div>
             </div>
-            {/* Bell → navigates to notifications page */}
+            {/* Clickable Avatar redirects to Profile */}
             <button
-              onClick={() => navigate('/mobile/notifications')}
+              onClick={() => navigate('/mobile/profile')}
               style={{
                 width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
-                background: 'rgba(255,255,255,0.13)', border: '1.5px solid rgba(255,255,255,0.22)',
+                background: 'rgba(255,255,255,0.18)', border: '1.5px solid rgba(255,255,255,0.3)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer', color: 'white', position: 'relative',
-                backdropFilter: 'blur(4px)',
+                fontWeight: 800, fontSize: 13, color: 'white',
+                backdropFilter: 'blur(4px)', cursor: 'pointer', padding: 0,
+                fontFamily: 'inherit', outline: 'none',
               }}
-              aria-label="Notifications"
+              aria-label="Profile"
             >
-              <Bell size={17} />
-              {unseenCount > 0 && (
-                <span style={{
-                  position: 'absolute', top: -3, right: -3,
-                  minWidth: 16, height: 16, borderRadius: 8,
-                  background: '#EF4444', fontSize: 9, fontWeight: 800,
-                  color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  border: '1.5px solid #1E3A5F', padding: '0 3px',
-                }}>
-                  {unseenCount > 9 ? '9+' : unseenCount}
-                </span>
-              )}
-            </button>
-            {/* Avatar */}
-            <div style={{
-              width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
-              background: 'rgba(255,255,255,0.18)', border: '1.5px solid rgba(255,255,255,0.3)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontWeight: 800, fontSize: 13, color: 'white',
-              backdropFilter: 'blur(4px)',
-            }}>
               {initials}
-            </div>
+            </button>
           </div>
           {/* Greeting row */}
           <div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 2 }}>Kamusta,</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 2 }}>Hello,</div>
             <div style={{ fontSize: 22, fontWeight: 800, color: 'white', letterSpacing: '-0.3px', lineHeight: 1.1 }}>{userName}</div>
           </div>
         </div>
@@ -208,7 +181,7 @@ export default function MobileHome() {
           }}>
             <MapPinOff size={16} color="#F97316" style={{ flexShrink: 0 }} />
             <div style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#9A3412' }}>
-              {locStatus === 'denied' ? 'I-enable ang location para sa emergency reports' : 'GPS not supported sa device na ito'}
+              {locStatus === 'denied' ? 'Enable location for emergency reports' : 'GPS not supported on this device'}
             </div>
             <button
               onClick={() => setShowLocBanner(false)}
@@ -252,7 +225,7 @@ export default function MobileHome() {
             </div>
             <h2 style={{ letterSpacing: '1.5px', fontSize: 20 }}>SEND EMERGENCY ALERT</h2>
             <p style={{ fontSize: 12.5, opacity: 0.82, marginTop: 6, letterSpacing: '0.1px' }}>
-              I-tap para makapag-report kaagad ng emergency sa MDRRMO
+              Tap to instantly report an emergency to MDRRMO
             </p>
             <div className="tap-hint">
               <span className="tap-arrow"><ChevronDown size={12} /></span>

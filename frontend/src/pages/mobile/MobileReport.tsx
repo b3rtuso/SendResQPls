@@ -36,7 +36,7 @@ export default function MobileReport() {
 
   const handleSend = async () => {
     if (!photo) {
-      showToast('warning', 'Walang photo', 'Kumuha o mag-upload ng larawan ng emergency.');
+      showToast('warning', 'No photo', 'Please capture or upload an image of the emergency.');
       return;
     }
 
@@ -61,13 +61,13 @@ export default function MobileReport() {
         lat = String(position.coords.latitude);
         lng = String(position.coords.longitude);
       } catch {
-        showToast('error', 'Kailangan ng Location', 'I-enable ang GPS/location para makapag-submit ng report. Ang mga report ay para lang sa loob ng Balayan, Batangas.');
+        showToast('error', 'Location Required', 'Please enable GPS/location to submit a report. Reports are only accepted within Balayan, Batangas.');
         setSending(false);
         return;
       }
 
       if (!isWithinBalayan(parseFloat(lat), parseFloat(lng))) {
-        showToast('error', 'Outside ng Balayan', 'Ang reports ay para lang sa loob ng Balayan, Batangas. Siguraduhing nasa area ka.');
+        showToast('error', 'Outside Balayan', 'Emergency reports are only accepted within the municipality of Balayan, Batangas.');
         setSending(false);
         return;
       }
@@ -80,8 +80,8 @@ export default function MobileReport() {
 
       showToast(
         'success',
-        'Na-send na ang Emergency Report! 🚑',
-        `AI-classified bilang: ${incident?.aiDetectedType || 'Processing...'} — Na-route sa ${incident?.aiRecommendedDept || 'MDRRMO'}`
+        'Emergency Report Sent! 🚑',
+        `AI-classified as: ${incident?.aiDetectedType || 'Processing...'} — Routed to ${incident?.aiRecommendedDept || 'MDRRMO'}`
       );
 
       setPhoto(null);
@@ -90,8 +90,8 @@ export default function MobileReport() {
       setTimeout(() => navigate('/mobile/history'), 3000);
 
     } catch (error: any) {
-      const detail = error?.response?.data?.details || error?.message || 'I-check ang connection at try mo ulit.';
-      showToast('error', 'Hindi na-send ang report', detail);
+      const detail = error?.response?.data?.details || error?.message || 'Please check your connection and try again.';
+      showToast('error', 'Report failed to send', detail);
     } finally {
       setSending(false);
     }
@@ -140,14 +140,14 @@ export default function MobileReport() {
           </button>
           <div>
             <h1 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: 'white', letterSpacing: '0.3px' }}>Quick SOS Alert</h1>
-            <p style={{ fontSize: 11, opacity: 0.85, margin: '2px 0 0' }}>MDRRMO will respond agad</p>
+            <p style={{ fontSize: 11, opacity: 0.85, margin: '2px 0 0' }}>MDRRMO will respond immediately</p>
           </div>
         </div>
 
         <div className="report-hero">
           <div className="alert-icon"><AlertTriangle size={28} /></div>
           <h2>Need Help? 🙋</h2>
-          <p>Kumuha ng pic ng sitwasyon at i-share ang location. Ang AI ang mag-cla-classify ng emergency at magpadala ng tamang team agad.</p>
+          <p>Take a picture of the situation and share your location. Our AI will classify the emergency and dispatch the appropriate response team immediately.</p>
         </div>
 
         <input
@@ -163,13 +163,13 @@ export default function MobileReport() {
           {preview ? (
             <img
               src={preview}
-              alt="Kinuha"
+              alt="Captured"
               style={{ width: '100%', maxHeight: 200, objectFit: 'cover', borderRadius: 12 }}
             />
           ) : (
             <>
               <div className="cam-icon"><Camera size={26} /></div>
-              <p>I-tap para kumuha o mag-upload ng photo</p>
+              <p>Tap to take or upload a photo</p>
             </>
           )}
           {photo && !preview && <p className="file-name">📷 {photo.name}</p>}
@@ -188,7 +188,7 @@ export default function MobileReport() {
             </>
           )}
         </button>
-        <p className="report-note">* Kailangan ang location at photo para mapadala ang alert</p>
+        <p className="report-note">* Location and photo are required to send the alert</p>
       </div>
       <BottomNav />
       <FcmBannerOverlay />

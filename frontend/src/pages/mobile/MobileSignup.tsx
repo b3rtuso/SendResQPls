@@ -29,7 +29,7 @@ export default function MobileSignup() {
 
   const handleSendCode = async () => {
     if (!form.email || !form.email.includes('@')) {
-      setError('Lagay muna ng valid email.');
+      setError('Please enter a valid email address.');
       return;
     }
     setSendingCode(true);
@@ -38,10 +38,10 @@ export default function MobileSignup() {
       await sendVerificationCode(form.email);
       setCodeSent(true);
       setCooldown(600);
-      setToast({ show: true, message: 'Code sent! 📩', detail: `Maaaring mapunta ang email sa Spam folder. Tingnan sa ${form.email}`, type: 'success' });
+      setToast({ show: true, message: 'Code sent! 📩', detail: `The code might be in your Spam folder. Sent to ${form.email}`, type: 'success' });
     } catch (err: any) {
       console.error('[SendCode] Error:', err.response?.data || err.message);
-      const msg = err.response?.data?.error || err.response?.data?.details || err.message || 'Hindi na-send ang code';
+      const msg = err.response?.data?.error || err.response?.data?.details || err.message || 'Verification code failed to send';
       setError(msg);
     } finally {
       setSendingCode(false);
@@ -50,7 +50,7 @@ export default function MobileSignup() {
 
   const handleVerifyCode = async () => {
     if (codeInput.length !== 6) {
-      setError('I-enter ang 6-digit code.');
+      setError('Please enter the 6-digit verification code.');
       return;
     }
     setVerifying(true);
@@ -58,9 +58,9 @@ export default function MobileSignup() {
     try {
       await verifyCode(form.email, codeInput);
       setVerified(true);
-      setToast({ show: true, message: 'Verified na! ✅', detail: 'Pwede na mag-complete ng registration.', type: 'success' });
+      setToast({ show: true, message: 'Verified! ✅', detail: 'You can now complete your registration.', type: 'success' });
     } catch (err: any) {
-      const msg = err.response?.data?.error || 'Mali ang code. Try mo ulit.';
+      const msg = err.response?.data?.error || 'Incorrect code. Please try again.';
       setError(msg);
     } finally {
       setVerifying(false);
@@ -69,11 +69,11 @@ export default function MobileSignup() {
 
   const handleSignup = async () => {
     if (!verified) {
-      setError('I-verify muna ang email mo.');
+      setError('Please verify your email address first.');
       return;
     }
     if (form.password.length < 6) {
-      setError('Dapat 6 or more characters ang password.');
+      setError('Password must be at least 6 characters.');
       return;
     }
     setLoading(true);
@@ -83,10 +83,10 @@ export default function MobileSignup() {
       localStorage.setItem('userName', form.name);
       localStorage.setItem('userEmail', form.email);
       localStorage.setItem('userPhone', form.phone);
-      setToast({ show: true, message: 'Account created! 🎉', detail: 'Papunta na sa login...', type: 'success' });
+      setToast({ show: true, message: 'Account created! 🎉', detail: 'Redirecting to login...', type: 'success' });
       setTimeout(() => navigate('/mobile/login'), 1500);
     } catch {
-      setError('Hindi nagawa ang account. Try mo ulit.');
+      setError('Failed to create account. Please try again.');
     } finally {
       setLoading(false);
     }

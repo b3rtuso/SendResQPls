@@ -17,11 +17,11 @@ const badgeClass: Record<Status, string> = {
 };
 
 const statusLabel: Record<Status, string> = {
-  PENDING: 'Naghihintay',
-  REVIEWING: 'Nire-review',
-  DISPATCHED: 'Naka-dispatch',
-  RESOLVED: 'Naresolba',
-  REJECTED: 'Na-reject',
+  PENDING: 'Pending',
+  REVIEWING: 'Reviewing',
+  DISPATCHED: 'Dispatched',
+  RESOLVED: 'Resolved',
+  REJECTED: 'Rejected',
 };
 
 const dotColors: Record<string, string> = {
@@ -158,7 +158,7 @@ export default function MobileHistory() {
               transition: refreshing ? undefined : 'transform 0.1s linear'
             }}
           />
-          <span>{refreshing ? 'Sina-sync...' : pullDistance > 60 ? 'Bitiwan para mag-refresh' : 'Hilahin pababa para i-refresh'}</span>
+          <span>{refreshing ? 'Syncing...' : pullDistance > 60 ? 'Release to refresh' : 'Pull down to refresh'}</span>
         </div>
         {/* Header */}
         <div style={{
@@ -186,13 +186,13 @@ export default function MobileHistory() {
               color: 'white',
               padding: 0,
             }}
-            aria-label="Bumalik"
+            aria-label="Back"
           >
             <ChevronLeft size={20} />
           </button>
           <div>
-            <h1 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: 'white', letterSpacing: '0.3px' }}>History ng Reports</h1>
-            <p style={{ fontSize: 11, opacity: 0.85, margin: '2px 0 0' }}>Subaybayan ang iyong mga active at nakaraang reports</p>
+            <h1 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: 'white', letterSpacing: '0.3px' }}>Report History</h1>
+            <p style={{ fontSize: 11, opacity: 0.85, margin: '2px 0 0' }}>Track your active and past emergency reports</p>
           </div>
         </div>
 
@@ -209,20 +209,20 @@ export default function MobileHistory() {
                       <AlertCircle size={20} color={typeColor} />
                     </div>
                     <div className="incident-info">
-                      <h4>{inc.aiDetectedType || 'Hindi na-identify na Emergency'}</h4>
+                      <h4>{inc.aiDetectedType || 'Unidentified Emergency'}</h4>
                       <div className="location">
                         <MapPin size={12} />
                         {inc.latitude && inc.longitude
                           ? getNearestBarangay(inc.latitude, inc.longitude)
-                          : 'Hindi available ang lokasyon'}
+                          : 'Location not available'}
                       </div>
                     </div>
                   </div>
                   <div className="history-card-bottom">
                     <div>
-                      <div className="reported-on">Na-report noong</div>
+                      <div className="reported-on">Reported on</div>
                       <div className="reported-date">
-                        {new Date(inc.createdAt).toLocaleDateString('fil-PH')} •{' '}
+                        {new Date(inc.createdAt).toLocaleDateString('en-US')} •{' '}
                         {new Date(inc.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </div>
@@ -236,7 +236,7 @@ export default function MobileHistory() {
                       borderTop: '1px solid var(--border-light)',
                       fontSize: 12, color: 'var(--text-secondary)',
                     }}>
-                      Naipadala sa: <strong style={{ color: 'var(--text-primary)' }}>{inc.aiRecommendedDept}</strong>
+                      Assigned to: <strong style={{ color: 'var(--text-primary)' }}>{inc.aiRecommendedDept}</strong>
                     </div>
                   )}
                 </div>
@@ -245,8 +245,8 @@ export default function MobileHistory() {
             {incidents.length === 0 && (
               <div style={{ textAlign: 'center', padding: 60, color: 'var(--text-muted)' }}>
                 <p style={{ fontSize: 48, marginBottom: 12 }}>📋</p>
-                <h3 style={{ fontWeight: 700, marginBottom: 4, color: 'var(--text-primary)' }}>Wala pang report</h3>
-                <p>Ang mga na-submit na emergency alert ay lalabas dito</p>
+                <h3 style={{ fontWeight: 700, marginBottom: 4, color: 'var(--text-primary)' }}>No reports yet</h3>
+                <p>Your submitted emergency alerts will appear here</p>
               </div>
             )}
           </div>

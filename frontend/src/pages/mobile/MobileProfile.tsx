@@ -202,8 +202,8 @@ export default function MobileProfile() {
           }}>{initials}</div>
 
           <h2 style={{ fontSize: 'clamp(20px, 5.5vw, 26px)', fontWeight: 800, margin: '0 0 4px', lineHeight: 1.2 }}>{name}</h2>
-          <p style={{ fontSize: 'clamp(12px, 3.5vw, 14px)', opacity: 0.75, margin: '0 0 2px', wordBreak: 'break-all' }}>{email || 'Walang email'}</p>
-          <p style={{ fontSize: 'clamp(12px, 3.5vw, 14px)', opacity: 0.75, margin: '0 0 14px' }}>{phone || 'Walang numero'}</p>
+          <p style={{ fontSize: 'clamp(12px, 3.5vw, 14px)', opacity: 0.75, margin: '0 0 2px', wordBreak: 'break-all' }}>{email || 'No email address'}</p>
+          <p style={{ fontSize: 'clamp(12px, 3.5vw, 14px)', opacity: 0.75, margin: '0 0 14px' }}>{phone || 'No phone number'}</p>
 
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -217,10 +217,10 @@ export default function MobileProfile() {
         {/* Menu */}
         <div style={{ padding: '12px clamp(14px, 4vw, 20px)' }}>
           {[
-            { icon: User, label: 'Detalye ng Account', key: 'account' as Section, desc: 'Pangalan, email, password' },
-            { icon: Phone, label: 'Emergency Contacts', key: 'contacts' as Section, desc: `${contacts.length} contact${contacts.length !== 1 ? 's' : ''} na-save` },
-            { icon: Bell, label: 'Mga Setting ng Notipikasyon', key: 'notifications' as Section, desc: 'Mga alerto at tunog' },
-            { icon: HelpCircle, label: 'Tulong at Suporta', key: 'help' as Section, desc: 'FAQs at makipag-ugnayan' },
+            { icon: User, label: 'Account Details', key: 'account' as Section, desc: 'Name, email, and password' },
+            { icon: Phone, label: 'Emergency Contacts', key: 'contacts' as Section, desc: `${contacts.length} contact${contacts.length !== 1 ? 's' : ''} saved` },
+            { icon: Bell, label: 'Notification Settings', key: 'notifications' as Section, desc: 'Alerts and sound preferences' },
+            { icon: HelpCircle, label: 'Help & Support', key: 'help' as Section, desc: 'FAQs and contact details' },
           ].map(item => (
             <div
               key={item.label}
@@ -257,7 +257,7 @@ export default function MobileProfile() {
             fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
           }}>
-            <LogOut size={17} /> Mag-logout
+            <LogOut size={17} /> Log Out
           </button>
         </div>
       </div>
@@ -270,12 +270,12 @@ export default function MobileProfile() {
     <div className="mobile-shell">
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }}>
         {toast.show && <Toast type={toast.type} message={toast.message} detail={toast.detail} onClose={() => setToast({ ...toast, show: false })} />}
-        <SectionHeader title="Detalye ng Account" onBack={() => setSection('main')} />
+        <SectionHeader title="Account Details" onBack={() => setSection('main')} />
 
         <div style={{ padding: 'clamp(14px, 4vw, 20px)' }}>
-          <Field label="Buong Pangalan" icon={User} value={name} onChange={setName} placeholder="Juan Dela Cruz" />
-          <Field label="Email Address" icon={Mail} value={email} onChange={setEmail} placeholder="juan@halimbawa.com" type="email" />
-          <Field label="Numero ng Telepono" icon={Phone} value={phone} onChange={setPhone} placeholder="+63 900 000 0000" type="tel" />
+          <Field label="Full Name" icon={User} value={name} onChange={setName} placeholder="Juan Dela Cruz" />
+          <Field label="Email Address" icon={Mail} value={email} onChange={setEmail} placeholder="juan@example.com" type="email" />
+          <Field label="Phone Number" icon={Phone} value={phone} onChange={setPhone} placeholder="+63 900 000 0000" type="tel" />
 
           <button onClick={handleSaveProfile} disabled={saving} style={{
             width: '100%', padding: 'clamp(12px, 3.5vw, 15px)',
@@ -285,14 +285,14 @@ export default function MobileProfile() {
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
             opacity: saving ? 0.6 : 1, marginBottom: 20,
           }}>
-            <Save size={16} /> {saving ? 'Sino-save...' : 'I-save ang Pagbabago'}
+            <Save size={16} /> {saving ? 'Saving...' : 'Save Changes'}
           </button>
 
           {/* Change Password card */}
           <div style={{
             background: '#F8FAFC', borderRadius: 16, border: '1px solid #E2E8F0', padding: 'clamp(14px, 4vw, 18px)',
           }}>
-            <h3 style={{ fontSize: 'clamp(13px, 3.8vw, 15px)', fontWeight: 800, color: '#0F172A', margin: '0 0 14px' }}>Baguhin ang Password</h3>
+            <h3 style={{ fontSize: 'clamp(13px, 3.8vw, 15px)', fontWeight: 800, color: '#0F172A', margin: '0 0 14px' }}>Change Password</h3>
 
             {/* Current password */}
             <div style={{
@@ -303,7 +303,7 @@ export default function MobileProfile() {
               <Lock size={16} color="#94A3B8" style={{ flexShrink: 0 }} />
               <input
                 type={showCurrentPass ? 'text' : 'password'}
-                placeholder="Kasalukuyang password"
+                placeholder="Current password"
                 value={currentPass}
                 onChange={e => setCurrentPass(e.target.value)}
                 style={{ flex: 1, border: 'none', background: 'none', outline: 'none', fontSize: 14, fontFamily: 'var(--font)', minWidth: 0 }}
@@ -322,7 +322,7 @@ export default function MobileProfile() {
               <Lock size={16} color="#94A3B8" style={{ flexShrink: 0 }} />
               <input
                 type={showNewPass ? 'text' : 'password'}
-                placeholder="Bagong password (min 6 chars)"
+                placeholder="New password (min 6 chars)"
                 value={newPass}
                 onChange={e => setNewPass(e.target.value)}
                 style={{ flex: 1, border: 'none', background: 'none', outline: 'none', fontSize: 14, fontFamily: 'var(--font)', minWidth: 0 }}
@@ -337,7 +337,7 @@ export default function MobileProfile() {
               border: 'none', fontSize: 14, fontWeight: 700, cursor: 'pointer',
               fontFamily: 'var(--font)', opacity: saving ? 0.6 : 1,
             }}>
-              {saving ? 'Ina-update...' : 'I-update ang Password'}
+              {saving ? 'Updating...' : 'Update Password'}
             </button>
           </div>
         </div>
@@ -351,11 +351,11 @@ export default function MobileProfile() {
     <div className="mobile-shell">
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }}>
         {toast.show && <Toast type={toast.type} message={toast.message} detail={toast.detail} onClose={() => setToast({ ...toast, show: false })} />}
-        <SectionHeader title="Mga Emergency Contact" onBack={() => setSection('main')} />
+        <SectionHeader title="Emergency Contacts" onBack={() => setSection('main')} />
 
         <div style={{ padding: 'clamp(14px, 4vw, 20px)' }}>
           <p style={{ fontSize: 13, color: '#64748B', marginBottom: 16, lineHeight: 1.5 }}>
-            Ang mga contact na ito ay aabisuhan kapag nagpadala ka ng emergency report.
+            These contacts will be notified when you submit an emergency report.
           </p>
 
           {contacts.length === 0 && !showAddContact && (

@@ -74,6 +74,22 @@ export default function MobileOnboarding({ onDone }: { onDone: () => void }) {
       boxSizing: 'border-box', transition: 'background 0.5s ease',
       fontFamily: "'Inter', sans-serif",
     }}>
+      <style>{`
+        @keyframes onboardingFadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(16px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .onboarding-transition {
+          animation: onboardingFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+      `}</style>
+
       {/* Top: Skip */}
       <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end' }}>
         {!isLast && (
@@ -85,9 +101,7 @@ export default function MobileOnboarding({ onDone }: { onDone: () => void }) {
       </div>
 
       {/* Middle: Content */}
-      <div style={{ textAlign: 'center', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 24 }}>
-
-
+      <div key={current} className="onboarding-transition" style={{ textAlign: 'center', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 24 }}>
         {/* Icon Card */}
         <div style={{
           width: 84, height: 84, borderRadius: 24, background: slide.iconBg,
@@ -120,7 +134,7 @@ export default function MobileOnboarding({ onDone }: { onDone: () => void }) {
         <div style={{ display: 'flex', gap: 8 }}>
           {slides.map((_, i) => (
             <div key={i} onClick={() => setCurrent(i)} style={{
-              width: i === current ? 28 : 8, height: 8, borderRadius: 4,
+              width: 8, height: 8, borderRadius: '50%',
               background: i === current ? 'white' : 'rgba(255,255,255,0.3)',
               transition: 'all 0.3s ease', cursor: 'pointer',
             }} />

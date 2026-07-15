@@ -28,11 +28,11 @@ export interface StoredNotif {
 }
 
 const STATUS_META: Record<string, { label: string; color: string; bg: string; icon: React.ElementType }> = {
-  DISPATCHED: { label: 'Na-dispatch na ang responder',  color: '#2563EB', bg: '#EFF6FF', icon: Truck },
-  RESOLVED:   { label: 'Resolved na ang iyong report',  color: '#16A34A', bg: '#F0FDF4', icon: ShieldCheck },
-  REJECTED:   { label: 'Hindi na-approve ang report',   color: '#DC2626', bg: '#FEF2F2', icon: XCircle },
-  REVIEWING:  { label: 'Nire-review ng MDRRMO',         color: '#D97706', bg: '#FFFBEB', icon: Clock },
-  PENDING:    { label: 'Naghihintay ng review',         color: '#64748B', bg: '#F8FAFC', icon: AlertCircle },
+  DISPATCHED: { label: 'Responders have been dispatched',  color: '#2563EB', bg: '#EFF6FF', icon: Truck },
+  RESOLVED:   { label: 'Your report has been resolved',  color: '#16A34A', bg: '#F0FDF4', icon: ShieldCheck },
+  REJECTED:   { label: 'Report was not approved',   color: '#DC2626', bg: '#FEF2F2', icon: XCircle },
+  REVIEWING:  { label: 'Under review by MDRRMO',         color: '#D97706', bg: '#FFFBEB', icon: Clock },
+  PENDING:    { label: 'Awaiting review',         color: '#64748B', bg: '#F8FAFC', icon: AlertCircle },
 };
 
 export default function MobileNotifications() {
@@ -76,7 +76,7 @@ export default function MobileNotifications() {
               )}
             </div>
             <div style={{ fontSize: 12, color: '#94A3B8', marginTop: 2 }}>
-              Mga update sa iyong mga report
+              Updates on your emergency reports
             </div>
           </div>
           {notifications.length > 0 && (
@@ -111,10 +111,10 @@ export default function MobileNotifications() {
               <Bell size={28} color="#CBD5E1" />
             </div>
             <div style={{ fontSize: 16, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>
-              Wala pang notification
+              No notifications yet
             </div>
             <div style={{ fontSize: 13, color: '#94A3B8', lineHeight: 1.6 }}>
-              Makakakita ka ng mga update dito kapag nagbago ang status ng iyong report.
+              You will see updates here when the status of your report changes.
             </div>
           </div>
         ) : (

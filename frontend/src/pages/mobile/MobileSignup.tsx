@@ -93,18 +93,75 @@ export default function MobileSignup() {
   };
 
   return (
-    <div className="mobile-shell">
-      <div className="mobile-auth">
-        <h1>Gawa tayo ng Account 🙌</h1>
-        <p className="auth-subtitle">Mag-register na para makapag-report agad ng emergency.</p>
+    <div className="mobile-shell" style={{ background: '#F1F5F9' }}>
+      <style>{`
+        .ms-signup-header {
+          background: linear-gradient(160deg, #0F1F38 0%, #1D4ED8 60%, #2563EB 100%);
+          padding: 56px 28px 44px;
+          position: relative;
+          overflow: hidden;
+          border-radius: 0 0 32px 32px;
+        }
+        .ms-signup-header::after {
+          content: '';
+          position: absolute;
+          top: -40px; right: -40px;
+          width: 160px; height: 160px;
+          background: rgba(255,255,255,0.05);
+          border-radius: 50%;
+        }
+        .ms-signup-header::before {
+          content: '';
+          position: absolute;
+          bottom: 20px; left: -30px;
+          width: 100px; height: 100px;
+          background: rgba(255,255,255,0.04);
+          border-radius: 50%;
+        }
+        .ms-form-card {
+          margin: -20px 20px 30px;
+          background: #fff;
+          border-radius: 22px;
+          padding: 28px 24px;
+          box-shadow: 0 8px 40px rgba(30,58,95,0.12), 0 2px 8px rgba(0,0,0,0.06);
+          position: relative; z-index: 2;
+        }
+      `}</style>
+
+      {/* Branded header */}
+      <div className="ms-signup-header">
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <img
+            src="/logo.jpg" alt="SRQ"
+            style={{ width: 56, height: 56, borderRadius: 16, objectFit: 'cover', marginBottom: 16, border: '2px solid rgba(255,255,255,0.2)', boxShadow: '0 8px 24px rgba(0,0,0,0.3)' }}
+          />
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6, fontWeight: 600 }}>
+            MDRRMO Balayan, Batangas
+          </div>
+          <h1 style={{ color: 'white', fontSize: 26, fontWeight: 900, letterSpacing: '-0.5px', lineHeight: 1.15, margin: 0 }}>
+            Gawa tayo ng<br />
+            <span style={{ color: '#93C5FD' }}>Account 🙌</span>
+          </h1>
+        </div>
+      </div>
+
+      {/* Floating form card */}
+      <div className="ms-form-card mobile-auth">
+        <p style={{ fontSize: 13, color: '#64748B', margin: '0 0 20px', lineHeight: 1.55 }}>
+          Mag-register na para makapag-report agad ng emergency.
+        </p>
 
         {toast.show && (
           <Toast type={toast.type} message={toast.message} detail={toast.detail} onClose={() => setToast({ ...toast, show: false })} />
         )}
 
-        {error && <p style={{ color: '#DC2626', fontSize: 13, marginBottom: 12, fontWeight: 600 }}>{error}</p>}
+        {error && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: 10, padding: '10px 12px', marginBottom: 16 }}>
+            <span style={{ fontSize: 13, color: '#B91C1C', fontWeight: 600 }}>{error}</span>
+          </div>
+        )}
 
-        <form autoComplete="on" onSubmit={(e) => e.preventDefault()} style={{ display: 'contents' }}>
+        <form autoComplete="on" onSubmit={(e) => e.preventDefault()} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div className="input-group">
             <label>Buong Pangalan</label>
             <div className="input-wrapper">
@@ -182,11 +239,11 @@ export default function MobileSignup() {
                   <input
                     type="text"
                     autoComplete="one-time-code"
-                    placeholder="I-enter ang 6-digit code"
+                    placeholder="I-enter ang code"
                     value={codeInput}
                     onChange={(e) => setCodeInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     maxLength={6}
-                    style={{ letterSpacing: 2, fontWeight: 700, fontSize: 18 }}
+                    style={{ letterSpacing: 2, fontWeight: 700, fontSize: 18, paddingLeft: 46 }}
                   />
                 </div>
                 <button
@@ -200,7 +257,7 @@ export default function MobileSignup() {
                     background: '#3B82F6', color: 'white',
                     border: 'none', cursor: 'pointer',
                     opacity: (verifying || codeInput.length !== 6) ? 0.5 : 1,
-                    fontFamily: 'var(--font)', minHeight: 46,
+                    fontFamily: 'var(--font)', minHeight: 50,
                   }}
                 >
                   {verifying ? '...' : 'Verify'}
@@ -237,7 +294,7 @@ export default function MobileSignup() {
           </button>
         </form>
 
-        <p className="auth-footer">
+        <p className="auth-footer" style={{ marginTop: 24 }}>
           May account ka na?{' '}
           <a href="#" onClick={(e) => { e.preventDefault(); navigate('/mobile/login'); }}>Mag-login</a>
         </p>

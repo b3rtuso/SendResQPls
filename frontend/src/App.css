@@ -68,13 +68,96 @@ button:active:not(:disabled) {
   width: 100%;
 }
 
-/* Auth input focus-within helper */
-.input-wrapper-focus {
-  border-color: var(--primary) !important;
-  background: #fff !important;
-  box-shadow: 0 0 0 3px rgba(37,99,235,0.10) !important;
+.mobile-auth h1 {
+  font-size: 26px;
+  font-weight: 900;
+  color: #0F172A;
+  letter-spacing: -0.5px;
+  margin: 0 0 8px;
 }
 
+.mobile-auth .auth-subtitle {
+  font-size: 13.5px;
+  color: #64748B;
+  line-height: 1.55;
+  margin: 0 0 24px;
+}
+
+/* Form Styles */
+.mobile-auth .input-group {
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-auth .input-group label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #374151;
+  margin-bottom: 6px;
+  letter-spacing: 0.01em;
+}
+
+.mobile-auth .input-wrapper {
+  display: flex;
+  align-items: center;
+  position: relative;
+  background: #F8FAFC;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 14px;
+  transition: all var(--transition);
+  width: 100%;
+}
+
+.mobile-auth .input-wrapper:focus-within {
+  background: #fff;
+  border-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+}
+
+.mobile-auth .input-icon {
+  position: absolute;
+  left: 14px;
+  color: #94A3B8;
+  pointer-events: none;
+  transition: color 0.18s;
+}
+
+.mobile-auth .input-wrapper:focus-within .input-icon {
+  color: #2563EB;
+}
+
+.mobile-auth .input-wrapper input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 15px;
+  font-family: inherit;
+  color: #0F172A;
+  padding: 16px 16px 16px 46px;
+}
+
+.mobile-auth .toggle-pass {
+  position: absolute;
+  right: 14px;
+  background: none;
+  border: none;
+  color: #94A3B8;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s;
+}
+
+.mobile-auth .toggle-pass:hover {
+  color: #475569;
+}
+
+/* Auth button */
 .mobile-auth .auth-btn {
   width: 100%;
   padding: 16px;
@@ -130,6 +213,7 @@ button:active:not(:disabled) {
   font-weight: 700;
   text-decoration: none;
 }
+
 
 
 /* ===== MOBILE HOME ===== */

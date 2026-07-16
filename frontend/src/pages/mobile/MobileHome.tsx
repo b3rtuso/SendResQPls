@@ -126,23 +126,20 @@ export default function MobileHome() {
   }, [locStatus]);
 
   return (
-    <div className="mobile-shell">
+    <div className="mobile-shell" style={{ background: '#F1F5F9' }}>
       <FcmBannerOverlay />
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }}>
 
         {/* ── Header ─────────────────────────────────── */}
-        <div className="mobile-home-header" style={{
-          background: 'linear-gradient(160deg, #1E3A5F 0%, #1D4ED8 65%, #2563EB 100%)',
-          padding: '52px 20px 24px',
-          borderRadius: '0 0 24px 24px',
-          boxShadow: '0 4px 20px rgba(30,58,95,0.2)',
-        }}>
+        <div className="mobile-home-header">
           {/* Top row: logo + actions */}
-          <div className="header-top" style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-            <img src="/logo.jpg" alt="SRQ" style={{ width: 36, height: 36, borderRadius: 10, objectFit: 'cover', flexShrink: 0, border: '1.5px solid rgba(255,255,255,0.25)' }} />
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.55)', letterSpacing: '0.5px', textTransform: 'uppercase', lineHeight: 1 }}>SendResQPls</div>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', lineHeight: 1.3, marginTop: 1 }}>MDRRMO Balayan, Batangas</div>
+          <div className="header-top">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <img src="/logo.jpg" alt="SRQ" style={{ width: 36, height: 36, borderRadius: 10, objectFit: 'cover', flexShrink: 0, border: '1.5px solid rgba(255,255,255,0.25)' }} />
+              <div>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.55)', letterSpacing: '0.5px', textTransform: 'uppercase', lineHeight: 1 }}>SendResQPls</div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', lineHeight: 1.3, marginTop: 1 }}>MDRRMO Balayan, Batangas</div>
+              </div>
             </div>
             {/* Clickable Avatar redirects to Profile */}
             <button
@@ -162,21 +159,22 @@ export default function MobileHome() {
           </div>
           {/* Greeting row */}
           <div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 2 }}>Hello,</div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: 'white', letterSpacing: '-0.3px', lineHeight: 1.1 }}>{userName}</div>
+            <div className="greeting">Hello,</div>
+            <div className="user-name">{userName}</div>
           </div>
         </div>
 
         {/* ── Location Banner (clean minimal pill) ────────── */}
         {showLocBanner && (locStatus === 'denied' || locStatus === 'unavailable') && (
           <div style={{
-            margin: '12px 16px 0',
+            margin: '20px 16px 0',
             display: 'flex', alignItems: 'center', gap: 10,
             padding: '10px 14px',
             background: '#FFF7ED',
             border: '1px solid #FED7AA',
             borderRadius: 12,
             animation: 'slideDown 0.22s ease',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
           }}>
             <MapPinOff size={16} color="#F97316" style={{ flexShrink: 0 }} />
             <div style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#9A3412' }}>
@@ -193,13 +191,14 @@ export default function MobileHome() {
 
         {showLocBanner && locStatus === 'granted' && (
           <div style={{
-            margin: '12px 16px 0',
+            margin: '20px 16px 0',
             display: 'flex', alignItems: 'center', gap: 8,
             padding: '8px 14px',
             background: '#F0FDF4',
             border: '1px solid #BBF7D0',
             borderRadius: 12,
             animation: 'slideDown 0.22s ease',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
           }}>
             <MapPin size={14} color="#16A34A" style={{ flexShrink: 0 }} />
             <div style={{ flex: 1, fontSize: 12.5, fontWeight: 600, color: '#15803D' }}>

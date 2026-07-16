@@ -93,7 +93,7 @@ export default function MobileSignup() {
   };
 
   return (
-    <div className="mobile-shell" style={{ background: '#F1F5F9' }}>
+    <div className="mobile-shell mobile-auth" style={{ background: '#F1F5F9' }}>
       <style>{`
         .ms-signup-header {
           background: linear-gradient(160deg, #0F1F38 0%, #1D4ED8 60%, #2563EB 100%);

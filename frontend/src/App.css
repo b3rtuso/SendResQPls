@@ -231,6 +231,7 @@ button:active:not(:disabled) {
   position: relative;
   overflow: hidden;
   box-shadow: 0 6px 24px rgba(15,31,56,0.35);
+  border-radius: 0 0 24px 24px;
 }
 
 .mobile-home-header::before {
@@ -241,16 +242,6 @@ button:active:not(:disabled) {
   background: rgba(255,255,255,0.05);
   border-radius: 50%;
   pointer-events: none;
-}
-
-.mobile-home-header::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  left: 0; right: 0;
-  height: 24px;
-  background: #F1F5F9;
-  border-radius: 24px 24px 0 0;
 }
 
 .mobile-home-header .header-top {

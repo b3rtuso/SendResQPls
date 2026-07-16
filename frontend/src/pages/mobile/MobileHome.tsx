@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Phone, AlertTriangle, Shield, Droplets, Flame, Heart, ChevronDown, MapPin, MapPinOff, X } from 'lucide-react';
+import { Phone, AlertTriangle, Shield, Droplets, Flame, Heart, ChevronDown, MapPinOff, X } from 'lucide-react';
 import BottomNav from '../../components/BottomNav';
 import FcmBannerOverlay from '../../components/FcmBannerOverlay';
 import { getMyIncidents, cachedGet } from '../../api/client';
@@ -130,8 +130,32 @@ export default function MobileHome() {
       <FcmBannerOverlay />
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }}>
 
+        {/* ── Location Alert Banner (Facebook-style full-width) ── */}
+        {showLocBanner && (locStatus === 'denied' || locStatus === 'unavailable') && (
+          <div style={{
+            background: '#FEF2F2',
+            borderBottom: '1px solid #FCA5A5',
+            padding: '10px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            animation: 'slideDown 0.22s ease',
+          }}>
+            <MapPinOff size={16} color="#DC2626" style={{ flexShrink: 0 }} />
+            <div style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#991B1B' }}>
+              {locStatus === 'denied' ? 'Enable location for emergency reports' : 'GPS not supported on this device'}
+            </div>
+            <button
+              onClick={() => setShowLocBanner(false)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#991B1B', padding: 2, flexShrink: 0, display: 'flex' }}
+            >
+              <X size={14} />
+            </button>
+          </div>
+        )}
+
         {/* ── Header ─────────────────────────────────── */}
-        <div className="mobile-home-header" style={{ marginBottom: 44 }}>
+        <div className="mobile-home-header" style={{ marginBottom: 24 }}>
           {/* Top row: logo + actions */}
           <div className="header-top">
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -164,54 +188,8 @@ export default function MobileHome() {
           </div>
         </div>
 
-        {/* ── Location Banner (clean minimal pill) ────────── */}
-        {showLocBanner && (locStatus === 'denied' || locStatus === 'unavailable') && (
-          <div style={{
-            margin: '0 16px 0',
-            display: 'flex', alignItems: 'center', gap: 10,
-            padding: '10px 14px',
-            background: '#FFF7ED',
-            border: '1px solid #FED7AA',
-            borderRadius: 12,
-            animation: 'slideDown 0.22s ease',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
-          }}>
-            <MapPinOff size={16} color="#F97316" style={{ flexShrink: 0 }} />
-            <div style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#9A3412' }}>
-              {locStatus === 'denied' ? 'Enable location for emergency reports' : 'GPS not supported on this device'}
-            </div>
-            <button
-              onClick={() => setShowLocBanner(false)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#C2410C', padding: 2, flexShrink: 0, display: 'flex' }}
-            >
-              <X size={14} />
-            </button>
-          </div>
-        )}
-
-        {showLocBanner && locStatus === 'granted' && (
-          <div style={{
-            margin: '0 16px 0',
-            display: 'flex', alignItems: 'center', gap: 8,
-            padding: '8px 14px',
-            background: '#F0FDF4',
-            border: '1px solid #BBF7D0',
-            borderRadius: 12,
-            animation: 'slideDown 0.22s ease',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
-          }}>
-            <MapPin size={14} color="#16A34A" style={{ flexShrink: 0 }} />
-            <div style={{ flex: 1, fontSize: 12.5, fontWeight: 600, color: '#15803D' }}>
-              Location ready
-            </div>
-            <button onClick={() => setShowLocBanner(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#16A34A', padding: 2, flexShrink: 0, display: 'flex' }}>
-              <X size={13} />
-            </button>
-          </div>
-        )}
-
         {/* ── SOS Card ─────────────────────────────────── */}
-        <div style={{ padding: '0 20px 0' }}>
+        <div style={{ padding: '20px 20px 0' }}>
           <div className="sos-card" onClick={() => navigate('/mobile/report')}>
             <div style={{
               width: 60, height: 60, margin: '0 auto 14px', borderRadius: '50%',

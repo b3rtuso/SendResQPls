@@ -131,7 +131,7 @@ export default function MobileHome() {
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }}>
 
         {/* ── Header ─────────────────────────────────── */}
-        <div className="mobile-home-header">
+        <div className="mobile-home-header" style={{ marginBottom: 24 }}>
           {/* Top row: logo + actions */}
           <div className="header-top">
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -167,7 +167,7 @@ export default function MobileHome() {
         {/* ── Location Banner (clean minimal pill) ────────── */}
         {showLocBanner && (locStatus === 'denied' || locStatus === 'unavailable') && (
           <div style={{
-            margin: '36px 16px 0',
+            margin: '0 16px 0',
             display: 'flex', alignItems: 'center', gap: 10,
             padding: '10px 14px',
             background: '#FFF7ED',
@@ -191,7 +191,7 @@ export default function MobileHome() {
 
         {showLocBanner && locStatus === 'granted' && (
           <div style={{
-            margin: '36px 16px 0',
+            margin: '0 16px 0',
             display: 'flex', alignItems: 'center', gap: 8,
             padding: '8px 14px',
             background: '#F0FDF4',
@@ -211,7 +211,7 @@ export default function MobileHome() {
         )}
 
         {/* ── SOS Card ─────────────────────────────────── */}
-        <div style={{ padding: '36px 20px 0' }}>
+        <div style={{ padding: '0 20px 0' }}>
           <div className="sos-card" onClick={() => navigate('/mobile/report')}>
             <div style={{
               width: 60, height: 60, margin: '0 auto 14px', borderRadius: '50%',

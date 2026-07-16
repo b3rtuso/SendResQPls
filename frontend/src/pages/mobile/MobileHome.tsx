@@ -131,7 +131,7 @@ export default function MobileHome() {
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }}>
 
         {/* ── Header ─────────────────────────────────── */}
-        <div className="mobile-home-header" style={{ marginBottom: 24 }}>
+        <div className="mobile-home-header" style={{ marginBottom: 44 }}>
           {/* Top row: logo + actions */}
           <div className="header-top">
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

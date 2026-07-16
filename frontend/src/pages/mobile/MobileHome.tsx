@@ -133,10 +133,9 @@ export default function MobileHome() {
         {/* ── Header ─────────────────────────────────── */}
         <div className="mobile-home-header" style={{
           background: 'linear-gradient(160deg, #1E3A5F 0%, #1D4ED8 65%, #2563EB 100%)',
-          padding: '52px 20px 20px',
-          position: 'sticky', top: 0, zIndex: 20,
+          padding: '52px 20px 24px',
           borderRadius: '0 0 24px 24px',
-          boxShadow: '0 4px 20px rgba(30,58,95,0.35)',
+          boxShadow: '0 4px 20px rgba(30,58,95,0.2)',
         }}>
           {/* Top row: logo + actions */}
           <div className="header-top" style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>

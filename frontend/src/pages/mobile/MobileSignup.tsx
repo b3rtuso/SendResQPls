@@ -166,7 +166,7 @@ export default function MobileSignup() {
             <label>Full Name</label>
             <div className="input-wrapper">
               <User size={18} className="input-icon" />
-              <input autoComplete="name" placeholder="John Doe" value={form.name} onChange={(e) => update('name', e.target.value)} />
+              <input autoComplete="name" placeholder="Juan Dela Cruz" value={form.name} onChange={(e) => update('name', e.target.value)} />
             </div>
           </div>
 
@@ -187,7 +187,7 @@ export default function MobileSignup() {
                 <input
                   type="email"
                   autoComplete="email"
-                  placeholder="john@example.com"
+                  placeholder="juan@example.com"
                   value={form.email}
                   onChange={(e) => {
                     update('email', e.target.value);

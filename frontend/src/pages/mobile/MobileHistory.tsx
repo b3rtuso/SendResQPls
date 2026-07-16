@@ -13,7 +13,7 @@ const badgeClass: Record<Status, string> = {
   REVIEWING: 'pending',
   DISPATCHED: 'dispatched',
   RESOLVED: 'resolved',
-  REJECTED: 'pending',
+  REJECTED: 'rejected',
 };
 
 const statusLabel: Record<Status, string> = {

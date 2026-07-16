@@ -707,6 +707,12 @@ button:active:not(:disabled) {
   border: 1px solid var(--success-border);
 }
 
+.mobile-badge.rejected {
+  background: #FEE2E2;
+  color: #DC2626;
+  border: 1px solid #FCA5A5;
+}
+
 /* ===== MOBILE PROFILE ===== */
 .profile-header-card {
   background: linear-gradient(150deg, #1E3A5F 0%, #2563EB 60%, #1D4ED8 100%);

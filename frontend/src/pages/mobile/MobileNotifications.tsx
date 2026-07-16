@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Bell, AlertCircle, Truck, ShieldCheck, XCircle, Clock } from 'lucide-react';
+import { Bell, AlertCircle, Truck, ShieldCheck, XCircle, Clock, ChevronLeft } from 'lucide-react';
 import BottomNav from '../../components/BottomNav';
 
 // Pull notifications from localStorage (written by MobileHome polling)
@@ -54,37 +54,59 @@ export default function MobileNotifications() {
 
   return (
     <div className="mobile-shell" style={{ background: '#F8FAFC' }}>
-      {/* ── Header ── */}
-      <div style={{
-        background: 'white',
-        borderBottom: '1px solid #F1F5F9',
-        padding: '56px 20px 16px',
-        position: 'sticky', top: 0, zIndex: 20,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.3px' }}>
+      <div className="mobile-page" style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }}>
+        {/* Header */}
+        <div style={{
+          background: 'linear-gradient(135deg, #1E3A5F 0%, #2563EB 100%)',
+          margin: '0 -24px 20px',
+          padding: '16px 24px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          color: 'white',
+          boxShadow: '0 4px 12px rgba(14, 165, 233, 0.15)',
+        }}>
+          <button 
+            onClick={() => navigate('/mobile')}
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 12,
+              border: '1.5px solid rgba(255, 255, 255, 0.3)',
+              background: 'rgba(255, 255, 255, 0.15)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: 'white',
+              padding: 0,
+            }}
+            aria-label="Back"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <div style={{ flex: 1 }}>
+            <h1 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: 'white', letterSpacing: '0.3px', display: 'flex', alignItems: 'center', gap: 8 }}>
               Notifications
               {unread > 0 && (
                 <span style={{
-                  marginLeft: 8, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  background: '#EF4444', color: 'white', fontSize: 11, fontWeight: 800,
-                  minWidth: 20, height: 20, borderRadius: 10, padding: '0 5px',
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  background: '#EF4444', color: 'white', fontSize: 10, fontWeight: 800,
+                  minWidth: 18, height: 18, borderRadius: 9, padding: '0 4px',
+                  border: '1.5px solid #1E3A5F',
                 }}>
                   {unread > 9 ? '9+' : unread}
                 </span>
               )}
-            </div>
-            <div style={{ fontSize: 12, color: '#94A3B8', marginTop: 2 }}>
-              Updates on your emergency reports
-            </div>
+            </h1>
+            <p style={{ fontSize: 11, opacity: 0.85, margin: '2px 0 0' }}>Updates on your emergency reports</p>
           </div>
           {notifications.length > 0 && (
             <button
               onClick={handleClearAll}
               style={{
-                background: '#F1F5F9', border: 'none', borderRadius: 8,
-                padding: '7px 12px', fontSize: 12, fontWeight: 700, color: '#475569',
+                background: 'rgba(255, 255, 255, 0.15)', border: '1.5px solid rgba(255, 255, 255, 0.3)', borderRadius: 10,
+                padding: '6px 12px', fontSize: 12, fontWeight: 700, color: 'white',
                 cursor: 'pointer', fontFamily: 'var(--font)',
               }}
             >
@@ -92,10 +114,6 @@ export default function MobileNotifications() {
             </button>
           )}
         </div>
-      </div>
-
-      {/* ── List ── */}
-      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 90 }}>
         {notifications.length === 0 ? (
           /* Empty state */
           <div style={{

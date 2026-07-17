@@ -32,18 +32,7 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// ── Mobile browser guard: blocks /mobile/* in desktop browsers ───────────────
-// Capacitor sets window.Capacitor on the native WebView; plain browsers don't have it.
-// This prevents someone from opening the mobile app URL in a desktop browser.
-function MobileBrowserGuard({ children }: { children: React.ReactNode }) {
-  const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
-  const isMobileUA = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-  // Allow: native Capacitor app OR mobile browser UA
-  if (!isNative && !isMobileUA) {
-    return <Navigate to="/admin/login" replace />;
-  }
-  return <>{children}</>;
-}
+
 
 // ── Admin auth guard: must have token AND ADMIN role ────────────────────────
 function AdminRoute({ children }: { children: React.ReactNode }) {
@@ -79,17 +68,17 @@ function App() {
         <Route path="/admin/login" element={<AdminLogin />} />
 
         {/* === PUBLIC MOBILE ROUTES === */}
-        <Route path="/mobile/login" element={<MobileBrowserGuard><MobileLogin /></MobileBrowserGuard>} />
-        <Route path="/mobile/signup" element={<MobileBrowserGuard><MobileSignup /></MobileBrowserGuard>} />
-        <Route path="/mobile/forgot-password" element={<MobileBrowserGuard><MobileForgotPassword /></MobileBrowserGuard>} />
-        <Route path="/mobile/reset-password" element={<MobileBrowserGuard><MobileResetPassword /></MobileBrowserGuard>} />
+        <Route path="/mobile/login" element={<MobileLogin />} />
+        <Route path="/mobile/signup" element={<MobileSignup />} />
+        <Route path="/mobile/forgot-password" element={<MobileForgotPassword />} />
+        <Route path="/mobile/reset-password" element={<MobileResetPassword />} />
 
         {/* === PROTECTED MOBILE ROUTES (require login) === */}
-        <Route path="/mobile" element={<MobileBrowserGuard><MobileHomeWithOnboarding /></MobileBrowserGuard>} />
-        <Route path="/mobile/report" element={<MobileBrowserGuard><PrivateRoute><MobileReport /></PrivateRoute></MobileBrowserGuard>} />
-        <Route path="/mobile/history" element={<MobileBrowserGuard><PrivateRoute><MobileHistory /></PrivateRoute></MobileBrowserGuard>} />
-        <Route path="/mobile/profile" element={<MobileBrowserGuard><PrivateRoute><MobileProfile /></PrivateRoute></MobileBrowserGuard>} />
-        <Route path="/mobile/notifications" element={<MobileBrowserGuard><PrivateRoute><MobileNotifications /></PrivateRoute></MobileBrowserGuard>} />
+        <Route path="/mobile" element={<MobileHomeWithOnboarding />} />
+        <Route path="/mobile/report" element={<PrivateRoute><MobileReport /></PrivateRoute>} />
+        <Route path="/mobile/history" element={<PrivateRoute><MobileHistory /></PrivateRoute>} />
+        <Route path="/mobile/profile" element={<PrivateRoute><MobileProfile /></PrivateRoute>} />
+        <Route path="/mobile/notifications" element={<PrivateRoute><MobileNotifications /></PrivateRoute>} />
 
         {/* === PROTECTED ADMIN ROUTES (require ADMIN role) === */}
         <Route

@@ -22,7 +22,7 @@ export const isRecognizedIncident = (incidentType: string): boolean => {
 
 export const runAIAnalysis = async (imageUrl: string) => {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer' });
     const imageData = Buffer.from(imageResponse.data).toString("base64");

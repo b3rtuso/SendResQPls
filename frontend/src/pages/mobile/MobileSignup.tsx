@@ -79,7 +79,8 @@ export default function MobileSignup() {
     setLoading(true);
     setError('');
     try {
-      await apiRegister({ name: form.name, email: form.email, password: form.password, phoneNumber: form.phone });
+      const res = await apiRegister({ name: form.name, email: form.email, password: form.password, phoneNumber: form.phone });
+      localStorage.setItem('userId', res.data?.id || '');
       localStorage.setItem('userName', form.name);
       localStorage.setItem('userEmail', form.email);
       localStorage.setItem('userPhone', form.phone);

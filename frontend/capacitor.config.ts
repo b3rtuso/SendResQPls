@@ -18,6 +18,13 @@ const config: CapacitorConfig = {
     allowMixedContent: false,
     captureInput: true,
     webContentsDebuggingEnabled: false,
+    // Appended to every HTTP request the WebView makes (native level, not JS)
+    // Used by Vercel Edge Middleware to distinguish APK traffic from browser traffic
+    appendUserAgent: 'SendResQPls-App',
+  },
+  ios: {
+    // Same token for iOS — appended to the WKWebView User-Agent natively
+    appendUserAgent: 'SendResQPls-App',
   },
   plugins: {
     SplashScreen: {

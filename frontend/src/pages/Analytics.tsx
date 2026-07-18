@@ -446,11 +446,23 @@ export default function Analytics() {
                     onChange={e => setDistYear(e.target.value as typeof distYear)}
                     style={{ marginLeft: 'auto' }}
                   >
-                    <option value="all">All Years (2023–2026)</option>
-                    <option value="2023">2023</option>
-                    <option value="2024">2024</option>
-                    <option value="2025">2025</option>
-                    <option value="2026">2026 (Jan–May)</option>
+                    {(() => {
+                      const yearsWithData = yearlyTotals.filter(y => y.total > 0);
+                      const minYear = yearsWithData[0]?.year;
+                      const maxYear = yearsWithData[yearsWithData.length - 1]?.year;
+                      return (
+                        <>
+                          <option value="all">
+                            All Years{minYear && maxYear ? ` (${minYear}–${maxYear})` : ''}
+                          </option>
+                          {yearsWithData.map(y => (
+                            <option key={y.year} value={String(y.year)}>
+                              {y.year}{y.year === new Date().getFullYear() ? ` (Jan–${new Date().toLocaleDateString('en-PH', { month: 'short' })})` : ''}
+                            </option>
+                          ))}
+                        </>
+                      );
+                    })()}
                   </select>
                 </div>
                 <div className="card-body" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 16, alignItems: 'center' }}>

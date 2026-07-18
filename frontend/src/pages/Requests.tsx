@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { RequestsTableSkeleton } from '../components/PageLoader';
-import { Search, RefreshCw, Download, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, RefreshCw, Download, ChevronLeft, ChevronRight, Image, X, CheckCircle2, XCircle } from 'lucide-react';
 import type { Incident, Status } from '../types';
-import { getIncidents } from '../api/client';
+import { getIncidents, updateIncidentStatus } from '../api/client';
 import { getNearestBarangay } from '../data/balayan-data';
 import { normalizeIncidentType } from '../utils/normalizeIncidentType';
 
@@ -37,12 +37,14 @@ function timeAgo(date: string) {
 
 export default function Requests() {
   const navigate = useNavigate();
-  const [incidents, setIncidents] = useState<Incident[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [filterStatus, setFilterStatus] = useState<string>('ALL');
-  const [filterType,   setFilterType]   = useState<string>('ALL');
-  const [search, setSearch]             = useState('');
-  const [page, setPage]                 = useState(1);
+  const [incidents,     setIncidents]     = useState<Incident[]>([]);
+  const [loading,       setLoading]       = useState(true);
+  const [filterStatus,  setFilterStatus]  = useState<string>('ALL');
+  const [filterType,    setFilterType]    = useState<string>('ALL');
+  const [search,        setSearch]        = useState('');
+  const [page,          setPage]          = useState(1);
+  const [previewUrl,    setPreviewUrl]    = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null); // incidentId being acted on
 
   const fetchIncidents = async () => {
     setLoading(true);
@@ -51,6 +53,16 @@ export default function Requests() {
       setIncidents(res.data);
     } catch { setIncidents([]); }
     finally  { setLoading(false); }
+  };
+
+  const quickAction = async (e: React.MouseEvent, incId: string, status: Status) => {
+    e.stopPropagation();
+    setActionLoading(incId + status);
+    try {
+      await updateIncidentStatus(incId, { status });
+      setIncidents(prev => prev.map(inc => inc.id === incId ? { ...inc, status } : inc));
+    } catch { /* silent — full details available on detail page */ }
+    finally { setActionLoading(null); }
   };
 
   useEffect(() => {
@@ -149,7 +161,7 @@ export default function Requests() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: '#F8FAFC' }}>
-                      {['Request ID', 'Type', 'Location', 'AI Suggested', 'Status', 'Time', 'Action'].map(h => (
+                      {['Request ID', 'Photo', 'Type', 'Location', 'AI Suggested', 'Status', 'Time', 'Action'].map(h => (
                         <th key={h} style={{ padding: '13px 18px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.07em', whiteSpace: 'nowrap', borderBottom: '1px solid #F1F5F9' }}>
                           {h}
                         </th>
@@ -172,6 +184,29 @@ export default function Requests() {
                           <td style={{ padding: '14px 18px', fontFamily: 'monospace', fontSize: 11, color: '#94A3B8', whiteSpace: 'nowrap' }}>
                             #{inc.id.slice(0, 8).toUpperCase()}
                           </td>
+                          {/* Photo thumbnail */}
+                          <td style={{ padding: '10px 18px' }} onClick={e => e.stopPropagation()}>
+                            {inc.photoUrl ? (
+                              <div
+                                onClick={e => { e.stopPropagation(); setPreviewUrl(inc.photoUrl); }}
+                                title="Click to preview"
+                                style={{
+                                  width: 44, height: 36, borderRadius: 8, overflow: 'hidden',
+                                  border: '1.5px solid #E2E8F0', cursor: 'zoom-in',
+                                  background: '#F8FAFC', flexShrink: 0,
+                                  transition: 'border-color 0.15s, transform 0.15s',
+                                }}
+                                onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = '#2563EB'; (e.currentTarget as HTMLDivElement).style.transform = 'scale(1.08)'; }}
+                                onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = '#E2E8F0'; (e.currentTarget as HTMLDivElement).style.transform = 'scale(1)'; }}
+                              >
+                                <img src={inc.photoUrl} alt="Incident" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              </div>
+                            ) : (
+                              <div style={{ width: 44, height: 36, borderRadius: 8, background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Image size={16} color="#CBD5E1" />
+                              </div>
+                            )}
+                          </td>
                           <td style={{ padding: '14px 18px', whiteSpace: 'nowrap' }}>
                             <span style={{ marginRight: 6 }}>{emoji}</span>
                             <span style={{ fontWeight: 600, color: '#1E293B' }}>{inc.aiDetectedType || 'Unknown'}</span>
@@ -193,14 +228,55 @@ export default function Requests() {
                             {timeAgo(inc.createdAt)}
                           </td>
                           <td style={{ padding: '14px 18px' }} onClick={e => e.stopPropagation()}>
-                            <button
-                              onClick={() => navigate(`/requests/${inc.id}`)}
-                              style={{ padding: '6px 14px', borderRadius: 7, background: '#2563EB', color: 'white', border: 'none', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.15s' }}
-                              onMouseEnter={e => e.currentTarget.style.background = '#1D4ED8'}
-                              onMouseLeave={e => e.currentTarget.style.background = '#2563EB'}
-                            >
-                              View
-                            </button>
+                            <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'nowrap' }}>
+                              {/* View details */}
+                              <button
+                                onClick={e => { e.stopPropagation(); navigate(`/requests/${inc.id}`); }}
+                                style={{ padding: '6px 12px', borderRadius: 7, background: '#2563EB', color: 'white', border: 'none', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.15s', whiteSpace: 'nowrap' }}
+                                onMouseEnter={e => e.currentTarget.style.background = '#1D4ED8'}
+                                onMouseLeave={e => e.currentTarget.style.background = '#2563EB'}
+                              >
+                                View
+                              </button>
+                              {/* Quick Accept — only for PENDING */}
+                              {inc.status === 'PENDING' && (
+                                <button
+                                  onClick={e => quickAction(e, inc.id, 'REVIEWING')}
+                                  disabled={actionLoading === inc.id + 'REVIEWING'}
+                                  title="Move to Reviewing"
+                                  style={{
+                                    padding: '6px 10px', borderRadius: 7, border: '1.5px solid #22C55E',
+                                    background: 'transparent', color: '#16A34A', fontSize: 12, fontWeight: 700,
+                                    cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4,
+                                    transition: 'all 0.15s', whiteSpace: 'nowrap',
+                                    opacity: actionLoading === inc.id + 'REVIEWING' ? 0.5 : 1,
+                                  }}
+                                  onMouseEnter={e => { e.currentTarget.style.background = '#F0FDF4'; }}
+                                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                                >
+                                  <CheckCircle2 size={13} /> Accept
+                                </button>
+                              )}
+                              {/* Quick Reject — for PENDING and REVIEWING */}
+                              {(inc.status === 'PENDING' || inc.status === 'REVIEWING') && (
+                                <button
+                                  onClick={e => quickAction(e, inc.id, 'REJECTED')}
+                                  disabled={actionLoading === inc.id + 'REJECTED'}
+                                  title="Reject this report"
+                                  style={{
+                                    padding: '6px 10px', borderRadius: 7, border: '1.5px solid #FCA5A5',
+                                    background: 'transparent', color: '#EF4444', fontSize: 12, fontWeight: 700,
+                                    cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4,
+                                    transition: 'all 0.15s', whiteSpace: 'nowrap',
+                                    opacity: actionLoading === inc.id + 'REJECTED' ? 0.5 : 1,
+                                  }}
+                                  onMouseEnter={e => { e.currentTarget.style.background = '#FEF2F2'; }}
+                                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                                >
+                                  <XCircle size={13} /> Reject
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       );
@@ -251,7 +327,47 @@ export default function Requests() {
           )}
         </div>
       </div>
+      {/* colSpan must match the new 8-column table */}
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+
+      {/* ── Photo Lightbox ─────────────────────────────────────── */}
+      {previewUrl && (
+        <div
+          onClick={() => setPreviewUrl(null)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 10000,
+            background: 'rgba(0,0,0,0.88)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'zoom-out',
+          }}
+        >
+          <button
+            onClick={() => setPreviewUrl(null)}
+            style={{
+              position: 'absolute', top: 24, right: 24,
+              background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)',
+              borderRadius: '50%', width: 44, height: 44,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', color: 'white',
+            }}
+          >
+            <X size={22} />
+          </button>
+          <img
+            src={previewUrl}
+            alt="Incident photo"
+            onClick={e => e.stopPropagation()}
+            style={{
+              maxWidth: '88vw', maxHeight: '88vh',
+              borderRadius: 18,
+              boxShadow: '0 32px 80px rgba(0,0,0,0.6)',
+              objectFit: 'contain',
+              border: '1px solid rgba(255,255,255,0.1)',
+            }}
+          />
+        </div>
+      )}
     </>
   );
 }

@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
-import { CheckCircle, XCircle, AlertTriangle, X, Info } from 'lucide-react';
+﻿import { useEffect, useState, useRef } from "react";
+import { CheckCircle, XCircle, AlertTriangle, X, Info } from "lucide-react";
 
-export type ToastType = 'success' | 'error' | 'warning' | 'info';
+export type ToastType = "success" | "error" | "warning" | "info";
 
 interface ToastProps {
   message: string;
@@ -11,78 +11,122 @@ interface ToastProps {
   onClose: () => void;
 }
 
-const icons = {
-  success: CheckCircle,
-  error: XCircle,
-  warning: AlertTriangle,
-  info: Info,
-};
+const icons = { success: CheckCircle, error: XCircle, warning: AlertTriangle, info: Info };
 
-const colors = {
-  success: { bg: '#ECFDF5', border: '#86EFAC', icon: '#22C55E', text: '#065F46' },
-  error: { bg: '#FEF2F2', border: '#FECACA', icon: '#EF4444', text: '#991B1B' },
-  warning: { bg: '#FEF3C7', border: '#FDE68A', icon: '#F59E0B', text: '#92400E' },
-  info: { bg: '#EFF6FF', border: '#BFDBFE', icon: '#3B82F6', text: '#1E40AF' },
+const palette = {
+  success: { rail: "#22C55E", icon: "#22C55E", glow: "rgba(34,197,94,0.18)"  },
+  error:   { rail: "#EF4444", icon: "#EF4444", glow: "rgba(239,68,68,0.18)"   },
+  warning: { rail: "#F59E0B", icon: "#F59E0B", glow: "rgba(245,158,11,0.18)"  },
+  info:    { rail: "#3B82F6", icon: "#3B82F6", glow: "rgba(59,130,246,0.18)"  },
 };
 
 export default function Toast({ message, type, detail, duration = 5000, onClose }: ToastProps) {
-  const [visible, setVisible] = useState(false);
-  const [exiting, setExiting] = useState(false);
-  const Icon = icons[type];
-  const color = colors[type];
+  const [phase,    setPhase]    = useState<"enter" | "visible" | "exit">("enter");
+  const [progress, setProgress] = useState(100);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rafRef   = useRef<number | null>(null);
+  const startRef = useRef<number | null>(null);
 
+  const Icon  = icons[type];
+  const color = palette[type];
+
+  // Animate progress bar
   useEffect(() => {
-    requestAnimationFrame(() => setVisible(true));
-    const timer = setTimeout(() => {
-      setExiting(true);
-      setTimeout(onClose, 350);
+    startRef.current = performance.now();
+    const tick = (now: number) => {
+      const elapsed = now - (startRef.current ?? now);
+      const pct = Math.max(0, 100 - (elapsed / duration) * 100);
+      setProgress(pct);
+      if (pct > 0) rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, [duration]);
+
+  // Lifecycle: enter -> visible -> exit
+  useEffect(() => {
+    const enterTimer = setTimeout(() => setPhase("visible"), 16);
+    timerRef.current = setTimeout(() => {
+      setPhase("exit");
+      setTimeout(onClose, 380);
     }, duration);
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(enterTimer);
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
   }, [duration, onClose]);
 
+  const dismiss = () => {
+    setPhase("exit");
+    if (timerRef.current) clearTimeout(timerRef.current);
+    if (rafRef.current)   cancelAnimationFrame(rafRef.current);
+    setTimeout(onClose, 380);
+  };
+
+  const isVisible = phase === "visible";
+
   return (
-    <div
-      style={{
-        position: 'fixed',
-        top: 24,
-        left: '50%',
-        transform: `translateX(-50%) translateY(${visible && !exiting ? '0' : '-20px'})`,
-        opacity: visible && !exiting ? 1 : 0,
-        transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
-        zIndex: 10000,
-        width: '90%',
-        maxWidth: 400,
-        background: color.bg,
-        border: `1.5px solid ${color.border}`,
-        borderRadius: 16,
-        padding: '16px 20px',
-        display: 'flex',
-        alignItems: 'flex-start',
-        gap: 14,
-        boxShadow: '0 12px 40px rgba(0,0,0,0.12)',
-        fontFamily: 'var(--font)',
-      }}
-    >
-      <Icon size={24} color={color.icon} style={{ flexShrink: 0, marginTop: 2 }} />
-      <div style={{ flex: 1 }}>
-        <div style={{ fontWeight: 700, fontSize: 15, color: color.text, marginBottom: detail ? 4 : 0 }}>
-          {message}
+    <div style={{
+      position: "fixed", top: 20, left: "50%", zIndex: 10000,
+      transform: `translateX(-50%) translateY(${isVisible ? "0" : "-28px"}) scale(${isVisible ? 1 : 0.94})`,
+      opacity: phase === "exit" ? 0 : isVisible ? 1 : 0,
+      transition: "transform 0.38s cubic-bezier(0.16,1,0.3,1), opacity 0.38s cubic-bezier(0.16,1,0.3,1)",
+      width: "90%", maxWidth: 420,
+      background: "rgba(15,23,42,0.96)",
+      backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
+      border: "1px solid rgba(255,255,255,0.1)",
+      borderRadius: 18, overflow: "hidden",
+      boxShadow: `0 20px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04), 0 4px 24px ${color.glow}`,
+      fontFamily: "var(--font)",
+    }}>
+      {/* Colored left rail */}
+      <div style={{
+        position: "absolute", left: 0, top: 0, bottom: 0, width: 4,
+        background: `linear-gradient(to bottom, ${color.rail}, ${color.rail}88)`,
+      }} />
+
+      {/* Content row */}
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 14, padding: "16px 18px 16px 22px" }}>
+        {/* Icon halo */}
+        <div style={{
+          width: 36, height: 36, borderRadius: 10, flexShrink: 0, marginTop: 1,
+          background: `${color.rail}1A`, border: `1px solid ${color.rail}33`,
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <Icon size={18} color={color.icon} strokeWidth={2.2} />
         </div>
-        {detail && (
-          <div style={{ fontSize: 13, color: color.text, opacity: 0.75, lineHeight: 1.4 }}>
-            {detail}
+
+        {/* Text */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 700, fontSize: 14, color: "rgba(255,255,255,0.95)", marginBottom: detail ? 4 : 0, letterSpacing: "-0.1px" }}>
+            {message}
           </div>
-        )}
+          {detail && (
+            <div style={{ fontSize: 12.5, color: "rgba(255,255,255,0.52)", lineHeight: 1.5 }}>
+              {detail}
+            </div>
+          )}
+        </div>
+
+        {/* Dismiss */}
+        <button onClick={dismiss} aria-label="Dismiss" style={{
+          background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)",
+          borderRadius: 8, width: 28, height: 28, cursor: "pointer", padding: 0,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          color: "rgba(255,255,255,0.5)", flexShrink: 0, transition: "background 0.15s",
+        }}>
+          <X size={14} />
+        </button>
       </div>
-      <button
-        onClick={() => { setExiting(true); setTimeout(onClose, 350); }}
-        style={{
-          background: 'none', border: 'none', cursor: 'pointer', padding: 4,
-          color: color.text, opacity: 0.5, flexShrink: 0,
-        }}
-      >
-        <X size={16} />
-      </button>
+
+      {/* Auto-dismiss progress bar */}
+      <div style={{ height: 2, background: "rgba(255,255,255,0.06)" }}>
+        <div style={{
+          height: "100%", width: `${progress}%`,
+          background: `linear-gradient(to right, ${color.rail}aa, ${color.rail})`,
+          transition: "width 0.1s linear", borderRadius: "0 2px 2px 0",
+        }} />
+      </div>
     </div>
   );
 }

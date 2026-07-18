@@ -27,12 +27,12 @@ export interface StoredNotif {
   read: boolean;
 }
 
-const STATUS_META: Record<string, { label: string; color: string; bg: string; icon: React.ElementType }> = {
-  DISPATCHED: { label: 'Responders have been dispatched',  color: '#2563EB', bg: '#EFF6FF', icon: Truck },
-  RESOLVED:   { label: 'Your report has been resolved',  color: '#16A34A', bg: '#F0FDF4', icon: ShieldCheck },
-  REJECTED:   { label: 'Report was not approved',   color: '#DC2626', bg: '#FEF2F2', icon: XCircle },
-  REVIEWING:  { label: 'Under review by MDRRMO',         color: '#D97706', bg: '#FFFBEB', icon: Clock },
-  PENDING:    { label: 'Awaiting review',         color: '#64748B', bg: '#F8FAFC', icon: AlertCircle },
+const STATUS_META: Record<string, { label: string; color: string; bg: string; border: string; icon: React.ElementType }> = {
+  DISPATCHED: { label: 'Responders dispatched to your location', color: '#2563EB', bg: '#EFF6FF', border: '#2563EB', icon: Truck },
+  RESOLVED:   { label: 'Your report has been resolved',          color: '#16A34A', bg: '#F0FDF4', border: '#16A34A', icon: ShieldCheck },
+  REJECTED:   { label: 'Report was not approved',                color: '#DC2626', bg: '#FEF2F2', border: '#DC2626', icon: XCircle },
+  REVIEWING:  { label: 'Under review by MDRRMO',                 color: '#D97706', bg: '#FFFBEB', border: '#D97706', icon: Clock },
+  PENDING:    { label: 'Awaiting dispatcher review',             color: '#64748B', bg: '#F8FAFC', border: '#CBD5E1', icon: AlertCircle },
 };
 
 export default function MobileNotifications() {
@@ -136,7 +136,7 @@ export default function MobileNotifications() {
             </div>
           </div>
         ) : (
-          <div style={{ padding: '12px 0' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
             {notifications.map((n, i) => {
               const meta = STATUS_META[n.status] || STATUS_META.PENDING;
               const Icon = meta.icon;
@@ -146,43 +146,62 @@ export default function MobileNotifications() {
                   onClick={() => handleMarkRead(n.id)}
                   style={{
                     display: 'flex', alignItems: 'flex-start', gap: 14,
-                    padding: '14px 20px',
-                    borderBottom: '1px solid #F1F5F9',
-                    background: n.read ? 'white' : '#FAFBFF',
+                    padding: '16px 20px 16px 20px',
+                    borderBottom: '1px solid rgba(241,245,249,0.9)',
+                    background: n.read ? 'white' : 'rgba(239,246,255,0.5)',
                     cursor: 'default',
                     position: 'relative',
+                    transition: 'background 0.15s',
+                    /* colored left border via box-shadow to avoid layout shift */
+                    borderLeft: `3px solid ${n.read ? 'transparent' : meta.border}`,
                   }}
                 >
-                  {/* Unread dot */}
+                  {/* Unread indicator dot */}
                   {!n.read && (
                     <div style={{
-                      position: 'absolute', left: 8, top: '50%',
+                      position: 'absolute', left: 11, top: '50%',
                       transform: 'translateY(-50%)',
-                      width: 6, height: 6, borderRadius: '50%',
-                      background: '#2563EB',
+                      width: 7, height: 7, borderRadius: '50%',
+                      background: meta.color,
+                      boxShadow: `0 0 0 3px ${meta.color}22`,
                     }} />
                   )}
 
-                  {/* Icon circle */}
+                  {/* Icon square with tinted bg */}
                   <div style={{
-                    width: 44, height: 44, borderRadius: 13,
+                    width: 46, height: 46, borderRadius: 14,
                     background: meta.bg, flexShrink: 0,
+                    border: `1.5px solid ${meta.color}22`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
-                    <Icon size={20} color={meta.color} />
+                    <Icon size={20} color={meta.color} strokeWidth={2} />
                   </div>
 
-                  {/* Text */}
+                  {/* Text block */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13.5, fontWeight: 700, color: '#0F172A', marginBottom: 3 }}>
-                      {n.type}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 }}>
+                      <div style={{ fontSize: 13.5, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.1px' }}>
+                        {n.type}
+                      </div>
+                      <div style={{ fontSize: 10.5, color: '#94A3B8', fontWeight: 600, flexShrink: 0, marginLeft: 8 }}>
+                        {n.time}
+                      </div>
                     </div>
-                    <div style={{ fontSize: 12.5, color: meta.color, fontWeight: 600, marginBottom: 4 }}>
+                    <div style={{ fontSize: 12.5, color: meta.color, fontWeight: 700, marginBottom: 2 }}>
                       {meta.label}
                     </div>
-                    <div style={{ fontSize: 11, color: '#94A3B8' }}>
-                      {n.time}
-                    </div>
+                    {!n.read && (
+                      <div style={{
+                        display: 'inline-flex', alignItems: 'center',
+                        fontSize: 10, fontWeight: 700, color: meta.color,
+                        background: `${meta.color}12`,
+                        border: `1px solid ${meta.color}22`,
+                        borderRadius: 6, padding: '2px 7px', marginTop: 4,
+                        letterSpacing: '0.04em', textTransform: 'uppercase',
+                      }}>
+                        New
+                      </div>
+                    )}
                   </div>
                 </div>
               );

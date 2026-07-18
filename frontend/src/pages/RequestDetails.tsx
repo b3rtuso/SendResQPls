@@ -236,7 +236,7 @@ export default function RequestDetails() {
             {/* AI Triage Card — uses REAL data from database */}
             <div className="ai-card">
               <h3><Brain size={20} /> AI Triage Assessment</h3>
-              <p>Analysis completed using Gemini 3 Flash</p>
+              <p>Analysis completed using Gemini 1.5 Flash</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div>
                   <strong style={{ fontSize: 12, color: 'var(--text-muted)' }}>DETECTED TYPE</strong>
@@ -263,6 +263,74 @@ export default function RequestDetails() {
                   </div>
                 </div>
               </div>
+
+              {/* ── Reject Suggestion Banner (shown when AI cannot recognise the incident) ── */}
+              {(() => {
+                const type = (incident.aiDetectedType || '').toLowerCase();
+                const isUnrecognized =
+                  type.includes('unrecognized') ||
+                  type.includes('unknown') ||
+                  type.includes('pending review') ||
+                  type.includes('unclear') ||
+                  !incident.aiRecommendedDept;
+                if (!isUnrecognized) return null;
+                return (
+                  <div style={{
+                    marginTop: 18,
+                    padding: '14px 16px',
+                    borderRadius: 12,
+                    background: 'rgba(239,68,68,0.07)',
+                    border: '1.5px solid rgba(239,68,68,0.25)',
+                    display: 'flex',
+                    gap: 12,
+                    alignItems: 'flex-start',
+                  }}>
+                    <div style={{
+                      width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                      background: 'rgba(239,68,68,0.12)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                        <line x1="12" y1="9" x2="12" y2="13"/>
+                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                      </svg>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13.5, fontWeight: 700, color: '#DC2626', marginBottom: 4 }}>
+                        AI Suggestion: Reject this report
+                      </div>
+                      <div style={{ fontSize: 12.5, color: 'var(--text-secondary)', lineHeight: 1.55 }}>
+                        The AI could not identify a valid emergency incident in the submitted photo.
+                        This may be a test submission, an unrelated image, or a false alarm.
+                        Review the photo carefully — if it is not a genuine emergency, consider rejecting it.
+                      </div>
+                      {currentStatus !== 'REJECTED' && currentStatus !== 'RESOLVED' && (
+                        <button
+                          onClick={() => handleStatusUpdate('REJECTED')}
+                          disabled={saving}
+                          style={{
+                            marginTop: 10,
+                            padding: '7px 16px',
+                            borderRadius: 8,
+                            background: '#EF4444',
+                            color: 'white',
+                            border: 'none',
+                            fontWeight: 700,
+                            fontSize: 12.5,
+                            cursor: saving ? 'not-allowed' : 'pointer',
+                            fontFamily: 'var(--font)',
+                            opacity: saving ? 0.6 : 1,
+                            transition: 'opacity 0.15s',
+                          }}
+                        >
+                          {saving ? 'Rejecting...' : 'Reject Report'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Incident Details — uses REAL data from database */}
@@ -311,6 +379,18 @@ export default function RequestDetails() {
                     <User size={16} />
                     <strong>Reporter:</strong> {incident.reporter?.name || 'Unknown'} ({incident.reporter?.email || incident.reporterId.slice(0, 8) + '...'})
                   </div>
+                  {incident.reporter?.phoneNumber && (
+                    <div className="dept-detail">
+                      <Phone size={16} />
+                      <strong>Phone:</strong>
+                      <a
+                        href={`tel:${incident.reporter.phoneNumber}`}
+                        style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}
+                      >
+                        {incident.reporter.phoneNumber}
+                      </a>
+                    </div>
+                  )}
                   <div className="dept-detail">
                     <Clock size={16} />
                     <strong>Reported:</strong> {new Date(incident.createdAt).toLocaleString()}

@@ -35,13 +35,15 @@ Return ONLY a JSON object with this exact structure:
   "incidentType": "<specific type or 'Unrecognized'>",
   "recommendedDept": "<BFP|PNP|MEDICAL|ENGINEERING|RESCUE|UNKNOWN>",
   "confidence": "<high|medium|low>",
-  "recognized": <true|false>
+  "recognized": <true|false>,
+  "suggestAction": "<PROCESS|REJECT>"
 }
 
 Rules:
-- If the image clearly shows fire/flood/accident/crime/medical emergency/trauma → recognized: true
-- If the image is unclear, not an emergency, a selfie, a random photo, or unrelated → recognized: false, incidentType: "Unrecognized"
-- confidence: "high" if very clear, "medium" if somewhat clear, "low" if unclear`;
+- If the image clearly shows fire/flood/accident/crime/medical emergency/trauma/structural damage/road hazard → recognized: true, suggestAction: "PROCESS"
+- If the image is unclear, a selfie, a random photo, food, scenery, text/meme, or anything NOT an emergency → recognized: false, incidentType: "Unrecognized", suggestAction: "REJECT"
+- confidence: "high" if very clear, "medium" if somewhat clear, "low" if unclear
+- When in doubt, lean toward recognized: false and suggestAction: "REJECT" to reduce false alarms`;
 
     const result = await model.generateContent([
       prompt,

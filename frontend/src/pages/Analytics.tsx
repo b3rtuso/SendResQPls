@@ -21,7 +21,7 @@ import {
 } from '../data/mdrrmo-data';
 import {
   downloadDailyReport, downloadWeeklyReport, downloadMonthlyReport,
-  getDailyRange, getWeeklyRange, getMonthlyRange,
+  getDailyRange,
 } from '../utils/reportGenerator';
 import { getIncidentsByRange } from '../api/client';
 import type { Incident } from '../types';
@@ -103,14 +103,7 @@ function buildPopupContent(brgy: Barangay, incidentType: string): string {
   `;
 }
 
-// ---- Pie data for type distribution ----
-const typeDistribution = [
-  { name: 'Medical', value: 587, color: TYPE_COLORS.Medical },
-  { name: 'Trauma', value: 616, color: TYPE_COLORS.Trauma },
-  { name: 'Accident', value: 44, color: TYPE_COLORS.Accident },
-  { name: 'Crime', value: 10, color: TYPE_COLORS.Crime },
-  { name: 'Fire', value: 2, color: TYPE_COLORS.Fire },
-];
+
 
 // ---- Main Component ----
 export default function Analytics() {
@@ -130,32 +123,66 @@ export default function Analytics() {
   const [downloading, setDownloading] = useState<RangeKey | null>(null);
   const [downloadDone, setDownloadDone] = useState<RangeKey | null>(null);
 
-  const fetchReportCounts = useCallback(async () => {
-    const ranges: { key: RangeKey; range: ReturnType<typeof getDailyRange> }[] = [
-      { key: 'daily',   range: getDailyRange()   },
-      { key: 'weekly',  range: getWeeklyRange()  },
-      { key: 'monthly', range: getMonthlyRange() },
+  // ── Distribution chart year filter ────────────────────────────────
+  const [distYear, setDistYear] = useState<'all' | '2023' | '2024' | '2025' | '2026'>('all');
+
+  // Per-card date pickers
+  const todayIso = new Date().toISOString().split('T')[0];
+  const [selectedDay, setSelectedDay]   = useState(todayIso);
+  const [selectedWeek, setSelectedWeek] = useState(getDailyRange().from);   // Monday of current week
+  const [selectedMonth, setSelectedMonth] = useState(todayIso.slice(0, 7)); // YYYY-MM
+
+  // Compute ranges from picker values
+  const pickerRanges = useMemo(() => {
+    // Daily: just the chosen day
+    const dailyFrom = selectedDay;
+    const dailyTo   = selectedDay;
+
+    // Weekly: Mon of chosen week → Sun
+    const wd  = new Date(selectedWeek + 'T00:00:00');
+    const day = wd.getDay();
+    const mon = new Date(wd); mon.setDate(wd.getDate() - (day === 0 ? 6 : day - 1));
+    const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+    const weekFrom = mon.toISOString().split('T')[0];
+    const weekTo   = sun.toISOString().split('T')[0];
+
+    // Monthly: first day of chosen month → last day
+    const [y, m]  = selectedMonth.split('-').map(Number);
+    const first   = new Date(y, m - 1, 1);
+    const last    = new Date(y, m, 0);
+    const monthFrom = first.toISOString().split('T')[0];
+    const monthTo   = last.toISOString().split('T')[0];
+
+    return { dailyFrom, dailyTo, weekFrom, weekTo, monthFrom, monthTo };
+  }, [selectedDay, selectedWeek, selectedMonth]);
+
+  const fetchReportCounts = useCallback(async (ranges?: { dailyFrom: string; dailyTo: string; weekFrom: string; weekTo: string; monthFrom: string; monthTo: string }) => {
+    const r = ranges ?? { dailyFrom: todayIso, dailyTo: todayIso, weekFrom: getDailyRange().from, weekTo: todayIso, monthFrom: todayIso.slice(0, 8) + '01', monthTo: todayIso };
+    const fetches: { key: RangeKey; from: string; to: string }[] = [
+      { key: 'daily',   from: r.dailyFrom, to: r.dailyTo   },
+      { key: 'weekly',  from: r.weekFrom,  to: r.weekTo    },
+      { key: 'monthly', from: r.monthFrom, to: r.monthTo   },
     ];
     const results = await Promise.allSettled(
-      ranges.map(({ key, range }) =>
-        getIncidentsByRange(range.from, range.to).then(res => ({ key, data: res.data as Incident[] }))
+      fetches.map(({ key, from, to }) =>
+        getIncidentsByRange(from, to).then(res => ({ key, data: res.data as Incident[] }))
       )
     );
-    const counts: Record<RangeKey, number | null> = { daily: null, weekly: null, monthly: null };
-    const incidents: Record<RangeKey, Incident[]> = { daily: [], weekly: [], monthly: [] };
-    results.forEach(r => {
-      if (r.status === 'fulfilled') {
-        counts[r.value.key]    = r.value.data.length;
-        incidents[r.value.key] = r.value.data;
+    const counts: Record<RangeKey, number | null>   = { daily: null, weekly: null, monthly: null };
+    const incidents: Record<RangeKey, Incident[]>   = { daily: [], weekly: [], monthly: [] };
+    results.forEach(res => {
+      if (res.status === 'fulfilled') {
+        counts[res.value.key]    = res.value.data.length;
+        incidents[res.value.key] = res.value.data;
       }
     });
     setReportCounts(counts);
     setReportIncidents(incidents);
-  }, []);
+  }, [todayIso]);
 
   useEffect(() => {
-    if (tab === 'reports') fetchReportCounts();
-  }, [tab, fetchReportCounts]);
+    if (tab === 'reports') fetchReportCounts(pickerRanges);
+  }, [tab, fetchReportCounts, pickerRanges]);
 
   const handleDownload = async (key: RangeKey) => {
     setDownloading(key);
@@ -411,31 +438,64 @@ export default function Analytics() {
               </div>
 
               <div className="card">
-                <div className="card-header"><h3>Incident Type Distribution (All Years)</h3></div>
+                <div className="card-header">
+                  <h3>Incident Type Distribution</h3>
+                  <select
+                    className="filter-select"
+                    value={distYear}
+                    onChange={e => setDistYear(e.target.value as typeof distYear)}
+                    style={{ marginLeft: 'auto' }}
+                  >
+                    <option value="all">All Years (2023–2026)</option>
+                    <option value="2023">2023</option>
+                    <option value="2024">2024</option>
+                    <option value="2025">2025</option>
+                    <option value="2026">2026 (Jan–May)</option>
+                  </select>
+                </div>
                 <div className="card-body" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 16, alignItems: 'center' }}>
-                  <div className="chart-container" style={{ height: 260 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie data={typeDistribution} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={55} outerRadius={95} paddingAngle={3}>
-                          {typeDistribution.map((entry, i) => (
-                            <Cell key={i} fill={entry.color} stroke="none" />
-                          ))}
-                        </Pie>
-                        <Tooltip contentStyle={tooltipStyle} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <div>
-                    {typeDistribution.map(t => (
-                      <div key={t.name} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                        <div style={{ width: 12, height: 12, borderRadius: 3, background: t.color, flexShrink: 0 }} />
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{t.name}</div>
-                          <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{t.value} incidents ({((t.value / 1260) * 100).toFixed(1)}%)</div>
+                  {(() => {
+                    // Per-year type totals from yearlyTotals
+                    const row = distYear === 'all'
+                      ? { Medical: 569, Trauma: 608, Accident: 44, Fire: 2, Crime: 10, Other: 27 }
+                      : yearlyTotals.find(y => String(y.year) === distYear) ?? { Medical: 0, Trauma: 0, Accident: 0, Fire: 0, Crime: 0, Other: 0 };
+                    const total = (row.Medical||0)+(row.Trauma||0)+(row.Accident||0)+(row.Fire||0)+(row.Crime||0);
+                    const dist = [
+                      { name: 'Medical',  value: row.Medical  || 0, color: TYPE_COLORS.Medical  },
+                      { name: 'Trauma',   value: row.Trauma   || 0, color: TYPE_COLORS.Trauma   },
+                      { name: 'Accident', value: row.Accident || 0, color: TYPE_COLORS.Accident },
+                      { name: 'Fire',     value: row.Fire     || 0, color: TYPE_COLORS.Fire     },
+                      { name: 'Crime',    value: row.Crime    || 0, color: TYPE_COLORS.Crime    },
+                    ].filter(d => d.value > 0);
+                    return (
+                      <>
+                        <div className="chart-container" style={{ height: 260 }}>
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie data={dist} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={55} outerRadius={95} paddingAngle={3}>
+                                {dist.map((entry, i) => <Cell key={i} fill={entry.color} stroke="none" />)}
+                              </Pie>
+                              <Tooltip contentStyle={tooltipStyle} />
+                            </PieChart>
+                          </ResponsiveContainer>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                        <div>
+                          {dist.map(t => (
+                            <div key={t.name} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                              <div style={{ width: 12, height: 12, borderRadius: 3, background: t.color, flexShrink: 0 }} />
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: 13, fontWeight: 600, fontFamily: 'var(--font)', color: 'var(--text-primary)' }}>{t.name}</div>
+                                <div style={{ fontSize: 11, fontFamily: 'var(--font)', color: 'var(--text-secondary)' }}>{t.value} incidents ({total > 0 ? ((t.value / total) * 100).toFixed(1) : 0}%)</div>
+                              </div>
+                            </div>
+                          ))}
+                          <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--border)', fontSize: 12, fontFamily: 'var(--font)', color: 'var(--text-muted)', fontWeight: 600 }}>
+                            Total: {total.toLocaleString()} incidents
+                          </div>
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
@@ -488,127 +548,157 @@ export default function Analytics() {
           <div className="fade-in">
 
             {/* ── Live Report Cards ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 18, marginBottom: 24 }}>
-              {(
-                [
-                  {
-                    key: 'daily'   as const,
-                    title: 'Daily Report',
-                    period: getDailyRange().period,
-                    icon: '📅',
-                    color: '#2563EB',
-                    bg: '#EFF6FF',
-                    border: '#BFDBFE',
-                  },
-                  {
-                    key: 'weekly'  as const,
-                    title: 'Weekly Report',
-                    period: getWeeklyRange().period,
-                    icon: '📆',
-                    color: '#7C3AED',
-                    bg: '#F5F3FF',
-                    border: '#DDD6FE',
-                  },
-                  {
-                    key: 'monthly' as const,
-                    title: 'Monthly Report',
-                    period: getMonthlyRange().period,
-                    icon: '🗓️',
-                    color: '#059669',
-                    bg: '#F0FDF4',
-                    border: '#BBF7D0',
-                  },
-                ] as const
-              ).map(card => {
-                const count      = reportCounts[card.key];
-                const isLoading  = downloading === card.key;
-                const isDone     = downloadDone === card.key;
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20, marginBottom: 28 }}>
 
-                return (
-                  <div
-                    key={card.key}
-                    style={{
-                      background: card.bg,
-                      border: `1.5px solid ${card.border}`,
-                      borderRadius: 18,
-                      padding: '22px 24px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 12,
-                      boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
-                    }}
-                  >
-                    {/* Title row */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontSize: 28 }}>{card.icon}</span>
-                      <div>
-                        <div style={{ fontSize: 15, fontWeight: 800, color: card.color, letterSpacing: '-0.2px' }}>
-                          {card.title}
-                        </div>
-                        <div style={{ fontSize: 11.5, color: '#64748B', marginTop: 2 }}>
-                          {card.period}
-                        </div>
-                      </div>
+              {/* ── DAILY ─────────────────────────────────────────────────────── */}
+              <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                <div className="card-header" style={{ borderBottom: '1px solid var(--border-light)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--primary-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Calendar size={18} color="var(--primary)" />
                     </div>
-
-                    {/* Incident count badge */}
-                    <div style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 8,
-                      background: 'white', border: `1px solid ${card.border}`,
-                      borderRadius: 12, padding: '8px 14px',
-                    }}>
-                      {count === null ? (
-                        <Loader2 size={16} color={card.color} style={{ animation: 'spin 1s linear infinite' }} />
-                      ) : (
-                        <>
-                          <span style={{ fontSize: 28, fontWeight: 800, color: card.color, lineHeight: 1 }}>
-                            {count}
-                          </span>
-                          <span style={{ fontSize: 12, color: '#64748B', fontWeight: 600 }}>
-                            {count === 1 ? 'incident' : 'incidents'} recorded
-                          </span>
-                        </>
-                      )}
-                    </div>
-
-                    {/* Download button */}
-                    <button
-                      onClick={() => handleDownload(card.key)}
-                      disabled={isLoading || count === null}
-                      style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                        padding: '11px 0',
-                        borderRadius: 12,
-                        background: isDone ? '#22C55E' : card.color,
-                        color: 'white',
-                        border: 'none',
-                        fontWeight: 700,
-                        fontSize: 13.5,
-                        cursor: isLoading || count === null ? 'not-allowed' : 'pointer',
-                        opacity: count === null ? 0.5 : 1,
-                        transition: 'background 0.3s, transform 0.15s',
-                        fontFamily: 'var(--font)',
-                        letterSpacing: '-0.1px',
-                      }}
-                      onMouseEnter={e => { if (!isLoading) (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.02)'; }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
-                    >
-                      {isLoading ? (
-                        <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Generating .docx…</>
-                      ) : isDone ? (
-                        <><CheckCircle2 size={16} /> Downloaded!</>
-                      ) : (
-                        <><Download size={16} /> Download .docx</>
-                      )}
-                    </button>
-
-                    {/* Format note */}
-                    <div style={{ fontSize: 11, color: '#94A3B8', textAlign: 'center' }}>
-                      Microsoft Word format · MDRRMO soft copy layout
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font)', letterSpacing: '-0.2px' }}>Daily Report</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font)', marginTop: 1 }}>Single-day incident summary</div>
                     </div>
                   </div>
-                );
-              })}
+                </div>
+                <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', fontFamily: 'var(--font)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>Select Date</label>
+                    <input
+                      type="date"
+                      className="filter-select"
+                      style={{ width: '100%', boxSizing: 'border-box' }}
+                      value={selectedDay}
+                      max={todayIso}
+                      onChange={e => setSelectedDay(e.target.value)}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'var(--bg-secondary)', borderRadius: 10, border: '1px solid var(--border)' }}>
+                    {reportCounts.daily === null ? (
+                      <Loader2 size={15} color="var(--primary)" style={{ animation: 'spin 1s linear infinite' }} />
+                    ) : (
+                      <>
+                        <span style={{ fontSize: 26, fontWeight: 800, color: 'var(--primary)', fontFamily: 'var(--font)', lineHeight: 1 }}>{reportCounts.daily}</span>
+                        <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'var(--font)', fontWeight: 600 }}>{reportCounts.daily === 1 ? 'incident' : 'incidents'} recorded</span>
+                      </>
+                    )}
+                  </div>
+                  <button
+                    className="btn btn-primary"
+                    style={{ width: '100%', justifyContent: 'center', gap: 8, background: downloadDone === 'daily' ? 'var(--success)' : undefined, transition: 'background 0.3s' }}
+                    onClick={() => handleDownload('daily')}
+                    disabled={downloading === 'daily' || reportCounts.daily === null}
+                  >
+                    {downloading === 'daily' ? <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> Generating…</> : downloadDone === 'daily' ? <><CheckCircle2 size={15} /> Downloaded!</> : <><Download size={15} /> Download .docx</>}
+                  </button>
+                  <div style={{ fontSize: 10.5, color: 'var(--text-muted)', fontFamily: 'var(--font)', textAlign: 'center' }}>Microsoft Word · MDRRMO soft copy format</div>
+                </div>
+              </div>
+
+              {/* ── WEEKLY ────────────────────────────────────────────────────── */}
+              <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                <div className="card-header" style={{ borderBottom: '1px solid var(--border-light)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(124,58,237,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <BarChart3 size={18} color="#7C3AED" />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font)', letterSpacing: '-0.2px' }}>Weekly Report</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font)', marginTop: 1 }}>Mon – Sun week block</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', fontFamily: 'var(--font)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>Any Date in That Week</label>
+                    <input
+                      type="date"
+                      className="filter-select"
+                      style={{ width: '100%', boxSizing: 'border-box' }}
+                      value={selectedWeek}
+                      max={todayIso}
+                      onChange={e => setSelectedWeek(e.target.value)}
+                    />
+                    {selectedWeek && (() => {
+                      const d = new Date(selectedWeek + 'T00:00:00');
+                      const day = d.getDay();
+                      const mon = new Date(d); mon.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
+                      const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+                      const fmt = (dt: Date) => dt.toLocaleDateString('en-PH', { month: 'short', day: 'numeric' });
+                      return <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font)', marginTop: 5 }}>Week: {fmt(mon)} – {fmt(sun)}</div>;
+                    })()}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'var(--bg-secondary)', borderRadius: 10, border: '1px solid var(--border)' }}>
+                    {reportCounts.weekly === null ? (
+                      <Loader2 size={15} color="#7C3AED" style={{ animation: 'spin 1s linear infinite' }} />
+                    ) : (
+                      <>
+                        <span style={{ fontSize: 26, fontWeight: 800, color: '#7C3AED', fontFamily: 'var(--font)', lineHeight: 1 }}>{reportCounts.weekly}</span>
+                        <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'var(--font)', fontWeight: 600 }}>{reportCounts.weekly === 1 ? 'incident' : 'incidents'} recorded</span>
+                      </>
+                    )}
+                  </div>
+                  <button
+                    className="btn btn-primary"
+                    style={{ width: '100%', justifyContent: 'center', gap: 8, background: downloadDone === 'weekly' ? 'var(--success)' : '#7C3AED', transition: 'background 0.3s' }}
+                    onClick={() => handleDownload('weekly')}
+                    disabled={downloading === 'weekly' || reportCounts.weekly === null}
+                  >
+                    {downloading === 'weekly' ? <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> Generating…</> : downloadDone === 'weekly' ? <><CheckCircle2 size={15} /> Downloaded!</> : <><Download size={15} /> Download .docx</>}
+                  </button>
+                  <div style={{ fontSize: 10.5, color: 'var(--text-muted)', fontFamily: 'var(--font)', textAlign: 'center' }}>Microsoft Word · MDRRMO soft copy format</div>
+                </div>
+              </div>
+
+              {/* ── MONTHLY ───────────────────────────────────────────────────── */}
+              <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                <div className="card-header" style={{ borderBottom: '1px solid var(--border-light)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(5,150,105,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <FileText size={18} color="#059669" />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font)', letterSpacing: '-0.2px' }}>Monthly Report</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font)', marginTop: 1 }}>Full month summary</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', fontFamily: 'var(--font)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>Select Month</label>
+                    <input
+                      type="month"
+                      className="filter-select"
+                      style={{ width: '100%', boxSizing: 'border-box' }}
+                      value={selectedMonth}
+                      max={todayIso.slice(0, 7)}
+                      onChange={e => setSelectedMonth(e.target.value)}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'var(--bg-secondary)', borderRadius: 10, border: '1px solid var(--border)' }}>
+                    {reportCounts.monthly === null ? (
+                      <Loader2 size={15} color="#059669" style={{ animation: 'spin 1s linear infinite' }} />
+                    ) : (
+                      <>
+                        <span style={{ fontSize: 26, fontWeight: 800, color: '#059669', fontFamily: 'var(--font)', lineHeight: 1 }}>{reportCounts.monthly}</span>
+                        <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'var(--font)', fontWeight: 600 }}>{reportCounts.monthly === 1 ? 'incident' : 'incidents'} recorded</span>
+                      </>
+                    )}
+                  </div>
+                  <button
+                    className="btn btn-primary"
+                    style={{ width: '100%', justifyContent: 'center', gap: 8, background: downloadDone === 'monthly' ? 'var(--success)' : '#059669', transition: 'background 0.3s' }}
+                    onClick={() => handleDownload('monthly')}
+                    disabled={downloading === 'monthly' || reportCounts.monthly === null}
+                  >
+                    {downloading === 'monthly' ? <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> Generating…</> : downloadDone === 'monthly' ? <><CheckCircle2 size={15} /> Downloaded!</> : <><Download size={15} /> Download .docx</>}
+                  </button>
+                  <div style={{ fontSize: 10.5, color: 'var(--text-muted)', fontFamily: 'var(--font)', textAlign: 'center' }}>Microsoft Word · MDRRMO soft copy format</div>
+                </div>
+              </div>
+
             </div>
 
             {/* Divider */}

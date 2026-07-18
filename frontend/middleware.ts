@@ -1,34 +1,31 @@
-import { NextResponse } from "@vercel/edge";
-import type { NextRequest } from "@vercel/edge";
-
-/**
- * Vercel Edge Middleware � Mobile Route Guard
+﻿/**
+ * Vercel Edge Middleware — Mobile Route Guard
  *
- * Runs on Vercel's servers BEFORE any HTML/JS is returned to the client.
- * Protects all /mobile/* routes so only the Capacitor APK (Android + iOS)
- * can access them. Regular browsers are redirected to /admin/login.
+ * Runs on Vercel's edge servers BEFORE any HTML/JS is returned to the client.
+ * Uses native Web APIs (Request / Response) — no Next.js imports needed for
+ * a non-Next.js Vite project.
  *
  * How it works:
- *   - capacitor.config.ts sets `appendUserAgent: "SendResQPls-App"` for both
- *     Android and iOS. This makes the native WebView append that string to
- *     every HTTP request at the OS level � not JavaScript.
- *   - This middleware reads the User-Agent header. If "SendResQPls-App" is
- *     present => it is the real app => let it through. If not => block it.
+ *   capacitor.config.ts sets `appendUserAgent: "SendResQPls-App"` for both
+ *   Android and iOS. The native WebView appends that token to every request
+ *   at the OS level (not JavaScript), so regular browsers cannot spoof it casually.
+ *
+ *   If the token is present  → the request is from the APK → allowed through.
+ *   If the token is absent   → regular browser visitor   → redirected to /admin/login.
  */
-export function middleware(request: NextRequest) {
-  const ua = request.headers.get("user-agent") || "";
-  const isApp = ua.includes("SendResQPls-App");
+export default function middleware(request: Request): Response | undefined {
+  const ua = request.headers.get('user-agent') ?? '';
 
-  if (!isApp) {
-    // Not the app � redirect to admin login
-    return NextResponse.redirect(new URL("/admin/login", request.url));
+  if (!ua.includes('SendResQPls-App')) {
+    // Block: not the app — send to admin login
+    return Response.redirect(new URL('/admin/login', request.url), 302);
   }
 
-  // It is the Capacitor APK � allow the request through
-  return NextResponse.next();
+  // Allow: it is the Capacitor APK — return undefined to continue normally
+  return undefined;
 }
 
-// Only apply this guard to /mobile and all paths below it
+// Only guard /mobile and every path under it
 export const config = {
-  matcher: ["/mobile", "/mobile/:path*"],
+  matcher: ['/mobile', '/mobile/:path*'],
 };

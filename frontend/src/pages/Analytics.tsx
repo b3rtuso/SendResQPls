@@ -110,7 +110,7 @@ export default function Analytics() {
   const [tab, setTab] = useState<'map' | 'forecast' | 'reports'>('map');
   const [selectedType, setSelectedType] = useState('fire');
   const [reportFilter, setReportFilter] = useState('All Types');
-  const [trendYear, setTrendYear] = useState<'all' | '2023' | '2024' | '2025' | '2026'>('all');
+  const [trendYear, setTrendYear] = useState<string>('all');
 
   // ── Live report counts & download state ──────────────────────────────
   type RangeKey = 'daily' | 'weekly' | 'monthly';
@@ -402,12 +402,23 @@ export default function Analytics() {
               <div className="card">
                 <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <h3>Year-Over-Year Incident Trends</h3>
-                  <select className="filter-select" value={trendYear} onChange={e => setTrendYear(e.target.value as any)} style={{ minWidth: 120 }}>
-                    <option value="all">All Years</option>
-                    <option value="2023">2023</option>
-                    <option value="2024">2024</option>
-                    <option value="2025">2025</option>
-                    <option value="2026">2026</option>
+                  <select className="filter-select" value={trendYear} onChange={e => setTrendYear(e.target.value)} style={{ minWidth: 120 }}>
+                    {(() => {
+                      // Detect which year-columns have at least one non-null data point
+                      const yearKeys = Object.keys(incidentTrendsData[0] || {}).filter(k => k.startsWith('y'));
+                      const yearsWithData = yearKeys
+                        .filter(k => incidentTrendsData.some(row => (row as any)[k] != null))
+                        .map(k => k.replace('y', ''))  // 'y2023' -> '2023'
+                        .sort();
+                      return (
+                        <>
+                          <option value="all">All Years</option>
+                          {yearsWithData.map(yr => (
+                            <option key={yr} value={yr}>{yr}</option>
+                          ))}
+                        </>
+                      );
+                    })()}
                   </select>
                 </div>
                 <div className="card-body">
@@ -419,18 +430,39 @@ export default function Analytics() {
                         <YAxis tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
                         <Tooltip contentStyle={tooltipStyle} />
                         <Legend />
-                        {(trendYear === 'all' || trendYear === '2023') && (
-                          <Line type="monotone" dataKey="y2023" stroke="#94A3B8" strokeWidth={trendYear === '2023' ? 3 : 2} name="2023" dot={{ r: trendYear === '2023' ? 4 : 3 }} strokeDasharray={trendYear === 'all' ? '4 4' : undefined} connectNulls={false} />
-                        )}
-                        {(trendYear === 'all' || trendYear === '2024') && (
-                          <Line type="monotone" dataKey="y2024" stroke="#3B82F6" strokeWidth={trendYear === '2024' ? 3 : 2} name="2024" dot={trendYear === '2024' ? { r: 4 } : false} />
-                        )}
-                        {(trendYear === 'all' || trendYear === '2025') && (
-                          <Line type="monotone" dataKey="y2025" stroke="#F59E0B" strokeWidth={trendYear === '2025' ? 3 : 2} name="2025" dot={trendYear === '2025' ? { r: 4 } : false} />
-                        )}
-                        {(trendYear === 'all' || trendYear === '2026') && (
-                          <Line type="monotone" dataKey="y2026" stroke="#22C55E" strokeWidth={trendYear === '2026' ? 3 : 2.5} name="2026" dot={{ r: trendYear === '2026' ? 5 : 4, strokeWidth: 2 }} connectNulls={false} />
-                        )}
+                        {(() => {
+                          const YEAR_COLORS: Record<string, string> = {
+                            '2023': '#94A3B8',
+                            '2024': '#3B82F6',
+                            '2025': '#F59E0B',
+                            '2026': '#22C55E',
+                          };
+                          const yearKeys = Object.keys(incidentTrendsData[0] || {}).filter(k => k.startsWith('y'));
+                          const yearsWithData = yearKeys
+                            .filter(k => incidentTrendsData.some(row => (row as any)[k] != null))
+                            .map(k => k.replace('y', ''))
+                            .sort();
+                          return yearsWithData
+                            .filter(yr => trendYear === 'all' || trendYear === yr)
+                            .map(yr => {
+                              const isSelected = trendYear === yr;
+                              const isLatest   = yr === yearsWithData[yearsWithData.length - 1];
+                              const color      = YEAR_COLORS[yr] ?? '#94A3B8';
+                              return (
+                                <Line
+                                  key={yr}
+                                  type="monotone"
+                                  dataKey={`y${yr}`}
+                                  stroke={color}
+                                  strokeWidth={isSelected ? 3 : isLatest ? 2.5 : 2}
+                                  name={yr}
+                                  dot={isSelected ? { r: 4 } : isLatest ? { r: 4, strokeWidth: 2 } : trendYear === 'all' ? false : { r: 3 }}
+                                  strokeDasharray={trendYear === 'all' && !isLatest ? '4 4' : undefined}
+                                  connectNulls={false}
+                                />
+                              );
+                            });
+                        })()}
                       </LineChart>
                     </ResponsiveContainer>
                   </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Phone, AlertTriangle, Shield, Droplets, Flame, Heart, ChevronDown, MapPinOff, X } from 'lucide-react';
+import { Phone, AlertTriangle, Wind, Waves, Siren, Stethoscope, ChevronDown, MapPinOff, X } from 'lucide-react';
 import BottomNav from '../../components/BottomNav';
 import FcmBannerOverlay from '../../components/FcmBannerOverlay';
 import { getMyIncidents, cachedGet } from '../../api/client';
@@ -16,10 +16,10 @@ const hotlines = [
 ];
 
 const safetyTips = [
-  { icon: Shield, color: '#2563EB', bg: '#EFF6FF', title: 'Stay Calm', tip: 'Take deep breaths. Panicking makes it harder to think clearly.' },
-  { icon: Droplets, color: '#0EA5E9', bg: '#F0F9FF', title: 'Flood Safety', tip: 'Move to high ground immediately. Do not walk or drive through floodwaters.' },
-  { icon: Flame, color: '#EF4444', bg: '#FEF2F2', title: 'Fire Safety', tip: 'Stay away from smoke. Cover your nose with a damp cloth and evacuate immediately.' },
-  { icon: Heart, color: '#EC4899', bg: '#FDF2F8', title: 'First Aid', tip: 'Apply pressure to wounds with a clean cloth to stop bleeding. Do not move injured persons unless necessary.' },
+  { icon: Wind,        color: '#2563EB', bg: '#EFF6FF', title: 'Stay Calm',    tip: 'Take deep breaths. Panicking makes it harder to think clearly.' },
+  { icon: Waves,       color: '#0EA5E9', bg: '#F0F9FF', title: 'Flood Safety', tip: 'Move to high ground immediately. Do not walk or drive through floodwaters.' },
+  { icon: Siren,       color: '#EF4444', bg: '#FEF2F2', title: 'Fire Safety',  tip: 'Stay away from smoke. Cover your nose with a damp cloth and evacuate immediately.' },
+  { icon: Stethoscope, color: '#8B5CF6', bg: '#F5F3FF', title: 'First Aid',   tip: 'Apply pressure to wounds with a clean cloth to stop bleeding. Do not move injured persons unless necessary.' },
 ];
 
 const STATUS_KEY = 'srq_last_statuses';
@@ -267,32 +267,39 @@ export default function MobileHome() {
                 className="srq-hotline-card"
                 style={{ animationDelay: `${i * 0.07}s` }}
               >
-                {/* Colored full-width header strip */}
+                {/* Colored header — stacked so 11-digit numbers always fit */}
                 <div style={{
-                  background: `linear-gradient(135deg, ${h.color}ee 0%, ${h.color}bb 100%)`,
-                  padding: '14px 14px 12px',
+                  background: `linear-gradient(135deg, ${h.color}ee 0%, ${h.color}aa 100%)`,
+                  padding: '12px 12px 10px',
                   display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
+                  flexDirection: 'column',
+                  gap: 8,
                 }}>
-                  {/* Icon in glass pill */}
+                  {/* Icon pill — top row */}
                   <div style={{
-                    width: 36, height: 36, borderRadius: 11,
+                    width: 30, height: 30, borderRadius: 9,
                     background: 'rgba(255,255,255,0.22)',
                     border: '1px solid rgba(255,255,255,0.35)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     flexShrink: 0,
                   }}>
-                    <Phone size={16} color="white" strokeWidth={2.5} />
+                    <Phone size={14} color="white" strokeWidth={2.5} />
                   </div>
-                  {/* Number display */}
-                  <div style={{ fontSize: 20, fontWeight: 900, color: 'white', letterSpacing: '-0.5px', lineHeight: 1 }}>
+                  {/* Number — full width, scales to fit 11 digits */}
+                  <div style={{
+                    fontSize: 15,
+                    fontWeight: 900,
+                    color: 'white',
+                    letterSpacing: '-0.3px',
+                    lineHeight: 1,
+                    wordBreak: 'break-all',
+                  }}>
                     {h.number}
                   </div>
                 </div>
-                {/* Name below */}
-                <div style={{ padding: '10px 14px 12px' }}>
-                  <div style={{ fontSize: 10.5, fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em', lineHeight: 1.3 }}>
+                {/* Name label below */}
+                <div style={{ padding: '9px 12px 11px' }}>
+                  <div style={{ fontSize: 10, fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em', lineHeight: 1.3 }}>
                     {h.name}
                   </div>
                 </div>

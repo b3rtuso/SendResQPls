@@ -87,6 +87,8 @@ export const updateIncidentStatus = (id: string, data: { status?: string; adminN
   api.patch(`/incidents/${id}/status`, data);
 
 export const getIncidents = () => api.get('/incidents');
+export const getIncidentsByRange = (from: string, to: string) =>
+  api.get('/incidents', { params: { from, to } });
 export const getIncident = (id: string) => api.get(`/incidents/${id}`);
 export const getIncidentStats = () => api.get('/incidents/stats');
 export const getMyIncidents = (userId: string) => api.get(`/incidents/my/${userId}`);

@@ -1,11 +1,11 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import Header from '../components/Header';
 import {
   Line, LineChart, AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
   PieChart, Pie, Cell,
 } from 'recharts';
-import { TrendingUp, FileText, Download, MapPin, BarChart3, Calendar } from 'lucide-react';
+import { TrendingUp, FileText, Download, MapPin, BarChart3, Calendar, Loader2, CheckCircle2 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -19,6 +19,12 @@ import {
   incidentTrendsData, yearlyTotals, topLocations,
   TYPE_COLORS, downloadReport, generateFullReport,
 } from '../data/mdrrmo-data';
+import {
+  downloadDailyReport, downloadWeeklyReport, downloadMonthlyReport,
+  getDailyRange, getWeeklyRange, getMonthlyRange,
+} from '../utils/reportGenerator';
+import { getIncidentsByRange } from '../api/client';
+import type { Incident } from '../types';
 
 // Fix Leaflet default icon issue with bundlers
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -112,6 +118,58 @@ export default function Analytics() {
   const [selectedType, setSelectedType] = useState('fire');
   const [reportFilter, setReportFilter] = useState('All Types');
   const [trendYear, setTrendYear] = useState<'all' | '2023' | '2024' | '2025' | '2026'>('all');
+
+  // ── Live report counts & download state ──────────────────────────────
+  type RangeKey = 'daily' | 'weekly' | 'monthly';
+  const [reportCounts, setReportCounts] = useState<Record<RangeKey, number | null>>({
+    daily: null, weekly: null, monthly: null,
+  });
+  const [reportIncidents, setReportIncidents] = useState<Record<RangeKey, Incident[]>>({
+    daily: [], weekly: [], monthly: [],
+  });
+  const [downloading, setDownloading] = useState<RangeKey | null>(null);
+  const [downloadDone, setDownloadDone] = useState<RangeKey | null>(null);
+
+  const fetchReportCounts = useCallback(async () => {
+    const ranges: { key: RangeKey; range: ReturnType<typeof getDailyRange> }[] = [
+      { key: 'daily',   range: getDailyRange()   },
+      { key: 'weekly',  range: getWeeklyRange()  },
+      { key: 'monthly', range: getMonthlyRange() },
+    ];
+    const results = await Promise.allSettled(
+      ranges.map(({ key, range }) =>
+        getIncidentsByRange(range.from, range.to).then(res => ({ key, data: res.data as Incident[] }))
+      )
+    );
+    const counts: Record<RangeKey, number | null> = { daily: null, weekly: null, monthly: null };
+    const incidents: Record<RangeKey, Incident[]> = { daily: [], weekly: [], monthly: [] };
+    results.forEach(r => {
+      if (r.status === 'fulfilled') {
+        counts[r.value.key]    = r.value.data.length;
+        incidents[r.value.key] = r.value.data;
+      }
+    });
+    setReportCounts(counts);
+    setReportIncidents(incidents);
+  }, []);
+
+  useEffect(() => {
+    if (tab === 'reports') fetchReportCounts();
+  }, [tab, fetchReportCounts]);
+
+  const handleDownload = async (key: RangeKey) => {
+    setDownloading(key);
+    try {
+      const incs = reportIncidents[key];
+      if (key === 'daily')   await downloadDailyReport(incs);
+      if (key === 'weekly')  await downloadWeeklyReport(incs);
+      if (key === 'monthly') await downloadMonthlyReport(incs);
+      setDownloadDone(key);
+      setTimeout(() => setDownloadDone(null), 3000);
+    } finally {
+      setDownloading(null);
+    }
+  };
 
   // Compute stats for current incident type
   const riskStats = useMemo(() => {
@@ -428,6 +486,140 @@ export default function Analytics() {
         {/* ============ REPORTS TAB ============ */}
         {tab === 'reports' && (
           <div className="fade-in">
+
+            {/* ── Live Report Cards ── */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 18, marginBottom: 24 }}>
+              {(
+                [
+                  {
+                    key: 'daily'   as const,
+                    title: 'Daily Report',
+                    period: getDailyRange().period,
+                    icon: '📅',
+                    color: '#2563EB',
+                    bg: '#EFF6FF',
+                    border: '#BFDBFE',
+                  },
+                  {
+                    key: 'weekly'  as const,
+                    title: 'Weekly Report',
+                    period: getWeeklyRange().period,
+                    icon: '📆',
+                    color: '#7C3AED',
+                    bg: '#F5F3FF',
+                    border: '#DDD6FE',
+                  },
+                  {
+                    key: 'monthly' as const,
+                    title: 'Monthly Report',
+                    period: getMonthlyRange().period,
+                    icon: '🗓️',
+                    color: '#059669',
+                    bg: '#F0FDF4',
+                    border: '#BBF7D0',
+                  },
+                ] as const
+              ).map(card => {
+                const count      = reportCounts[card.key];
+                const isLoading  = downloading === card.key;
+                const isDone     = downloadDone === card.key;
+
+                return (
+                  <div
+                    key={card.key}
+                    style={{
+                      background: card.bg,
+                      border: `1.5px solid ${card.border}`,
+                      borderRadius: 18,
+                      padding: '22px 24px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 12,
+                      boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
+                    }}
+                  >
+                    {/* Title row */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{ fontSize: 28 }}>{card.icon}</span>
+                      <div>
+                        <div style={{ fontSize: 15, fontWeight: 800, color: card.color, letterSpacing: '-0.2px' }}>
+                          {card.title}
+                        </div>
+                        <div style={{ fontSize: 11.5, color: '#64748B', marginTop: 2 }}>
+                          {card.period}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Incident count badge */}
+                    <div style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 8,
+                      background: 'white', border: `1px solid ${card.border}`,
+                      borderRadius: 12, padding: '8px 14px',
+                    }}>
+                      {count === null ? (
+                        <Loader2 size={16} color={card.color} style={{ animation: 'spin 1s linear infinite' }} />
+                      ) : (
+                        <>
+                          <span style={{ fontSize: 28, fontWeight: 800, color: card.color, lineHeight: 1 }}>
+                            {count}
+                          </span>
+                          <span style={{ fontSize: 12, color: '#64748B', fontWeight: 600 }}>
+                            {count === 1 ? 'incident' : 'incidents'} recorded
+                          </span>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Download button */}
+                    <button
+                      onClick={() => handleDownload(card.key)}
+                      disabled={isLoading || count === null}
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                        padding: '11px 0',
+                        borderRadius: 12,
+                        background: isDone ? '#22C55E' : card.color,
+                        color: 'white',
+                        border: 'none',
+                        fontWeight: 700,
+                        fontSize: 13.5,
+                        cursor: isLoading || count === null ? 'not-allowed' : 'pointer',
+                        opacity: count === null ? 0.5 : 1,
+                        transition: 'background 0.3s, transform 0.15s',
+                        fontFamily: 'var(--font)',
+                        letterSpacing: '-0.1px',
+                      }}
+                      onMouseEnter={e => { if (!isLoading) (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.02)'; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
+                    >
+                      {isLoading ? (
+                        <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Generating .docx…</>
+                      ) : isDone ? (
+                        <><CheckCircle2 size={16} /> Downloaded!</>
+                      ) : (
+                        <><Download size={16} /> Download .docx</>
+                      )}
+                    </button>
+
+                    {/* Format note */}
+                    <div style={{ fontSize: 11, color: '#94A3B8', textAlign: 'center' }}>
+                      Microsoft Word format · MDRRMO soft copy layout
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Divider */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '4px 0 20px' }}>
+              <div style={{ flex: 1, height: 1, background: '#E2E8F0' }} />
+              <span style={{ fontSize: 11, color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Historical Reports Archive
+              </span>
+              <div style={{ flex: 1, height: 1, background: '#E2E8F0' }} />
+            </div>
+
             {/* Stat cards for reports */}
             <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: 20 }}>
               <div className="stat-card"><div className="stat-info"><h3>Total Reports</h3><div className="stat-value">{reportData.length}</div><div className="stat-change up">Available for download</div></div><div className="stat-icon blue"><FileText size={22} /></div></div>

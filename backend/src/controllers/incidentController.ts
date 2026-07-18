@@ -48,7 +48,7 @@ const BALAYAN_BOUNDS = {
 // GET /api/incidents — List all incidents with optional search & status filter
 export const getIncidents = async (req: Request, res: Response) => {
   try {
-    const { search, status } = req.query;
+    const { search, status, from, to } = req.query;
 
     const where: any = {};
 
@@ -63,13 +63,21 @@ export const getIncidents = async (req: Request, res: Response) => {
       ];
     }
 
+    // Date-range filter for report generation (e.g. daily/weekly/monthly)
+    if (from || to) {
+      where.createdAt = {};
+      if (from) where.createdAt.gte = new Date(from as string);
+      if (to)   where.createdAt.lte = new Date((to as string) + 'T23:59:59.999Z');
+    }
+
     const incidents = await prisma.incident.findMany({
       where,
       include: { reporter: { select: { id: true, name: true, email: true, phoneNumber: true, role: true } } },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: 'asc' },  // asc so report rows go oldest→newest
     });
 
     res.json(incidents);
+
   } catch (error: any) {
     console.error("❌ GET incidents error:", error.message);
     res.status(500).json({ error: "Failed to fetch incidents", details: error.message });

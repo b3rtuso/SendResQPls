@@ -127,6 +127,51 @@ export default function MobileHome() {
 
   return (
     <div className="mobile-shell" style={{ background: '#F1F5F9' }}>
+      <style>{`
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(14px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .srq-hotline-card {
+          display: flex;
+          flex-direction: column;
+          text-decoration: none;
+          background: white;
+          border-radius: 20px;
+          overflow: hidden;
+          box-shadow: 0 2px 12px rgba(15,23,42,0.07), 0 1px 3px rgba(15,23,42,0.04);
+          border: 1px solid rgba(226,232,240,0.8);
+          transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.18s ease;
+          animation: fadeUp 0.4s cubic-bezier(0.16,1,0.3,1) both;
+        }
+        .srq-hotline-card:active {
+          transform: scale(0.96);
+          box-shadow: 0 1px 4px rgba(15,23,42,0.08);
+        }
+        .srq-tip-card {
+          display: flex;
+          gap: 14px;
+          padding: 16px;
+          background: white;
+          border-radius: 18px;
+          align-items: flex-start;
+          box-shadow: 0 2px 10px rgba(15,23,42,0.06), 0 1px 3px rgba(15,23,42,0.03);
+          border: 1px solid rgba(226,232,240,0.7);
+          transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1);
+          animation: fadeUp 0.4s cubic-bezier(0.16,1,0.3,1) both;
+        }
+        .srq-tip-card:active {
+          transform: scale(0.98);
+        }
+        .srq-section-label {
+          font-size: 10.5px;
+          font-weight: 800;
+          color: #94A3B8;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+          margin: 0 0 14px;
+        }
+      `}</style>
       <FcmBannerOverlay />
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }}>
 
@@ -213,27 +258,44 @@ export default function MobileHome() {
 
         {/* ── Emergency Hotlines ─────────────────────────── */}
         <div style={{ padding: '24px 20px 0' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <h3 style={{ fontSize: 13, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>Emergency Hotlines</h3>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            {hotlines.map(h => (
-              <a key={h.number} href={`tel:${h.number}`} style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center',
-                padding: '16px 10px', borderRadius: 14, background: 'white',
-                border: '1px solid #E2E8F0', textDecoration: 'none',
-                transition: 'all 0.15s', cursor: 'pointer', position: 'relative', overflow: 'hidden',
-              }}>
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: h.color, borderRadius: '14px 14px 0 0' }} />
+          <p className="srq-section-label">Emergency Hotlines</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            {hotlines.map((h, i) => (
+              <a
+                key={h.number}
+                href={`tel:${h.number}`}
+                className="srq-hotline-card"
+                style={{ animationDelay: `${i * 0.07}s` }}
+              >
+                {/* Colored full-width header strip */}
                 <div style={{
-                  width: 40, height: 40, borderRadius: 11,
-                  background: `${h.color}15`, display: 'flex',
-                  alignItems: 'center', justifyContent: 'center', marginBottom: 8,
+                  background: `linear-gradient(135deg, ${h.color}ee 0%, ${h.color}bb 100%)`,
+                  padding: '14px 14px 12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
                 }}>
-                  <Phone size={18} color={h.color} />
+                  {/* Icon in glass pill */}
+                  <div style={{
+                    width: 36, height: 36, borderRadius: 11,
+                    background: 'rgba(255,255,255,0.22)',
+                    border: '1px solid rgba(255,255,255,0.35)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0,
+                  }}>
+                    <Phone size={16} color="white" strokeWidth={2.5} />
+                  </div>
+                  {/* Number display */}
+                  <div style={{ fontSize: 20, fontWeight: 900, color: 'white', letterSpacing: '-0.5px', lineHeight: 1 }}>
+                    {h.number}
+                  </div>
                 </div>
-                <div style={{ fontSize: 10.5, color: '#94A3B8', fontWeight: 700, marginBottom: 3, textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{h.name}</div>
-                <div style={{ fontSize: 17, fontWeight: 900, color: '#0F172A', letterSpacing: '-0.3px' }}>{h.number}</div>
+                {/* Name below */}
+                <div style={{ padding: '10px 14px 12px' }}>
+                  <div style={{ fontSize: 10.5, fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em', lineHeight: 1.3 }}>
+                    {h.name}
+                  </div>
+                </div>
               </a>
             ))}
           </div>
@@ -241,25 +303,49 @@ export default function MobileHome() {
 
         {/* ── Safety Tips ─────────────────────────────────── */}
         <div style={{ padding: '24px 20px 28px' }}>
-          <h3 style={{ fontSize: 13, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Safety Tips</h3>
+          <p className="srq-section-label">Quick Safety Tips</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {safetyTips.map(t => (
-              <div key={t.title} style={{
-                display: 'flex', gap: 14, padding: '14px 16px',
-                background: 'white', borderRadius: 14, alignItems: 'flex-start',
-                border: '1px solid #E2E8F0',
-                borderLeft: `3px solid ${t.color}`,
-              }}>
+            {safetyTips.map((t, i) => (
+              <div
+                key={t.title}
+                className="srq-tip-card"
+                style={{ animationDelay: `${i * 0.07 + 0.15}s` }}
+              >
+                {/* Icon block — double-bezel: outer tinted shell + inner icon */}
                 <div style={{
-                  width: 38, height: 38, borderRadius: 10, background: t.bg,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                  width: 46, height: 46, borderRadius: 14,
+                  background: t.bg,
+                  border: `1.5px solid ${t.color}22`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0, position: 'relative',
                 }}>
-                  <t.icon size={18} color={t.color} />
+                  {/* Inner accent dot */}
+                  <div style={{
+                    position: 'absolute', top: 6, right: 6,
+                    width: 5, height: 5, borderRadius: '50%',
+                    background: t.color, opacity: 0.45,
+                  }} />
+                  <t.icon size={20} color={t.color} strokeWidth={2} />
                 </div>
-                <div>
-                  <div style={{ fontSize: 13.5, fontWeight: 700, color: '#0F172A', marginBottom: 3 }}>{t.title}</div>
-                  <div style={{ fontSize: 12, color: '#64748B', lineHeight: 1.55 }}>{t.tip}</div>
+                {/* Text */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{
+                    fontSize: 13.5, fontWeight: 800, color: '#0F172A',
+                    marginBottom: 4, letterSpacing: '-0.1px',
+                  }}>
+                    {t.title}
+                  </div>
+                  <div style={{ fontSize: 11.5, color: '#64748B', lineHeight: 1.6 }}>
+                    {t.tip}
+                  </div>
                 </div>
+                {/* Right accent bar */}
+                <div style={{
+                  width: 3, height: '100%', borderRadius: 4,
+                  background: `linear-gradient(to bottom, ${t.color}, ${t.color}44)`,
+                  alignSelf: 'stretch', flexShrink: 0,
+                  marginLeft: 4,
+                }} />
               </div>
             ))}
           </div>

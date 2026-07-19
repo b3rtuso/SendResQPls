@@ -168,9 +168,10 @@ export function getMonthlyRange() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function downloadDailyReport(incidents: Incident[]) {
+  const sorted = [...incidents].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   const { label } = getDailyRange();
 
-  const incidentData = incidents.map(inc => ({
+  const incidentData = sorted.map(inc => ({
     time:           militaryTime(inc.createdAt),
     date:           longDate(inc.createdAt),
     incident_type:  inc.aiDetectedType ?? 'Unknown Incident',
@@ -221,9 +222,10 @@ function groupByWeek(incidents: Incident[]): Map<string, Incident[]> {
 }
 
 export async function downloadWeeklyReport(incidents: Incident[]) {
+  const sorted = [...incidents].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   const { label } = getWeeklyRange();
 
-  const weekMap     = groupByWeek(incidents);
+  const weekMap     = groupByWeek(sorted);
   const sortedKeys  = Array.from(weekMap.keys()).sort();
 
   const weeks = sortedKeys.map((weekStart, idx) => {
@@ -281,14 +283,15 @@ export async function downloadWeeklyReport(incidents: Incident[]) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function downloadMonthlyReport(incidents: Incident[]) {
+  const sorted = [...incidents].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   const now   = new Date();
   const { label } = getMonthlyRange();
 
-  const total   = incidents.length;
-  const trauma  = incidents.filter(i => classifyType(i).trauma).length;
-  const medical = incidents.filter(i => classifyType(i).medical).length;
-  const fire    = incidents.filter(i => classifyType(i).fire).length;
-  const crime   = incidents.filter(i => classifyType(i).crime).length;
+  const total   = sorted.length;
+  const trauma  = sorted.filter(i => classifyType(i).trauma).length;
+  const medical = sorted.filter(i => classifyType(i).medical).length;
+  const fire    = sorted.filter(i => classifyType(i).fire).length;
+  const crime   = sorted.filter(i => classifyType(i).crime).length;
 
   // Build extra_types string for fire/crime if present
   const extras: string[] = [];

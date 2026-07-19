@@ -73,7 +73,7 @@ export const getIncidents = async (req: Request, res: Response) => {
     const incidents = await prisma.incident.findMany({
       where,
       include: { reporter: { select: { id: true, name: true, email: true, phoneNumber: true, role: true } } },
-      orderBy: { createdAt: 'asc' },  // asc so report rows go oldest→newest
+      orderBy: { createdAt: 'desc' },  // newest first — dashboard recent incidents + admin list
     });
 
     res.json(incidents);

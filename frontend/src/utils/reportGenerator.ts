@@ -94,6 +94,72 @@ async function loadTemplate(name: 'daily' | 'weekly' | 'monthly'): Promise<Array
   return res.arrayBuffer();
 }
 
+// ─── Typography post-processor ────────────────────────────────────────────────
+// After docxtemplater fills the template, this function walks the document.xml
+// and enforces government-document typography:
+//   • Body font: Times New Roman, 12pt (24 half-points)
+//   • Alignment: justified (both)
+//   • Line spacing: single (240 twips)
+//   • Space before/after paragraphs: 0
+// Header/footer XML is intentionally left untouched.
+
+function applyDocxTypography(zip: PizZip): void {
+  const docXml = zip.file('word/document.xml')?.asText();
+  if (!docXml) return;
+
+  let xml = docXml;
+
+  // 1. Ensure every <w:pPr> (paragraph properties) has justified alignment and spacing.
+  //    If <w:pPr> doesn't already contain <w:jc>, inject it.
+  //    We also ensure <w:spacing> is set to single-line, 0 before/after.
+  xml = xml.replace(/<w:pPr>([\s\S]*?)<\/w:pPr>/g, (match, inner) => {
+    // Skip headings (they have their own style — don't override)
+    if (/<w:pStyle[^/]*w:val="Heading/i.test(inner)) return match;
+    // Skip table of contents, caption, etc.
+    if (/<w:pStyle[^/]*w:val="(TOC|Caption|Title|Subtitle)/i.test(inner)) return match;
+
+    let props = inner;
+    // Add justification if not already set
+    if (!/<w:jc\b/.test(props)) {
+      props += '<w:jc w:val="both"/>';
+    }
+    // Add/replace spacing — only if not already present
+    if (!/<w:spacing\b/.test(props)) {
+      props += '<w:spacing w:after="0" w:before="0" w:line="240" w:lineRule="auto"/>';
+    }
+    return `<w:pPr>${props}</w:pPr>`;
+  });
+
+  // 2. Ensure every <w:rPr> (run properties) has Times New Roman 12pt.
+  //    We DON'T override bold/italic/underline — just font and size.
+  xml = xml.replace(/<w:rPr>([\s\S]*?)<\/w:rPr>/g, (_match, inner) => {
+    let props = inner;
+    // Remove any existing font declarations then re-add ours
+    props = props.replace(/<w:rFonts[^/]*\/>/g, '');
+    props = props.replace(/<w:rFonts[\s\S]*?\/>/g, '');
+    // Remove any existing sz/szCs then re-add 12pt (24 half-points)
+    props = props.replace(/<w:sz\b[^/]*\/>/g, '');
+    props = props.replace(/<w:szCs\b[^/]*\/>/g, '');
+    // Inject font + size at the start (OOXML requires rFonts before sz)
+    props =
+      '<w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:cs="Times New Roman"/>' +
+      '<w:sz w:val="24"/><w:szCs w:val="24"/>' +
+      props;
+    return `<w:rPr>${props}</w:rPr>`;
+  });
+
+  // 3. Ensure runs that have NO <w:rPr> get one added.
+  //    Match <w:r> followed immediately by <w:t> (no rPr).
+  xml = xml.replace(/<w:r>(\s*<w:t)/g,
+    '<w:r><w:rPr>' +
+    '<w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:cs="Times New Roman"/>' +
+    '<w:sz w:val="24"/><w:szCs w:val="24"/>' +
+    '</w:rPr>$1'
+  );
+
+  zip.file('word/document.xml', xml);
+}
+
 // ─── fill template and trigger download ───────────────────────────────────────
 
 async function fillAndDownload(
@@ -113,6 +179,9 @@ async function fillAndDownload(
 
   doc.render(data);
 
+  // Post-process: enforce government typography in the filled document
+  applyDocxTypography(doc.getZip());
+
   const blob = doc.getZip().generate({
     type: 'blob',
     mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -121,6 +190,7 @@ async function fillAndDownload(
 
   saveAs(blob, filename);
 }
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DATE RANGE HELPERS  (used by Analytics.tsx for card labels)

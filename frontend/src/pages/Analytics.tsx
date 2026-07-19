@@ -591,6 +591,22 @@ export default function Analytics() {
         {tab === 'reports' && (
           <div className="fade-in">
 
+            {/* ── KPI Stat Cards — TOP ── */}
+            <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: 24 }}>
+              <div className="stat-card"><div className="stat-info"><h3>Total Reports</h3><div className="stat-value">{reportData.length}</div><div className="stat-change up">Available for download</div></div><div className="stat-icon blue"><FileText size={22} /></div></div>
+              <div className="stat-card"><div className="stat-info"><h3>Data Coverage</h3><div className="stat-value">2023–2026</div><div className="stat-change up">4 years of data</div></div><div className="stat-icon purple"><Calendar size={22} /></div></div>
+              <div className="stat-card"><div className="stat-info"><h3>Total Records</h3><div className="stat-value">1,260</div><div className="stat-change up">MDRRMO incident reports</div></div><div className="stat-icon green"><BarChart3 size={22} /></div></div>
+            </div>
+
+            {/* ── Divider ── */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '0 0 24px' }}>
+              <div style={{ flex: 1, height: 1, background: '#E2E8F0' }} />
+              <span style={{ fontSize: 11, color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Generate Reports
+              </span>
+              <div style={{ flex: 1, height: 1, background: '#E2E8F0' }} />
+            </div>
+
             {/* ── Live Report Cards ── */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20, marginBottom: 28 }}>
 
@@ -615,6 +631,7 @@ export default function Analytics() {
                       className="filter-select"
                       style={{ width: '100%', boxSizing: 'border-box' }}
                       value={selectedDay}
+                      min="2023-01-01"
                       max={todayIso}
                       onChange={e => setSelectedDay(e.target.value)}
                     />
@@ -662,6 +679,7 @@ export default function Analytics() {
                       className="filter-select"
                       style={{ width: '100%', boxSizing: 'border-box' }}
                       value={selectedWeek}
+                      min="2023-01-01"
                       max={todayIso}
                       onChange={e => setSelectedWeek(e.target.value)}
                     />
@@ -717,6 +735,7 @@ export default function Analytics() {
                       className="filter-select"
                       style={{ width: '100%', boxSizing: 'border-box' }}
                       value={selectedMonth}
+                      min="2023-01"
                       max={todayIso.slice(0, 7)}
                       onChange={e => setSelectedMonth(e.target.value)}
                     />
@@ -745,20 +764,14 @@ export default function Analytics() {
 
             </div>
 
-            {/* Divider */}
+
+            {/* ── Divider ── */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '4px 0 20px' }}>
               <div style={{ flex: 1, height: 1, background: '#E2E8F0' }} />
               <span style={{ fontSize: 11, color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                 Historical Reports Archive
               </span>
               <div style={{ flex: 1, height: 1, background: '#E2E8F0' }} />
-            </div>
-
-            {/* Stat cards for reports */}
-            <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: 20 }}>
-              <div className="stat-card"><div className="stat-info"><h3>Total Reports</h3><div className="stat-value">{reportData.length}</div><div className="stat-change up">Available for download</div></div><div className="stat-icon blue"><FileText size={22} /></div></div>
-              <div className="stat-card"><div className="stat-info"><h3>Data Coverage</h3><div className="stat-value">2023–2026</div><div className="stat-change up">4 years of data</div></div><div className="stat-icon purple"><Calendar size={22} /></div></div>
-              <div className="stat-card"><div className="stat-info"><h3>Total Records</h3><div className="stat-value">1,260</div><div className="stat-change up">MDRRMO incident reports</div></div><div className="stat-icon green"><BarChart3 size={22} /></div></div>
             </div>
 
             <div className="filters-bar">

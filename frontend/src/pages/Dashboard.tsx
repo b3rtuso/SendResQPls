@@ -12,7 +12,7 @@ import type { Incident, Status } from '../types';
 import { getIncidents, getIncidentStats } from '../api/client';
 import { getNearestBarangay } from '../data/balayan-data';
 import { normalizeIncidentType } from '../utils/normalizeIncidentType';
-import { dashboardChartData } from '../data/mdrrmo-data';
+import { dashboardChartData, monthlyByType2024, monthlyByType2025, yearlyTotals } from '../data/mdrrmo-data';
 
 const DEPARTMENTS = [
   { label: 'BFP',         sub: 'Bureau of Fire Protection', icon: Flame,       color: '#EF4444', bg: '#FEF2F2', tel: 'tel:(043) 211-6387' },
@@ -97,6 +97,20 @@ export default function Dashboard() {
   const [stats, setStats] = useState({ total: 0, pending: 0, dispatched: 0, resolved: 0 });
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<Status | 'ALL'>('ALL');
+  const [dashboardYear, setDashboardYear] = useState<string>(String(new Date().getFullYear()));
+
+  // Map each year to its monthly breakdown dataset
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const YEAR_CHART_DATA: Record<string, any[]> = {
+    '2024': monthlyByType2024,
+    '2025': monthlyByType2025,
+    '2026': dashboardChartData,
+  };
+  const activeChartData = YEAR_CHART_DATA[dashboardYear] ?? dashboardChartData;
+  // Only show years that have a dataset
+  const availableChartYears = yearlyTotals
+    .filter(y => YEAR_CHART_DATA[String(y.year)] !== undefined && y.total > 0)
+    .map(y => y.year);
 
   const fetchData = async () => {
     setLoading(true);
@@ -303,16 +317,20 @@ export default function Dashboard() {
           <div className="card">
             <div className="card-header">
               <h3 style={{ fontWeight: 700, fontSize: 16, color: '#0F172A' }}>Incident Trends</h3>
-              <select className="filter-select">
-                <option>Last 6 Months</option>
-                <option>Last 12 Months</option>
-                <option>This Year</option>
+              <select
+                className="filter-select"
+                value={dashboardYear}
+                onChange={e => setDashboardYear(e.target.value)}
+              >
+                {availableChartYears.map(yr => (
+                  <option key={yr} value={String(yr)}>{yr}</option>
+                ))}
               </select>
             </div>
             <div className="card-body">
               <div className="chart-container" style={{ height: '300px' }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={dashboardChartData} barCategoryGap="35%">
+                  <BarChart data={activeChartData} barCategoryGap="35%">
                     <defs>
                       <linearGradient id="medicalGrad" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="#22C55E" />

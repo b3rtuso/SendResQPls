@@ -4,9 +4,7 @@
  * Uses official MDRRMO Balayan template .docx files (stored in /public/templates/)
  * as base, filling live incident and questionnaire data via docxtemplater.
  * 
- * Formatting & Placeholders strictly aligned with user specifications:
- * - Weekly: [Week] of the month dated [Start Date] to [End Date], bulleted counts, injury & complaint lists.
- * - Monthly: {Month}, bulleted counts, trauma causes/injuries, dispositions, complaints, conduction purposes.
+ * Includes comprehensive resolution questionnaire data across Daily, Weekly, and Monthly reports.
  */
 
 import Docxtemplater from 'docxtemplater';
@@ -387,20 +385,29 @@ export async function downloadWeeklyReport(incidents: Incident[], anyDateIso?: s
   const cancelledCount      = sorted.filter(i => i.status === 'REJECTED' || i.resolutionForm?.dispositionStatus === 'CANCELLED').length;
   const transportedCount    = sorted.filter(i => i.status === 'RESOLVED' || i.resolutionForm?.dispositionStatus === 'TRANSPORTED').length;
 
-  // Aggregate trauma injuries from actual DB records ONLY
+  // Aggregate rich trauma details from questionnaire entries
   const injuriesSet = new Set<string>();
   traumaIncs.forEach(i => {
-    if (i.resolutionForm?.injuriesObserved) {
-      i.resolutionForm.injuriesObserved.split(/[,;]/).forEach(item => item.trim() && injuriesSet.add(item.trim().toLowerCase()));
+    const rf = i.resolutionForm;
+    if (rf?.injuriesObserved) {
+      rf.injuriesObserved.split(/[,;]/).forEach(item => item.trim() && injuriesSet.add(item.trim().toLowerCase()));
+    }
+    if (rf?.mechanismOfInjury) {
+      injuriesSet.add(`mechanism: ${rf.mechanismOfInjury.toLowerCase()}`);
     }
   });
   const injuryList = injuriesSet.size > 0 ? Array.from(injuriesSet).join(', ') : 'none recorded';
 
-  // Aggregate medical chief complaints from actual DB records ONLY
+  // Aggregate rich medical complaints & vitals from questionnaire entries
   const complaintsSet = new Set<string>();
   medicalIncs.forEach(i => {
-    if (i.resolutionForm?.howIncidentHappened) complaintsSet.add(i.resolutionForm.howIncidentHappened.toLowerCase());
-    if (i.resolutionForm?.injuriesObserved) complaintsSet.add(i.resolutionForm.injuriesObserved.toLowerCase());
+    const rf = i.resolutionForm;
+    if (rf?.howIncidentHappened) complaintsSet.add(rf.howIncidentHappened.toLowerCase());
+    if (rf?.injuriesObserved) complaintsSet.add(rf.injuriesObserved.toLowerCase());
+    if (rf?.bloodPressure || rf?.pulseRate || rf?.oxygenSaturation) {
+      const vitalsSummary = `vitals: BP ${rf.bloodPressure || 'N/A'}, pulse ${rf.pulseRate || 'N/A'} bpm, SaO₂ ${rf.oxygenSaturation || 'N/A'}%`;
+      complaintsSet.add(vitalsSummary);
+    }
   });
   const complaintList = complaintsSet.size > 0 ? Array.from(complaintsSet).join(', ') : 'none recorded';
 
@@ -440,12 +447,14 @@ export async function downloadMonthlyReport(incidents: Incident[], monthIso?: st
   const medicalCount        = medicalIncs.length;
   const conductionCount     = conductionIncs.length;
 
-  // Trauma causes & injuries from actual resolutionForm entries ONLY
+  // Aggregate trauma causes & injuries from questionnaire entries
   const causesSet = new Set<string>();
   const injuriesSet = new Set<string>();
   traumaIncs.forEach(i => {
-    if (i.resolutionForm?.mechanismOfInjury) causesSet.add(i.resolutionForm.mechanismOfInjury.toLowerCase());
-    if (i.resolutionForm?.injuriesObserved) injuriesSet.add(i.resolutionForm.injuriesObserved.toLowerCase());
+    const rf = i.resolutionForm;
+    if (rf?.mechanismOfInjury) causesSet.add(rf.mechanismOfInjury.toLowerCase());
+    if (rf?.howIncidentHappened) causesSet.add(rf.howIncidentHappened.toLowerCase());
+    if (rf?.injuriesObserved) injuriesSet.add(rf.injuriesObserved.toLowerCase());
   });
 
   const topTraumaCauses = causesSet.size > 0 ? Array.from(causesSet).join(', ') : 'reported trauma incidents';
@@ -455,22 +464,29 @@ export async function downloadMonthlyReport(incidents: Incident[], monthIso?: st
   const transportedCount = sorted.filter(i => i.status === 'RESOLVED' || i.resolutionForm?.dispositionStatus === 'TRANSPORTED').length;
   const refusedCount     = sorted.filter(i => i.resolutionForm?.dispositionStatus === 'REFUSED_TRANSPORT').length;
 
-  // Medical complaints from actual resolutionForm entries ONLY
+  // Aggregate medical complaints & vitals from questionnaire entries
   const medComplaintsSet = new Set<string>();
   medicalIncs.forEach(i => {
-    if (i.resolutionForm?.howIncidentHappened) medComplaintsSet.add(i.resolutionForm.howIncidentHappened.toLowerCase());
-    if (i.resolutionForm?.injuriesObserved) medComplaintsSet.add(i.resolutionForm.injuriesObserved.toLowerCase());
+    const rf = i.resolutionForm;
+    if (rf?.howIncidentHappened) medComplaintsSet.add(rf.howIncidentHappened.toLowerCase());
+    if (rf?.injuriesObserved) medComplaintsSet.add(rf.injuriesObserved.toLowerCase());
+    if (rf?.bloodPressure || rf?.pulseRate || rf?.oxygenSaturation) {
+      medComplaintsSet.add(`vital signs: BP ${rf.bloodPressure || 'N/A'}, pulse ${rf.pulseRate || 'N/A'} bpm, SaO₂ ${rf.oxygenSaturation || 'N/A'}%`);
+    }
   });
+
   const topMedicalComplaints = medicalCount === 0
     ? 'No Medical Emergencies reported for this month'
     : (medComplaintsSet.size > 0 ? Array.from(medComplaintsSet).join(', ') : 'various medical conditions');
 
-  // Conduction purposes from actual resolutionForm entries ONLY
+  // Aggregate conduction purposes & destination facilities from questionnaire entries
   const conductionSet = new Set<string>();
   conductionIncs.forEach(i => {
-    if (i.resolutionForm?.destinationFacility) conductionSet.add(`providing transportation to ${i.resolutionForm.destinationFacility}`);
-    else if (i.resolutionForm?.howIncidentHappened) conductionSet.add(i.resolutionForm.howIncidentHappened.toLowerCase());
+    const rf = i.resolutionForm;
+    if (rf?.destinationFacility) conductionSet.add(`transportation to ${rf.destinationFacility}`);
+    if (rf?.howIncidentHappened) conductionSet.add(rf.howIncidentHappened.toLowerCase());
   });
+
   const medicalConductionPurposes = conductionCount === 0
     ? 'No Medical Conduction reported.'
     : (conductionSet.size > 0 ? Array.from(conductionSet).join(', ') : 'providing transportation assistance for hospital check-ups and transfers');

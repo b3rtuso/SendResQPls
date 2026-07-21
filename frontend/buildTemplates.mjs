@@ -20,6 +20,7 @@ const rSigBold = `<w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/
 const pCenter = `<w:pPr><w:jc w:val="center"/><w:spacing w:before="120" w:after="120" w:line="240" w:lineRule="auto"/></w:pPr>`;
 const pBoth   = `<w:pPr><w:jc w:val="both"/><w:spacing w:before="120" w:after="120" w:line="240" w:lineRule="auto"/></w:pPr>`;
 const pEmpty  = `<w:pPr><w:spacing w:after="120" w:line="240" w:lineRule="auto"/></w:pPr>`;
+const pBullet = `<w:pPr><w:jc w:val="both"/><w:ind w:left="360"/><w:spacing w:before="60" w:after="60" w:line="240" w:lineRule="auto"/></w:pPr>`;
 
 const run  = (t) => `<w:r>${rBody}<w:t xml:space="preserve">${t}</w:t></w:r>`;
 const runB = (t) => `<w:r>${rBold}<w:t xml:space="preserve">${t}</w:t></w:r>`;
@@ -72,39 +73,60 @@ ${pageBreak()}
 ${p(pEmpty, run('{/incidents}'))}
 `;
 
-// ── WEEKLY Body (Matching Reference File Verbatim) ───────────────────────────
+// ── WEEKLY Body (User's Exact Requested Bullet & Placeholder Structure) ───────
 const weeklyBody = `
 ${p(pEmpty, run('{#weeks}'))}
 ${p(pCenter, runB('WEEKLY INCIDENT REPORT'))}
 ${blank()}
-${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 For the '), runB('{week_ordinal}'), run(' week of the Month Dated: '), runB('{date_range}'), run('. The Municipal Disaster Risk Reduction and Management Office ('), runB('MDRRMO'), run(') emergency responders responded to '), runB('{total_incidents_text}'), run(' incidents.'))}
+${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 For the '), runB('{week_ordinal}'), run(' of the month dated '), runB('{start_date}'), run(' to '), runB('{end_date}'), run(', the MDRRMO responded to '), runB('{total_incidents}'), run(' incidents.'))}
 ${blank()}
-${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 That '), runB('{trauma_count_text}'), run(' of the incidents were Trauma Emergencies, '), run('{trauma_breakdown}.'))}
+${p(pBoth, run('Of these,'))}
+${p(pBullet, run('\u2022 '), runB('{trauma_count}'), run(' were Trauma Emergencies,'))}
+${p(pBullet, run('\u2022 '), runB('{medical_count}'), run(' were Medical Emergencies, and'))}
+${p(pBullet, run('\u2022 '), runB('{medical_conduction_count}'), run(' was a Medical Conduction.'))}
 ${blank()}
-${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 That '), runB('{medical_count_text}'), run(' of the '), run('{total_count_word}'), run(' incidents were Medical Emergencies, '), run('{medical_breakdown}.'))}
+${p(pBoth, run('Among the Trauma Emergencies,'))}
+${p(pBullet, run('\u2022 '), runB('{dead_count}'), run(' patients were reported dead on the spot,'))}
+${p(pBullet, run('\u2022 '), runB('{cancelled_count}'), run(' incident was cancelled,'))}
+${p(pBullet, run('\u2022 '), runB('{transported_count}'), run(' patients were transported after receiving proper care.'))}
 ${blank()}
-${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 That the other '), runB('{conduction_count_text}'), run(' of the '), run('{total_count_word}'), run(' incidents was a Medical Conduction, '), run('{conduction_breakdown}.'))}
+${p(pBoth, run('The common injuries observed were:'))}
+${p(pBoth, runB('{injury_list}'), run('.'))}
 ${blank()}
-${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 That the Four (4) teams of the Municipal Disaster and Risk Reduction and Management Office ('), runB('MDRRMO'), run('), emergency responders, radio operators, and the operation sections diligently and effectively did their duties.'))}
+${p(pBoth, run('Among the Medical Emergencies,'))}
+${p(pBoth, run('the recorded chief complaints included:'))}
+${p(pBoth, runB('{complaint_list}'), run('.'))}
+${blank()}
+${p(pBoth, run('The MDRRMO teams successfully performed their emergency response duties throughout the reporting period.'))}
 ${sigTable}
 ${p(pEmpty, run('{/weeks}'))}
 `;
 
-// ── MONTHLY Body (Matching Reference File Verbatim) ──────────────────────────
+// ── MONTHLY Body (User's Exact Requested Bullet & Placeholder Structure) ──────
 const monthlyBody = `
 ${p(pCenter, runB('MONTHLY INCIDENT REPORT'))}
 ${blank()}
-${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 For the month of '), runB('{month_name_upper}'), run(' '), runB('{year}'), run(', the Municipal Disaster Risk Reduction and Management Office ('), runB('MDRRMO'), run(') emergency responders handled a total of '), runB('{total_incidents_text}'), run(' incidents.'))}
+${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 For the month of '), runB('{month_name}'), run(','))}
 ${blank()}
-${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 These included '), runB('{trauma_count_text}'), run(' Trauma Emergencies, '), runB('{medical_count_text}'), run(' Medical Emergencies, and '), runB('{conduction_count_text}'), run(' Medical Conductions.'))}
+${p(pBoth, run('the MDRRMO handled a total of '), runB('{total_incidents}'), run(' incidents.'))}
 ${blank()}
-${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 Most trauma cases involved '), runB('{top_trauma_causes}'), run(' resulting in '), runB('{common_injuries}'), run(', while some patients were under alcohol intoxication. '), run('{trauma_disposition_narrative}'))}
+${p(pBoth, run('These included'))}
+${p(pBullet, run('\u2022 '), runB('{trauma_count}'), run(' Trauma Emergencies,'))}
+${p(pBullet, run('\u2022 '), runB('{medical_count}'), run(' Medical Emergencies,'))}
+${p(pBullet, run('\u2022 and '), runB('{medical_conduction_count}'), run(' Medical Conductions.'))}
 ${blank()}
-${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 Medical emergencies commonly involved '), runB('{top_medical_complaints}'), run('.'))}
+${p(pBoth, run('Most trauma cases involved '), runB('{top_trauma_causes}'), run(', resulting in '), runB('{common_injuries}'), run('.'))}
 ${blank()}
-${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 Medical conduction cases involved '), runB('{medical_conduction_purposes}'), run('.'))}
+${p(pBoth, runB('{dead_count}'), run(' patients were reported dead on the spot, while '), runB('{transported_count}'), run(' were transported after receiving proper care, except for '), runB('{refused_count}'), run(' patient who refused transport.'))}
 ${blank()}
-${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 Throughout the month, the four (4) teams of the MDRRMO emergency responders, radio operators, and operations personnel diligently and effectively performed their duties in responding to all reported incidents.'))}
+${p(pBoth, run('Medical emergencies commonly involved '))}
+${p(pBoth, runB('{top_medical_complaints}'), run('.'))}
+${blank()}
+${p(pBoth, run('Medical conduction cases involved '))}
+${p(pBoth, runB('{medical_conduction_purposes}'), run('.'))}
+${blank()}
+${p(pBoth, run('Throughout the month, '))}
+${p(pBoth, runB('{team_count}'), run(' MDRRMO teams effectively responded to all reported incidents.'))}
 ${sigTable}
 `;
 
@@ -149,5 +171,5 @@ async function buildTemplate(srcDocx, newBodyInner, outFile) {
   await buildTemplate(weeklySrc, weeklyBody, `${OUT_DIR}/weekly-template.docx`);
   await buildTemplate(monthlySrc, monthlyBody, `${OUT_DIR}/monthly-template.docx`);
 
-  console.log('✅ All templates recreated with 100% valid OpenXML formatting & Arial 11pt signature block!');
+  console.log('✅ All templates recreated with exact requested bullet & placeholder structure!');
 })();

@@ -1,4 +1,4 @@
-﻿import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import JSZip from 'jszip';
@@ -72,7 +72,7 @@ function makeSectionHeader(title) {
 
 // ── DAILY Body ────────────────────────────────────────────────────────────────
 const dailyBody = `
-{#incidents}
+${p(pEmpty, run('{#incidents}'))}
 ${p(pCenter, runB('INCIDENT REPORT'))}
 ${blank()}
 ${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 That on or about '), runB('{time}'), run(' of '), runB('{date}'), run(', a '), runB('{incident_type}'), run(' occurred at '), runB('{location}.'))}
@@ -117,12 +117,12 @@ ${blank()}
 ${p(pBoth, run('{procedure_photo_note}'))}
 ${blank()}
 ${makeSigDrawingXml()}
-{/incidents}
+${p(pEmpty, run('{/incidents}'))}
 `;
 
 // ── WEEKLY Body ───────────────────────────────────────────────────────────────
 const weeklyBody = `
-{#weeks}
+${p(pEmpty, run('{#weeks}'))}
 ${p(pCenter, runB('WEEKLY INCIDENT REPORT'))}
 ${blank()}
 ${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 For the '), runB('{week_ordinal}'), run(' week of the month dated '), runB('{start_date}'), run(' to '), runB('{end_date}'), run(', the MDRRMO responded to '), runB('{total_incidents}'), run(' incidents.'))}
@@ -147,7 +147,7 @@ ${blank()}
 ${p(pBoth, run('The MDRRMO teams successfully performed their emergency response duties throughout the reporting period.'))}
 ${blank()}
 ${makeSigDrawingXml()}
-{/weeks}
+${p(pEmpty, run('{/weeks}'))}
 `;
 
 // ── MONTHLY Body ──────────────────────────────────────────────────────────────

@@ -188,9 +188,9 @@ export default function Analytics() {
     setDownloading(key);
     try {
       const incs = reportIncidents[key];
-      if (key === 'daily')   await downloadDailyReport(incs);
-      if (key === 'weekly')  await downloadWeeklyReport(incs);
-      if (key === 'monthly') await downloadMonthlyReport(incs);
+      if (key === 'daily')   await downloadDailyReport(incs, selectedDay);
+      if (key === 'weekly')  await downloadWeeklyReport(incs, selectedWeek);
+      if (key === 'monthly') await downloadMonthlyReport(incs, selectedMonth);
       setDownloadDone(key);
       setTimeout(() => setDownloadDone(null), 3000);
     } finally {

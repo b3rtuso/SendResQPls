@@ -5,7 +5,8 @@ import { RequestDetailsSkeleton } from '../components/PageLoader';
 import Toast, { type ToastType } from '../components/Toast';
 import { ArrowLeft, Brain, MapPin, Camera, User, Clock, ExternalLink, X, Phone, Building2, CheckCircle2 } from 'lucide-react';
 import { updateIncidentStatus, getIncident as fetchIncident, reverseGeocode } from '../api/client';
-import type { Status, Incident } from '../types';
+import type { Status, Incident, ResolutionForm } from '../types';
+import ResolutionFormModal from '../components/ResolutionFormModal';
 import { getNearestBarangay } from '../data/balayan-data';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
@@ -91,6 +92,7 @@ export default function RequestDetails() {
   const [toast, setToast] = useState<ToastState>({ show: false, message: '', type: 'info' });
   const [resolvedAddress, setResolvedAddress] = useState('');
   const [resolvingAddress, setResolvingAddress] = useState(false);
+  const [showResolutionModal, setShowResolutionModal] = useState(false);
 
   const showToast = useCallback((type: ToastType, message: string, detail?: string) => {
     setToast({ show: true, message, detail, type });
@@ -129,18 +131,24 @@ export default function RequestDetails() {
     }
   }, [incident?.latitude, incident?.longitude]);
 
-  const handleStatusUpdate = async (status: Status) => {
+  const handleStatusUpdate = async (status: Status, resolutionForm?: ResolutionForm) => {
+    if (status === 'RESOLVED' && !resolutionForm) {
+      setShowResolutionModal(true);
+      return;
+    }
+
     setCurrentStatus(status);
     setSaving(true);
     try {
-      await updateIncidentStatus(id!, { status });
+      await updateIncidentStatus(id!, { status, resolutionForm });
       showToast(
         'success',
         `Status updated to ${status} 📱`,
         `Incident ${id?.slice(0, 8)}... marked as ${status}. Push notification sent to the reporter's mobile app.`
       );
       // Update local state
-      setIncident((prev) => prev ? { ...prev, status } : prev);
+      setIncident((prev) => prev ? { ...prev, status, resolutionForm: resolutionForm || prev.resolutionForm } : prev);
+      setShowResolutionModal(false);
     } catch {
       showToast('error', 'Failed to update status', 'The server returned an error. Please try again.');
     } finally {
@@ -697,6 +705,16 @@ export default function RequestDetails() {
             }}
           />
         </div>
+      )}
+      {/* Resolution Form Questionnaire Modal */}
+      {incident && (
+        <ResolutionFormModal
+          isOpen={showResolutionModal}
+          onClose={() => setShowResolutionModal(false)}
+          onSubmit={(formData) => handleStatusUpdate('RESOLVED', formData)}
+          incident={incident}
+          isSubmitting={saving}
+        />
       )}
     </>
   );

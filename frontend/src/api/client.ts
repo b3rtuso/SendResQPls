@@ -83,7 +83,9 @@ export const reportIncident = (formData: FormData) =>
     headers: { 'Content-Type': 'multipart/form-data' },
   });
 
-export const updateIncidentStatus = (id: string, data: { status?: string; adminNotes?: string; assignedDepartment?: string }) =>
+import type { ResolutionForm } from '../types';
+
+export const updateIncidentStatus = (id: string, data: { status?: string; adminNotes?: string; assignedDepartment?: string; resolutionForm?: ResolutionForm }) =>
   api.patch(`/incidents/${id}/status`, data);
 
 export const getIncidents = () => api.get('/incidents');

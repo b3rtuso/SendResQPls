@@ -6,19 +6,21 @@
  * margins, and all formatting exactly.
  *
  * At runtime: fetches the template → injects live incident data via docxtemplater
- * → triggers browser download.
+ * → applies Arial 12pt typography & signature block → triggers browser download.
  */
 
 import Docxtemplater from 'docxtemplater';
 import PizZip from 'pizzip';
 import { saveAs } from 'file-saver';
 import type { Incident } from '../types';
+import { getNearestBarangay } from '../data/balayan-data';
 
 // ─── number → English words (for narrative) ──────────────────────────────────
 
 function toWords(n: number): string {
+  if (n === 0) return 'Zero';
   const ones = [
-    'Zero','One','Two','Three','Four','Five','Six','Seven','Eight','Nine',
+    '','One','Two','Three','Four','Five','Six','Seven','Eight','Nine',
     'Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen',
     'Seventeen','Eighteen','Nineteen',
   ];
@@ -48,6 +50,10 @@ function longDate(iso: string): string {
   });
 }
 
+function monthYear(d: Date): string {
+  return d.toLocaleDateString('en-PH', { month: 'long', year: 'numeric' });
+}
+
 function isoDate(d: Date): string {
   return d.toISOString().split('T')[0];
 }
@@ -56,34 +62,64 @@ function dateStr(d: Date): string {
   return d.toLocaleDateString('en-PH', { month: 'long', day: 'numeric', year: 'numeric' });
 }
 
+// ─── location extraction ──────────────────────────────────────────────────────
+
+function resolveLocation(inc: Incident): string {
+  if (inc.resolutionForm?.incidentLocation) return inc.resolutionForm.incidentLocation;
+  if (inc.adminNotes) {
+    const brgyMatch = inc.adminNotes.match(/Brgy\.?\s+([A-Za-z\s]+)/i);
+    if (brgyMatch) return `Brgy. ${brgyMatch[1].trim()}, Balayan, Batangas`;
+  }
+  if (inc.latitude && inc.longitude) {
+    return `${getNearestBarangay(inc.latitude, inc.longitude)}, Balayan, Batangas`;
+  }
+  return 'Balayan, Batangas';
+}
+
 // ─── incident type classifier ─────────────────────────────────────────────────
 
-function classifyType(inc: Incident): { trauma: boolean; medical: boolean; fire: boolean; crime: boolean } {
-  const t = (inc.aiDetectedType ?? '').toLowerCase();
+function classifyType(inc: Incident): { trauma: boolean; medical: boolean; conduction: boolean; fire: boolean; crime: boolean } {
+  const t = (inc.resolutionForm?.incidentType ?? inc.aiDetectedType ?? '').toLowerCase();
   return {
-    trauma:  t.includes('trauma') || t.includes('accident') || t.includes('vehicular'),
-    medical: t.includes('medical') || t.includes('conduction') || t.includes('emergency'),
-    fire:    t.includes('fire'),
-    crime:   t.includes('crime') || t.includes('assault'),
+    trauma:      t.includes('trauma') || t.includes('accident') || t.includes('vehicular') || t.includes('fall'),
+    medical:     t.includes('medical') && !t.includes('conduction'),
+    conduction:  t.includes('conduction') || t.includes('transfer'),
+    fire:        t.includes('fire'),
+    crime:       t.includes('crime') || t.includes('assault'),
   };
 }
 
-// ─── action narrative based on status ─────────────────────────────────────────
+// ─── action narrative based on incident & resolution form ─────────────────────
 
 function actionNarrative(inc: Incident): string {
+  const rf = inc.resolutionForm;
+  if (rf?.howIncidentHappened) {
+    let text = rf.howIncidentHappened.trim();
+    if (rf.treatmentInterventions) text += `. Care provided: ${rf.treatmentInterventions.trim()}`;
+    if (rf.destinationFacility) text += `. Patient transported to ${rf.destinationFacility.trim()}`;
+    return text + '.';
+  }
+
   const dept = inc.assignedDepartment ?? inc.aiRecommendedDept ?? 'MDRRMO';
   switch (inc.status) {
     case 'RESOLVED':
-      return `${dept} emergency responders responded to the scene and the patient was transported to the hospital for further evaluation and treatment.`;
+      return `${dept} emergency responders responded to the scene, rendered necessary pre-hospital care, and transported the patient to the medical facility for further evaluation.`;
     case 'REJECTED':
       return 'The response was considered stood down / cancelled. No patient was catered to.';
     case 'DISPATCHED':
-      return `${dept} emergency responders have been dispatched and are currently responding to the scene.`;
+      return `${dept} emergency responders were dispatched and provided immediate care on scene.`;
     case 'REVIEWING':
-      return 'The incident is currently under review by MDRRMO personnel for appropriate dispatch.';
+      return 'The incident was logged and reviewed by MDRRMO personnel for appropriate response.';
     default:
-      return 'The incident has been logged and is awaiting response.';
+      return 'The incident was logged and catered to by MDRRMO emergency teams.';
   }
+}
+
+function describeType(inc: Incident): string {
+  if (inc.resolutionForm?.incidentType) return inc.resolutionForm.incidentType;
+  const raw = inc.aiDetectedType ?? '';
+  if (!raw || raw.trim() === '') return 'Emergency Incident';
+  return raw.replace(/\b\w/g, c => c.toUpperCase());
 }
 
 // ─── fetch template from public/templates/ ────────────────────────────────────
@@ -94,14 +130,7 @@ async function loadTemplate(name: 'daily' | 'weekly' | 'monthly'): Promise<Array
   return res.arrayBuffer();
 }
 
-// ─── Typography post-processor ────────────────────────────────────────────────
-// After docxtemplater fills the template, this function walks the document.xml
-// and enforces government-document typography:
-//   • Body font: Times New Roman, 12pt (24 half-points)
-//   • Alignment: justified (both)
-//   • Line spacing: single (240 twips)
-//   • Space before/after paragraphs: 0
-// Header/footer XML is intentionally left untouched.
+// ─── Typography post-processor (Arial 12pt) ──────────────────────────────────
 
 function applyDocxTypography(zip: PizZip): void {
   const docXml = zip.file('word/document.xml')?.asText();
@@ -109,50 +138,39 @@ function applyDocxTypography(zip: PizZip): void {
 
   let xml = docXml;
 
-  // 1. Ensure every <w:pPr> (paragraph properties) has justified alignment and spacing.
-  //    If <w:pPr> doesn't already contain <w:jc>, inject it.
-  //    We also ensure <w:spacing> is set to single-line, 0 before/after.
+  // 1. Ensure every <w:pPr> has justified alignment and single spacing.
   xml = xml.replace(/<w:pPr>([\s\S]*?)<\/w:pPr>/g, (match, inner) => {
-    // Skip headings (they have their own style — don't override)
     if (/<w:pStyle[^/]*w:val="Heading/i.test(inner)) return match;
-    // Skip table of contents, caption, etc.
     if (/<w:pStyle[^/]*w:val="(TOC|Caption|Title|Subtitle)/i.test(inner)) return match;
 
     let props = inner;
-    // Add justification if not already set
     if (!/<w:jc\b/.test(props)) {
       props += '<w:jc w:val="both"/>';
     }
-    // Add/replace spacing — only if not already present
     if (!/<w:spacing\b/.test(props)) {
-      props += '<w:spacing w:after="0" w:before="0" w:line="240" w:lineRule="auto"/>';
+      props += '<w:spacing w:after="120" w:before="120" w:line="240" w:lineRule="auto"/>';
     }
     return `<w:pPr>${props}</w:pPr>`;
   });
 
-  // 2. Ensure every <w:rPr> (run properties) has Times New Roman 12pt.
-  //    We DON'T override bold/italic/underline — just font and size.
+  // 2. Ensure every <w:rPr> uses Arial font, 12pt (24 half-points).
   xml = xml.replace(/<w:rPr>([\s\S]*?)<\/w:rPr>/g, (_match, inner) => {
     let props = inner;
-    // Remove any existing font declarations then re-add ours
     props = props.replace(/<w:rFonts[^/]*\/>/g, '');
     props = props.replace(/<w:rFonts[\s\S]*?\/>/g, '');
-    // Remove any existing sz/szCs then re-add 12pt (24 half-points)
     props = props.replace(/<w:sz\b[^/]*\/>/g, '');
     props = props.replace(/<w:szCs\b[^/]*\/>/g, '');
-    // Inject font + size at the start (OOXML requires rFonts before sz)
     props =
-      '<w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:cs="Times New Roman"/>' +
+      '<w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/>' +
       '<w:sz w:val="24"/><w:szCs w:val="24"/>' +
       props;
     return `<w:rPr>${props}</w:rPr>`;
   });
 
-  // 3. Ensure runs that have NO <w:rPr> get one added.
-  //    Match <w:r> followed immediately by <w:t> (no rPr).
+  // 3. Runs with no <w:rPr> get Arial 12pt.
   xml = xml.replace(/<w:r>(\s*<w:t)/g,
     '<w:r><w:rPr>' +
-    '<w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:cs="Times New Roman"/>' +
+    '<w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/>' +
     '<w:sz w:val="24"/><w:szCs w:val="24"/>' +
     '</w:rPr>$1'
   );
@@ -173,13 +191,12 @@ async function fillAndDownload(
   const doc = new Docxtemplater(zip, {
     paragraphLoop: true,
     linebreaks: true,
-    // Treat missing tags as empty string (no errors on optional fields)
     nullGetter: () => '',
   });
 
   doc.render(data);
 
-  // Post-process: enforce government typography in the filled document
+  // Post-process: enforce Arial 12pt typography
   applyDocxTypography(doc.getZip());
 
   const blob = doc.getZip().generate({
@@ -191,45 +208,64 @@ async function fillAndDownload(
   saveAs(blob, filename);
 }
 
-
 // ─────────────────────────────────────────────────────────────────────────────
-// DATE RANGE HELPERS  (used by Analytics.tsx for card labels)
+// DATE RANGE HELPERS
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function getDailyRange() {
-  const now  = new Date();
+export function getDailyRange(dateIso?: string) {
+  const now  = dateIso ? new Date(dateIso + 'T00:00:00') : new Date();
   const from = isoDate(now);
   return {
     from,
     to:     from,
-    label:  `DAILY-INCIDENT-REPORT_${from}.docx`,
+    label:  `DAILY-INCIDENT-REPORT_${from.replace(/-/g, '')}.docx`,
     period: `Date: ${dateStr(now)}`,
   };
 }
 
-export function getWeeklyRange() {
-  const now = new Date();
-  const day = now.getDay();
-  const mon = new Date(now);
-  mon.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
+export function getWeeklyRange(anyDateIso?: string) {
+  const ref = anyDateIso ? new Date(anyDateIso + 'T00:00:00') : new Date();
+  const day = ref.getDay();
+  const mon = new Date(ref);
+  mon.setDate(ref.getDate() - (day === 0 ? 6 : day - 1));
+  const sun = new Date(mon);
+  sun.setDate(mon.getDate() + 6);
   const from = isoDate(mon);
-  const to   = isoDate(now);
+  const to   = isoDate(sun);
+  const monLabel = mon.toLocaleDateString('en-PH', { month: 'long', day: 'numeric', year: 'numeric' });
+  const sunLabel = sun.toLocaleDateString('en-PH', { month: 'long', day: 'numeric', year: 'numeric' });
   return {
     from,
     to,
-    label:  `WEEKLY-INCIDENT-REPORT_${now.toLocaleDateString('en-PH', { month: 'long', year: 'numeric' }).replace(/ /g, '-').toUpperCase()}.docx`,
-    period: `Week of ${dateStr(mon)} – ${dateStr(now)}`,
+    mon,
+    sun,
+    label:  `WEEKLY-INCIDENT-REPORT_${mon.toLocaleDateString('en-PH', { month: 'long', year: 'numeric' }).replace(/ /g, '-').toUpperCase()}.docx`,
+    period: `Week of ${dateStr(mon)} – ${dateStr(sun)}`,
+    monLabel,
+    sunLabel,
   };
 }
 
-export function getMonthlyRange() {
-  const now   = new Date();
-  const first = new Date(now.getFullYear(), now.getMonth(), 1);
+export function getMonthlyRange(monthIso?: string) {
+  let year: number, month: number;
+  if (monthIso) {
+    [year, month] = monthIso.split('-').map(Number);
+  } else {
+    const now = new Date();
+    year  = now.getFullYear();
+    month = now.getMonth() + 1;
+  }
+  const first = new Date(year, month - 1, 1);
+  const last  = new Date(year, month, 0);
   return {
-    from:   isoDate(first),
-    to:     isoDate(now),
-    label:  `MONTHLY-INCIDENT-REPORT_${now.toLocaleDateString('en-PH', { month: 'long', year: 'numeric' }).replace(/ /g, '-').toUpperCase()}.docx`,
-    period: `Month of ${now.toLocaleDateString('en-PH', { month: 'long', year: 'numeric' })}`,
+    from:      isoDate(first),
+    to:        isoDate(last),
+    first,
+    last,
+    label:     `MONTHLY-INCIDENT-REPORT_${monthYear(first).replace(/ /g, '-').toUpperCase()}.docx`,
+    period:    `Month of ${monthYear(first)}`,
+    monthName: monthYear(first),
+    year,
   };
 }
 
@@ -237,36 +273,52 @@ export function getMonthlyRange() {
 // DAILY REPORT
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function downloadDailyReport(incidents: Incident[]) {
+export async function downloadDailyReport(incidents: Incident[], dateIso?: string) {
   const sorted = [...incidents].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-  const { label } = getDailyRange();
+  const { label } = getDailyRange(dateIso);
 
-  const incidentData = sorted.map(inc => ({
-    time:           militaryTime(inc.createdAt),
-    date:           longDate(inc.createdAt),
-    incident_type:  inc.aiDetectedType ?? 'Unknown Incident',
-    location:       inc.latitude && inc.longitude
-                      ? `Balayan, Batangas (Lat: ${inc.latitude.toFixed(4)}, Lng: ${inc.longitude.toFixed(4)})`
-                      : 'Balayan, Batangas',
-    reporter_name:  inc.reporter?.name ?? 'Unknown Reporter',
-    reporter_phone: inc.reporter?.phoneNumber ? ` (${inc.reporter.phoneNumber})` : '',
-    narrative:      actionNarrative(inc),
-  }));
+  const reportDate = dateIso
+    ? longDate(dateIso + 'T00:00:00')
+    : longDate(new Date().toISOString());
+
+  const incidentData = sorted.map((inc, idx) => {
+    // If a procedure photo was uploaded, format raw XML note or procedure block
+    const procedurePhotoXml = inc.resolutionForm?.procedurePhotoUrl
+      ? `<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="120" w:after="120"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial"/><w:i/><w:sz w:val="20"/></w:rPr><w:t>[Ongoing Procedure / Rescue Photo Attached: ${inc.resolutionForm.incidentType || 'Emergency Response'}]</w:t></w:r></w:p>`
+      : '';
+
+    return {
+      incident_no:          idx + 1,
+      time:                 militaryTime(inc.createdAt),
+      date:                 reportDate,
+      incident_type:        describeType(inc),
+      location:             resolveLocation(inc),
+      reporter_name:        inc.reporter?.name ?? 'MDRRMO Dispatcher',
+      reporter_phone:       inc.reporter?.phoneNumber ? ` (${inc.reporter.phoneNumber})` : '',
+      narrative:            actionNarrative(inc),
+      procedure_photo_xml:  procedurePhotoXml,
+    };
+  });
 
   await fillAndDownload(
     'daily',
-    { incidents: incidentData.length > 0 ? incidentData : [
-      // If no incidents, show a blank-slate page
-      {
-        time:           '—',
-        date:           longDate(new Date().toISOString()),
-        incident_type:  'No incidents recorded',
-        location:       'Balayan, Batangas',
-        reporter_name:  '—',
-        reporter_phone: '',
-        narrative:      'No incidents were recorded for this date.',
-      },
-    ]},
+    {
+      report_date: reportDate,
+      total_incidents: sorted.length,
+      incidents: incidentData.length > 0 ? incidentData : [
+        {
+          incident_no:          1,
+          time:                 '—',
+          date:                 reportDate,
+          incident_type:        'No incidents recorded',
+          location:             'Balayan, Batangas',
+          reporter_name:        '—',
+          reporter_phone:       '',
+          narrative:            'No incidents were recorded for this date. The MDRRMO emergency response teams remained on standby.',
+          procedure_photo_xml:  '',
+        },
+      ],
+    },
     label,
   );
 }
@@ -275,74 +327,66 @@ export async function downloadDailyReport(incidents: Incident[]) {
 // WEEKLY REPORT
 // ─────────────────────────────────────────────────────────────────────────────
 
-const WEEK_ORDINALS = ['First','Second','Third','Fourth','Fifth','Sixth'];
+const WEEK_ORDINALS = ['First','Second','Third','Fourth','Fifth'];
 
-function groupByWeek(incidents: Incident[]): Map<string, Incident[]> {
-  const map = new Map<string, Incident[]>();
-  for (const inc of incidents) {
-    const d   = new Date(inc.createdAt);
-    const day = d.getDay();
-    const mon = new Date(d);
-    mon.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
-    const key = isoDate(mon);
-    if (!map.has(key)) map.set(key, []);
-    map.get(key)!.push(inc);
-  }
-  return map;
+function weekOrdinalInMonth(monDate: Date): string {
+  const firstDayOfMonth = new Date(monDate.getFullYear(), monDate.getMonth(), 1);
+  const firstMonday = new Date(firstDayOfMonth);
+  const firstDay = firstDayOfMonth.getDay();
+  firstMonday.setDate(firstDayOfMonth.getDate() + (firstDay === 0 ? 1 : firstDay === 1 ? 0 : 8 - firstDay));
+  const weekNum = Math.round((monDate.getTime() - firstMonday.getTime()) / (7 * 86400000));
+  return WEEK_ORDINALS[Math.max(0, weekNum)] ?? `Week ${weekNum + 1}`;
 }
 
-export async function downloadWeeklyReport(incidents: Incident[]) {
+export async function downloadWeeklyReport(incidents: Incident[], anyDateIso?: string) {
   const sorted = [...incidents].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-  const { label } = getWeeklyRange();
+  const range = getWeeklyRange(anyDateIso);
+  const { label, mon, monLabel, sunLabel } = range;
 
-  const weekMap     = groupByWeek(sorted);
-  const sortedKeys  = Array.from(weekMap.keys()).sort();
+  const weekOrdinal = weekOrdinalInMonth(mon);
 
-  const weeks = sortedKeys.map((weekStart, idx) => {
-    const weekIncs = weekMap.get(weekStart)!;
-    const total    = weekIncs.length;
+  const total               = sorted.length;
+  const traumaIncs          = sorted.filter(i => classifyType(i).trauma);
+  const medicalIncs         = sorted.filter(i => classifyType(i).medical);
+  const conductionIncs      = sorted.filter(i => classifyType(i).conduction);
 
-    const trauma  = weekIncs.filter(i => classifyType(i).trauma).length;
-    const medical = weekIncs.filter(i => classifyType(i).medical).length;
-    const fire    = weekIncs.filter(i => classifyType(i).fire).length;
-    const crime   = weekIncs.filter(i => classifyType(i).crime).length;
+  const traumaCount         = traumaIncs.length;
+  const medicalCount        = medicalIncs.length;
+  const conductionCount     = conductionIncs.length;
 
-    const fromDate = new Date(weekStart + 'T00:00:00');
-    const lastDate = new Date(weekIncs[weekIncs.length - 1].createdAt);
+  const deadCount           = sorted.filter(i => i.resolutionForm?.dispositionStatus === 'DEAD_ON_SPOT').length;
+  const cancelledCount      = sorted.filter(i => i.status === 'REJECTED' || i.resolutionForm?.dispositionStatus === 'CANCELLED').length;
+  const transportedCount    = sorted.filter(i => i.status === 'RESOLVED' || i.resolutionForm?.dispositionStatus === 'TRANSPORTED').length;
 
-    const fromLabel = fromDate.toLocaleDateString('en-PH', { month: 'long', day: 'numeric' }).toUpperCase();
-    const toLabel   = lastDate.toLocaleDateString('en-PH', { month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase();
-
-    return {
-      week_ordinal:  WEEK_ORDINALS[idx] ?? `Week ${idx + 1}`,
-      week_range:    `${fromLabel}-${toLabel}`,
-      total_word:    toWords(total),
-      total_num:     total,
-      total_plural:  total !== 1 ? 's' : '',
-      has_trauma:    trauma > 0,
-      trauma_word:   toWords(trauma),
-      trauma_num:    trauma,
-      has_medical:   medical > 0,
-      medical_word:  toWords(medical),
-      medical_num:   medical,
-      has_fire:      fire > 0,
-      fire_word:     toWords(fire),
-      fire_num:      fire,
-      has_crime:     crime > 0,
-      crime_word:    toWords(crime),
-      crime_num:     crime,
-    };
+  // Compile injury list
+  const injuriesSet = new Set<string>();
+  traumaIncs.forEach(i => {
+    const inj = i.resolutionForm?.injuriesObserved || 'abrasions, laceration wounds, contusions, and swelling';
+    inj.split(/[,;]/).forEach(item => item.trim() && injuriesSet.add(item.trim().toLowerCase()));
   });
+  const injuryList = injuriesSet.size > 0 ? Array.from(injuriesSet).join(', ') : 'abrasions, laceration wounds, contusions, and swelling';
 
-  // If no incidents, show blank week
-  const weeksData = weeks.length > 0 ? weeks : [{
-    week_ordinal: 'First',
-    week_range:   `${getWeeklyRange().period.toUpperCase()}`,
-    total_word:   'Zero',   total_num: 0,   total_plural: 's',
-    has_trauma:   false,    trauma_word: 'Zero',  trauma_num: 0,
-    has_medical:  false,    medical_word: 'Zero', medical_num: 0,
-    has_fire:     false,    fire_word: 'Zero',    fire_num: 0,
-    has_crime:    false,    crime_word: 'Zero',   crime_num: 0,
+  // Compile complaint list
+  const complaintsSet = new Set<string>();
+  medicalIncs.forEach(i => {
+    const comp = i.resolutionForm?.injuriesObserved || 'dizziness, hypertension, difficulty of breathing, and body weakness';
+    comp.split(/[,;]/).forEach(item => item.trim() && complaintsSet.add(item.trim().toLowerCase()));
+  });
+  const complaintList = complaintsSet.size > 0 ? Array.from(complaintsSet).join(', ') : 'dizziness, hypertension, difficulty of breathing, and body weakness';
+
+  const weeksData = [{
+    week_ordinal:             weekOrdinal,
+    start_date:               monLabel,
+    end_date:                 sunLabel,
+    total_incidents:          `${total} (${toWords(total)})`,
+    trauma_count:             `${traumaCount} (${toWords(traumaCount)})`,
+    medical_count:            `${medicalCount} (${toWords(medicalCount)})`,
+    medical_conduction_count: `${conductionCount} (${toWords(conductionCount)})`,
+    dead_count:               `${deadCount} (${toWords(deadCount)})`,
+    cancelled_count:          `${cancelledCount} (${toWords(cancelledCount)})`,
+    transported_count:        `${transportedCount} (${toWords(transportedCount)})`,
+    injury_list:              injuryList,
+    complaint_list:           complaintList,
   }];
 
   await fillAndDownload('weekly', { weeks: weeksData }, label);
@@ -352,33 +396,62 @@ export async function downloadWeeklyReport(incidents: Incident[]) {
 // MONTHLY REPORT
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function downloadMonthlyReport(incidents: Incident[]) {
+export async function downloadMonthlyReport(incidents: Incident[], monthIso?: string) {
   const sorted = [...incidents].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-  const now   = new Date();
-  const { label } = getMonthlyRange();
+  const range = getMonthlyRange(monthIso);
+  const { label, monthName } = range;
 
-  const total   = sorted.length;
-  const trauma  = sorted.filter(i => classifyType(i).trauma).length;
-  const medical = sorted.filter(i => classifyType(i).medical).length;
-  const fire    = sorted.filter(i => classifyType(i).fire).length;
-  const crime   = sorted.filter(i => classifyType(i).crime).length;
+  const total               = sorted.length;
+  const traumaIncs          = sorted.filter(i => classifyType(i).trauma);
+  const medicalIncs         = sorted.filter(i => classifyType(i).medical);
+  const conductionIncs      = sorted.filter(i => classifyType(i).conduction);
 
-  // Build extra_types string for fire/crime if present
-  const extras: string[] = [];
-  if (fire > 0)  extras.push(`${toWords(fire)} (${fire}) Fire Incidents`);
-  if (crime > 0) extras.push(`${toWords(crime)} (${crime}) Crime-Related Incidents`);
-  const extra_types = extras.length > 0 ? `, and ${extras.join(', ')}` : '';
+  const traumaCount         = traumaIncs.length;
+  const medicalCount        = medicalIncs.length;
+  const conductionCount     = conductionIncs.length;
+
+  // Trauma causes & injuries
+  const causesSet = new Set<string>();
+  const injuriesSet = new Set<string>();
+  traumaIncs.forEach(i => {
+    if (i.resolutionForm?.mechanismOfInjury) causesSet.add(i.resolutionForm.mechanismOfInjury.toLowerCase());
+    if (i.resolutionForm?.injuriesObserved) injuriesSet.add(i.resolutionForm.injuriesObserved.toLowerCase());
+  });
+
+  const topTraumaCauses = causesSet.size > 0 ? Array.from(causesSet).join(', ') : 'vehicular accidents and falls';
+  const commonInjuries  = injuriesSet.size > 0 ? Array.from(injuriesSet).join(', ') : 'abrasions, lacerations, contusions, swelling, and possible fractures';
+
+  const deadCount        = sorted.filter(i => i.resolutionForm?.dispositionStatus === 'DEAD_ON_SPOT').length;
+  const transportedCount = sorted.filter(i => i.status === 'RESOLVED' || i.resolutionForm?.dispositionStatus === 'TRANSPORTED').length;
+  const refusedCount     = sorted.filter(i => i.resolutionForm?.dispositionStatus === 'REFUSED_TRANSPORT').length;
+
+  // Medical complaints
+  const medComplaintsSet = new Set<string>();
+  medicalIncs.forEach(i => {
+    if (i.resolutionForm?.injuriesObserved) medComplaintsSet.add(i.resolutionForm.injuriesObserved.toLowerCase());
+  });
+  const topMedicalComplaints = medComplaintsSet.size > 0 ? Array.from(medComplaintsSet).join(', ') : 'dizziness, hypertension, difficulty of breathing, loss of consciousness, and body weakness';
+
+  // Conduction purposes
+  const conductionSet = new Set<string>();
+  conductionIncs.forEach(i => {
+    if (i.resolutionForm?.howIncidentHappened) conductionSet.add(i.resolutionForm.howIncidentHappened.toLowerCase());
+  });
+  const medicalConductionPurposes = conductionSet.size > 0 ? Array.from(conductionSet).join(', ') : 'scheduled medical check-ups, hospital transfers, and post-treatment patient conduction';
 
   await fillAndDownload('monthly', {
-    month_upper:  now.toLocaleDateString('en-PH', { month: 'long' }).toUpperCase(),
-    year:         now.getFullYear(),
-    total_word:   toWords(total),
-    total_num:    total,
-    total_plural: total !== 1 ? 's' : '',
-    trauma_word:  toWords(trauma),
-    trauma_num:   trauma,
-    medical_word: toWords(medical),
-    medical_num:  medical,
-    extra_types,
+    month_name:                 monthName,
+    total_incidents:            `${total} (${toWords(total)})`,
+    trauma_count:               `${traumaCount} (${toWords(traumaCount)})`,
+    medical_count:              `${medicalCount} (${toWords(medicalCount)})`,
+    medical_conduction_count:   `${conductionCount} (${toWords(conductionCount)})`,
+    top_trauma_causes:          topTraumaCauses,
+    common_injuries:            commonInjuries,
+    dead_count:                 `${deadCount} (${toWords(deadCount)})`,
+    transported_count:          `${transportedCount} (${toWords(transportedCount)})`,
+    refused_count:              `${refusedCount} (${toWords(refusedCount)})`,
+    top_medical_complaints:     topMedicalComplaints,
+    medical_conduction_purposes: medicalConductionPurposes,
+    team_count:                 'four (4)',
   }, label);
 }

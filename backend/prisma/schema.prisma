@@ -35,10 +35,75 @@ model Incident {
   adminNotes            String?     // Notes added by the MDRRMO dispatcher
   
   reporterId            String
-  reporter              User        @relation(fields: [reporterId], references: [id])
+  reporter              User            @relation(fields: [reporterId], references: [id])
   
-  createdAt             DateTime    @default(now())
-  updatedAt             DateTime    @updatedAt
+  resolutionForm        ResolutionForm?
+
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+}
+
+model ResolutionForm {
+  id                    String   @id @default(uuid())
+  incidentId            String   @unique
+  incident              Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  // Incident Information
+  incidentType          String?
+  incidentDate          String?
+  incidentTime          String?
+  incidentLocation      String?
+
+  // Patient Information
+  patientName           String?
+  patientAge            String?
+  patientSex            String?
+  patientAddress        String?
+
+  // Incident Details
+  howIncidentHappened   String?
+  intoxicationSuspected String?  // "Yes" | "No"
+  mechanismOfInjury     String?
+
+  // Patient Assessment
+  injuriesObserved      String?
+  gcsLevel              String?
+  airwayStatus          String?
+  breathingStatus       String?
+  circulationStatus     String?
+
+  // Vital Signs
+  bloodPressure         String?
+  pulseRate             String?
+  respiratoryRate       String?
+  oxygenSaturation      String?
+  temperature           String?
+  gcsScore              String?
+
+  // Pre-hospital Care
+  treatmentInterventions String?
+  bleedingControlled    String?  // "Yes" | "No" | "N/A"
+  patientImmobilized    String?  // "Yes" | "No" | "N/A"
+  woundsCleaned         String?  // "Yes" | "No" | "N/A"
+  oxygenAdministered    String?  // "Yes" | "No" | "N/A"
+
+  // Ongoing Procedure / Rescue Photo
+  procedurePhotoUrl     String?
+
+  // Response Information
+  respondingAgency      String?
+  responderNames        String?
+  arrivalTime           String?
+  departureTime         String?
+
+  // Patient Disposition
+  dispositionStatus     String?  // "TRANSPORTED" | "REFUSED_TRANSPORT" | "DEAD_ON_SPOT" | "CANCELLED"
+  destinationFacility   String?
+  transportTime         String?
+  turnoverStatus        String?
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 }
 
 enum Role {

@@ -72,7 +72,10 @@ export const getIncidents = async (req: Request, res: Response) => {
 
     const incidents = await prisma.incident.findMany({
       where,
-      include: { reporter: { select: { id: true, name: true, email: true, phoneNumber: true, role: true } } },
+      include: {
+        reporter: { select: { id: true, name: true, email: true, phoneNumber: true, role: true } },
+        resolutionForm: true,
+      },
       orderBy: { createdAt: 'desc' },  // newest first — dashboard recent incidents + admin list
     });
 
@@ -127,7 +130,10 @@ export const getIncident = async (req: Request, res: Response) => {
 
     const incident = await prisma.incident.findUnique({
       where: { id },
-      include: { reporter: { select: { id: true, name: true, email: true, phoneNumber: true, role: true } } },
+      include: {
+        reporter: { select: { id: true, name: true, email: true, phoneNumber: true, role: true } },
+        resolutionForm: true,
+      },
     });
 
     if (!incident) {
@@ -266,7 +272,7 @@ export const reportIncident = async (req: Request, res: Response) => {
 export const updateIncidentStatus = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { status, adminNotes, assignedDepartment } = req.body;
+    const { status, adminNotes, assignedDepartment, resolutionForm } = req.body;
 
     const data: any = {};
     if (adminNotes) data.adminNotes = adminNotes;
@@ -302,8 +308,22 @@ export const updateIncidentStatus = async (req: Request, res: Response) => {
     const updated = await prisma.incident.update({
       where: { id },
       data,
-      include: { reporter: true },
+      include: { reporter: true, resolutionForm: true },
     });
+
+    // Save or update resolution questionnaire form if provided
+    if (resolutionForm) {
+      await prisma.resolutionForm.upsert({
+        where: { incidentId: id },
+        create: {
+          incidentId: id,
+          ...resolutionForm,
+        },
+        update: {
+          ...resolutionForm,
+        },
+      });
+    }
 
     // Sync department statuses dynamically in the database
     await syncDepartmentStatuses();

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * reportGenerator.ts
  *
  * Uses official MDRRMO Balayan template .docx files (stored in /public/templates/)
@@ -462,8 +462,8 @@ export async function downloadMonthlyReport(incidents: Incident[], monthIso?: st
     if (i.resolutionForm?.injuriesObserved) injuriesSet.add(i.resolutionForm.injuriesObserved.toLowerCase());
   });
 
-  const topTraumaCauses = causesSet.size > 0 ? Array.from(causesSet).join(', ') : 'vehicular accidents and falls';
-  const commonInjuries  = injuriesSet.size > 0 ? Array.from(injuriesSet).join(', ') : 'abrasions, lacerations, contusions, swelling, and possible fractures';
+  const topTraumaCauses = causesSet.size > 0 ? Array.from(causesSet).join(', ') : 'trauma and emergency incidents';
+  const commonInjuries  = injuriesSet.size > 0 ? Array.from(injuriesSet).join(', ') : 'reported injuries and contusions';
 
   const deadCount        = sorted.filter(i => i.resolutionForm?.dispositionStatus === 'DEAD_ON_SPOT').length;
   const transportedCount = sorted.filter(i => i.status === 'RESOLVED' || i.resolutionForm?.dispositionStatus === 'TRANSPORTED').length;
@@ -484,14 +484,14 @@ export async function downloadMonthlyReport(incidents: Incident[], monthIso?: st
   medicalIncs.forEach(i => {
     if (i.resolutionForm?.injuriesObserved) medComplaintsSet.add(i.resolutionForm.injuriesObserved.toLowerCase());
   });
-  const topMedicalComplaints = medComplaintsSet.size > 0 ? Array.from(medComplaintsSet).join(', ') : 'dizziness, hypertension, asthma attacks, difficulty of breathing, loss of consciousness, vomiting, and body weakness';
+  const topMedicalComplaints = medComplaintsSet.size > 0 ? Array.from(medComplaintsSet).join(', ') : 'reported medical conditions and chief complaints';
 
   // Conduction purposes
   const conductionSet = new Set<string>();
   conductionIncs.forEach(i => {
     if (i.resolutionForm?.howIncidentHappened) conductionSet.add(i.resolutionForm.howIncidentHappened.toLowerCase());
   });
-  const medicalConductionPurposes = conductionSet.size > 0 ? Array.from(conductionSet).join(', ') : 'providing transportation assistance to elderly and other patients for hospital check-ups and transfers';
+  const medicalConductionPurposes = conductionSet.size > 0 ? Array.from(conductionSet).join(', ') : 'providing patient transportation assistance to medical facilities for check-ups and transfers';
 
   await fillAndDownload('monthly', {
     month_name_upper:           monthNameUpper,

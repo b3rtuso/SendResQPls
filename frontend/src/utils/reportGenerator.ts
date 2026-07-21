@@ -130,54 +130,6 @@ async function loadTemplate(name: 'daily' | 'weekly' | 'monthly'): Promise<Array
   return res.arrayBuffer();
 }
 
-// ─── Typography post-processor (Arial 12pt) ──────────────────────────────────
-
-function applyDocxTypography(zip: PizZip): void {
-  const docXml = zip.file('word/document.xml')?.asText();
-  if (!docXml) return;
-
-  let xml = docXml;
-
-  // 1. Ensure every <w:pPr> has justified alignment and single spacing.
-  xml = xml.replace(/<w:pPr>([\s\S]*?)<\/w:pPr>/g, (match, inner) => {
-    if (/<w:pStyle[^/]*w:val="Heading/i.test(inner)) return match;
-    if (/<w:pStyle[^/]*w:val="(TOC|Caption|Title|Subtitle)/i.test(inner)) return match;
-
-    let props = inner;
-    if (!/<w:jc\b/.test(props)) {
-      props += '<w:jc w:val="both"/>';
-    }
-    if (!/<w:spacing\b/.test(props)) {
-      props += '<w:spacing w:after="120" w:before="120" w:line="240" w:lineRule="auto"/>';
-    }
-    return `<w:pPr>${props}</w:pPr>`;
-  });
-
-  // 2. Ensure every <w:rPr> uses Arial font, 12pt (24 half-points).
-  xml = xml.replace(/<w:rPr>([\s\S]*?)<\/w:rPr>/g, (_match, inner) => {
-    let props = inner;
-    props = props.replace(/<w:rFonts[^/]*\/>/g, '');
-    props = props.replace(/<w:rFonts[\s\S]*?\/>/g, '');
-    props = props.replace(/<w:sz\b[^/]*\/>/g, '');
-    props = props.replace(/<w:szCs\b[^/]*\/>/g, '');
-    props =
-      '<w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/>' +
-      '<w:sz w:val="24"/><w:szCs w:val="24"/>' +
-      props;
-    return `<w:rPr>${props}</w:rPr>`;
-  });
-
-  // 3. Runs with no <w:rPr> get Arial 12pt.
-  xml = xml.replace(/<w:r>(\s*<w:t)/g,
-    '<w:r><w:rPr>' +
-    '<w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/>' +
-    '<w:sz w:val="24"/><w:szCs w:val="24"/>' +
-    '</w:rPr>$1'
-  );
-
-  zip.file('word/document.xml', xml);
-}
-
 // ─── fill template and trigger download ───────────────────────────────────────
 
 async function fillAndDownload(
@@ -195,9 +147,6 @@ async function fillAndDownload(
   });
 
   doc.render(data);
-
-  // Post-process: enforce Arial 12pt typography
-  applyDocxTypography(doc.getZip());
 
   const blob = doc.getZip().generate({
     type: 'blob',

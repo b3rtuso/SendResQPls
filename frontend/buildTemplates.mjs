@@ -7,7 +7,6 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const DOWNLOADS = 'C:/Users/angel/Downloads';
 const OUT_DIR = join(__dirname, 'public/templates');
-const SIG_IMG_PATH = join(OUT_DIR, 'signature_block.png');
 mkdirSync(OUT_DIR, { recursive: true });
 
 // ── XML building helpers for Arial 12pt ─────────────────────────────────────
@@ -20,45 +19,34 @@ const pEmpty  = `<w:pPr><w:spacing w:after="120" w:line="240" w:lineRule="auto"/
 
 const run  = (t) => `<w:r>${rBody}<w:t xml:space="preserve">${t}</w:t></w:r>`;
 const runB = (t) => `<w:r>${rBold}<w:t xml:space="preserve">${t}</w:t></w:r>`;
+const tab  = () => `<w:r>${rBody}<w:tab/></w:r>`;
 
 const p = (pPr, ...runs) => `<w:p>${pPr}${runs.join('')}</w:p>`;
 const blank = () => `<w:p>${pEmpty}</w:p>`;
 
-// Inline Drawing XML for signature block image
-const sigDrawingXml = `
-<w:p>
-  <w:pPr><w:jc w:val="center"/><w:spacing w:before="240" w:after="240"/></w:pPr>
-  <w:r>
-    <w:drawing>
-      <wp:inline distT="0" distB="0" distL="0" distR="0">
-        <wp:extent cx="5400000" cy="1800000"/>
-        <wp:docPr id="500" name="Signature Block"/>
-        <a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
-          <a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/main">
-            <pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">
-              <pic:nvPicPr>
-                <pic:cNvPr id="500" name="signature_block.png"/>
-                <pic:cNvPicPr/>
-              </pic:nvPicPr>
-              <pic:blipFill>
-                <a:blip r:embed="rIdSig"/>
-                <a:stretch><a:fillRect/></a:stretch>
-              </pic:blipFill>
-              <pic:spPr>
-                <a:xfrm><a:off x="0" y="0"/><a:ext cx="5400000" cy="1800000"/></a:xfrm>
-                <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
-              </pic:spPr>
-            </pic:pic>
-          </a:graphicData>
-        </a:graphic>
-      </wp:inline>
-    </w:drawing>
-  </w:r>
-</w:p>
-`;
+// Signature block — clean OpenXML text block matching user image
+const sigBlock = [
+  blank(),
+  blank(),
+  p(pCenter,
+    run('Prepared by:'), tab(), tab(), tab(), tab(),
+    run('Checked by:'), tab(), tab(), tab(), tab(),
+    run('Noted by:'),
+  ),
+  blank(),
+  p(pCenter,
+    runB('Rosalinda Espinar'), tab(), tab(),
+    runB('Giovanni Marco'), tab(), tab(),
+    runB('Christian Noel Villanueva'),
+  ),
+  p(pCenter,
+    run('Incident Documentation Staff'), tab(),
+    run('Operations-In-Charge'), tab(), tab(),
+    run('MGDH I – LDRRMO'),
+  ),
+].join('\n');
 
 // ── DAILY Body ────────────────────────────────────────────────────────────────
-// Format: Explanation -> Procedure Picture (if rawXml provided) -> Signature Image
 const dailyBody = `
 {#incidents}
 ${p(pCenter, runB('INCIDENT REPORT'))}
@@ -66,10 +54,7 @@ ${blank()}
 ${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 That on or about '), runB('{time}'), run(' of '), runB('{date}'), run(', a '), runB('{incident_type}'), run(' occurred at '), runB('{location}.'))}
 ${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 That the incident was reported by '), runB('{reporter_name}'), run('{reporter_phone}. {narrative}'))}
 ${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 That the Municipal Disaster Risk Reduction and Management Office ('), runB('MDRRMO'), run(') emergency responders immediately responded to the scene to assess the situation and provide proper care management in accordance with standard operating procedures.'))}
-${blank()}
-{@procedure_photo_xml}
-${blank()}
-${sigDrawingXml}
+${sigBlock}
 {/incidents}
 `;
 
@@ -98,8 +83,7 @@ ${p(pBoth, run('the recorded chief complaints included:'))}
 ${p(pBoth, runB('{complaint_list}'), run('.'))}
 ${blank()}
 ${p(pBoth, run('The MDRRMO teams successfully performed their emergency response duties throughout the reporting period.'))}
-${blank()}
-${sigDrawingXml}
+${sigBlock}
 {/weeks}
 `;
 
@@ -128,8 +112,7 @@ ${p(pBoth, runB('{medical_conduction_purposes}'), run('.'))}
 ${blank()}
 ${p(pBoth, run('Throughout the month, '))}
 ${p(pBoth, runB('{team_count}'), run(' MDRRMO teams effectively responded to all reported incidents.'))}
-${blank()}
-${sigDrawingXml}
+${sigBlock}
 `;
 
 function buildDocXml(originalXml, newBodyInner) {
@@ -146,36 +129,9 @@ async function buildTemplate(srcDocx, newBodyInner, outFile) {
   const srcBuf = readFileSync(srcDocx);
   const zip = await JSZip.loadAsync(srcBuf);
 
-  // 1. Inject document.xml
   const originalDocXml = await zip.file('word/document.xml').async('string');
   const newDocXml = buildDocXml(originalDocXml, newBodyInner);
   zip.file('word/document.xml', newDocXml);
-
-  // 2. Inject signature_block.png asset if available
-  if (existsSync(SIG_IMG_PATH)) {
-    const sigBuf = readFileSync(SIG_IMG_PATH);
-    zip.file('word/media/signature_block.png', sigBuf);
-
-    // Update document.xml.rels
-    let relsXml = await zip.file('word/_rels/document.xml.rels')?.async('string') || '';
-    if (!relsXml.includes('rIdSig')) {
-      relsXml = relsXml.replace(
-        '</Relationships>',
-        '<Relationship Id="rIdSig" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/signature_block.png"/></Relationships>'
-      );
-      zip.file('word/_rels/document.xml.rels', relsXml);
-    }
-
-    // Update [Content_Types].xml
-    let contentTypes = await zip.file('[Content_Types].xml')?.async('string') || '';
-    if (!contentTypes.includes('signature_block.png') && !contentTypes.includes('Extension="png"')) {
-      contentTypes = contentTypes.replace(
-        '</Types>',
-        '<Default Extension="png" ContentType="image/png"/></Types>'
-      );
-      zip.file('[Content_Types].xml', contentTypes);
-    }
-  }
 
   const outBuf = await zip.generateAsync({
     type: 'nodebuffer',
@@ -184,21 +140,17 @@ async function buildTemplate(srcDocx, newBodyInner, outFile) {
   });
 
   writeFileSync(outFile, outBuf);
-  console.log(`✓ Created template: ${outFile} (${(outBuf.length / 1024).toFixed(0)} KB)`);
+  console.log(`✓ Created template: ${outFile} (${(outBuf.length / 1024).toFixed(1)} KB)`);
 }
 
 (async () => {
-  let dailySrc = `${DOWNLOADS}/DAILY-INCIDENT-REPORT_MARCH-2026.docx`;
-  let weeklySrc = `${DOWNLOADS}/WEEKLY-INCIDENT-REPORT_MARCH-2026.docx`;
-  let monthlySrc = `${DOWNLOADS}/MONTHLY-INCIDENT-REPORT_MARCH-2026.docx`;
-
-  if (!existsSync(dailySrc)) dailySrc = `${OUT_DIR}/daily-template.docx`;
-  if (!existsSync(weeklySrc)) weeklySrc = `${OUT_DIR}/weekly-template.docx`;
-  if (!existsSync(monthlySrc)) monthlySrc = `${OUT_DIR}/monthly-template.docx`;
+  const dailySrc = `${DOWNLOADS}/DAILY-INCIDENT-REPORT_2026-07-18.docx`;
+  const weeklySrc = `${DOWNLOADS}/MDRRMO_Weekly_Report_2026-07-12_to_2026-07-18.docx`;
+  const monthlySrc = `${DOWNLOADS}/MONTHLY-INCIDENT-REPORT_JULY-2026.docx`;
 
   await buildTemplate(dailySrc, dailyBody, `${OUT_DIR}/daily-template.docx`);
   await buildTemplate(weeklySrc, weeklyBody, `${OUT_DIR}/weekly-template.docx`);
   await buildTemplate(monthlySrc, monthlyBody, `${OUT_DIR}/monthly-template.docx`);
 
-  console.log('✅ All templates successfully updated with Arial 12pt & signature image!');
+  console.log('✅ Clean templates generated successfully!');
 })();

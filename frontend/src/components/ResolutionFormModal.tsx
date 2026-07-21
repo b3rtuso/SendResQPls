@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { X, CheckCircle2, Upload, Camera, FileText, HeartPulse, UserCheck, ShieldAlert } from 'lucide-react';
 import type { Incident, ResolutionForm } from '../types';
 import { getNearestBarangay } from '../data/balayan-data';
-import { isoDate } from '../utils/reportGenerator';
 
 interface Props {
   isOpen: boolean;
@@ -13,7 +12,7 @@ interface Props {
 }
 
 export default function ResolutionFormModal({ isOpen, onClose, onSubmit, incident, isSubmitting }: Props) {
-  const defaultDate = incident?.createdAt ? isoDate(new Date(incident.createdAt)) : isoDate();
+  const defaultDate = incident?.createdAt ? new Date(incident.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
   const defaultTime = incident?.createdAt ? new Date(incident.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }) : '';
   const defaultLocation = incident ? getNearestBarangay(incident.latitude, incident.longitude) + ', Balayan, Batangas' : 'Balayan, Batangas';
 

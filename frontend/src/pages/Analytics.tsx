@@ -21,7 +21,7 @@ import {
 } from '../data/mdrrmo-data';
 import {
   downloadDailyReport, downloadWeeklyReport, downloadMonthlyReport,
-  getDailyRange, isoDate,
+  getDailyRange,
 } from '../utils/reportGenerator';
 import { getIncidentsByRange } from '../api/client';
 import type { Incident } from '../types';
@@ -123,13 +123,21 @@ export default function Analytics() {
   const [downloading, setDownloading] = useState<RangeKey | null>(null);
   const [downloadDone, setDownloadDone] = useState<RangeKey | null>(null);
 
+  // Local timezone date helper (prevents UTC offset shifting dates backwards)
+  function getLocalIsoDate(d = new Date()): string {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   // ── Distribution chart year filter ────────────────────────────────
   const [distYear, setDistYear] = useState<'all' | '2023' | '2024' | '2025' | '2026'>('all');
 
   // Per-card date pickers
-  const todayIso = isoDate();
+  const todayIso = getLocalIsoDate(new Date());
   const [selectedDay, setSelectedDay]   = useState(todayIso);
-  const [selectedWeek, setSelectedWeek] = useState(getDailyRange().from);   // Monday of current week
+  const [selectedWeek, setSelectedWeek] = useState(todayIso);
   const [selectedMonth, setSelectedMonth] = useState(todayIso.slice(0, 7)); // YYYY-MM
 
   // Compute ranges from picker values
@@ -143,15 +151,15 @@ export default function Analytics() {
     const day = wd.getDay();
     const mon = new Date(wd); mon.setDate(wd.getDate() - (day === 0 ? 6 : day - 1));
     const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
-    const weekFrom = mon.toISOString().split('T')[0];
-    const weekTo   = sun.toISOString().split('T')[0];
+    const weekFrom = getLocalIsoDate(mon);
+    const weekTo   = getLocalIsoDate(sun);
 
     // Monthly: first day of chosen month → last day
     const [y, m]  = selectedMonth.split('-').map(Number);
     const first   = new Date(y, m - 1, 1);
     const last    = new Date(y, m, 0);
-    const monthFrom = first.toISOString().split('T')[0];
-    const monthTo   = last.toISOString().split('T')[0];
+    const monthFrom = getLocalIsoDate(first);
+    const monthTo   = getLocalIsoDate(last);
 
     return { dailyFrom, dailyTo, weekFrom, weekTo, monthFrom, monthTo };
   }, [selectedDay, selectedWeek, selectedMonth]);

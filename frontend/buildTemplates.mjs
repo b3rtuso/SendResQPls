@@ -72,7 +72,6 @@ function makeSectionHeader(title) {
 }
 
 // ── DAILY Body ────────────────────────────────────────────────────────────────
-// Full Narrative + 8 Section Resolution Questionnaire Form Answers Table + Procedure Photo + Signature Image
 const dailyBody = `
 {#incidents}
 ${p(pCenter, runB('INCIDENT REPORT'))}
@@ -186,8 +185,16 @@ function buildDocXml(originalXml, newBodyInner) {
   const bodyStartTagMatch = originalXml.match(/<w:body[^>]*>/);
   if (!bodyStartTagMatch) throw new Error('Could not find <w:body> tag in original XML');
 
-  const prefixEnd = originalXml.indexOf(bodyStartTagMatch[0]) + bodyStartTagMatch[0].length;
-  const prefix = originalXml.substring(0, prefixEnd);
+  let prefixEnd = originalXml.indexOf(bodyStartTagMatch[0]) + bodyStartTagMatch[0].length;
+  let prefix = originalXml.substring(0, prefixEnd);
+
+  // Ensure root <w:document> tag explicitly contains drawingml namespaces (xmlns:a, xmlns:pic)
+  if (!prefix.includes('xmlns:a=')) {
+    prefix = prefix.replace('<w:document ', '<w:document xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ');
+  }
+  if (!prefix.includes('xmlns:pic=')) {
+    prefix = prefix.replace('<w:document ', '<w:document xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" ');
+  }
 
   // Preserve original <w:sectPr> containing header/footer references
   const sectPrMatch = originalXml.match(/<w:sectPr[\s\S]*?<\/w:sectPr>/);
@@ -200,7 +207,7 @@ async function buildTemplate(srcDocx, newBodyInner, outFile) {
   const srcBuf = readFileSync(srcDocx);
   const zip = await JSZip.loadAsync(srcBuf);
 
-  // 1. Replace document.xml body while preserving header/footer sectPr
+  // 1. Replace document.xml body while preserving header/footer sectPr and root namespaces
   const originalDocXml = await zip.file('word/document.xml').async('string');
   const newDocXml = buildDocXml(originalDocXml, newBodyInner);
   zip.file('word/document.xml', newDocXml);
@@ -251,5 +258,5 @@ async function buildTemplate(srcDocx, newBodyInner, outFile) {
   await buildTemplate(weeklySrc, weeklyBody, `${OUT_DIR}/weekly-template.docx`);
   await buildTemplate(monthlySrc, monthlyBody, `${OUT_DIR}/monthly-template.docx`);
 
-  console.log('✅ Official templates created with valid XML namespaces & unique drawing IDs!');
+  console.log('✅ Official templates created with root namespaces, headers, footers & signature image!');
 })();

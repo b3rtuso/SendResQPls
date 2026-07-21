@@ -56,14 +56,23 @@ function formatDisplayDate(dateStrRaw: string): string {
 
 // ─── location extraction ──────────────────────────────────────────────────────
 
+function cleanLocation(raw?: string): string {
+  if (!raw || !raw.trim()) return 'Balayan, Batangas';
+  let str = raw.trim();
+  str = str.replace(/,\s*Balayan,\s*Batangas/gi, '');
+  str = str.replace(/,\s*Balayan/gi, '');
+  str = str.replace(/,\s*Batangas/gi, '');
+  return `${str.trim()}, Balayan, Batangas`;
+}
+
 function resolveLocation(inc: Incident): string {
-  if (inc.resolutionForm?.incidentLocation) return inc.resolutionForm.incidentLocation;
+  if (inc.resolutionForm?.incidentLocation) return cleanLocation(inc.resolutionForm.incidentLocation);
   if (inc.adminNotes) {
     const brgyMatch = inc.adminNotes.match(/Brgy\.?\s+([A-Za-z\s]+)/i);
-    if (brgyMatch) return `Brgy. ${brgyMatch[1].trim()}, Balayan, Batangas`;
+    if (brgyMatch) return cleanLocation(`Brgy. ${brgyMatch[1].trim()}`);
   }
   if (inc.latitude && inc.longitude) {
-    return `${getNearestBarangay(inc.latitude, inc.longitude)}, Balayan, Batangas`;
+    return cleanLocation(getNearestBarangay(inc.latitude, inc.longitude));
   }
   return 'Balayan, Batangas';
 }
@@ -263,7 +272,7 @@ export async function downloadDailyReport(incidents: Incident[], dateIso?: strin
     const patientName    = rf?.patientName || (inc.reporter?.name ? inc.reporter.name : 'Unidentified Patient');
     const patientSex     = (rf?.patientSex || 'Male').toLowerCase();
     const patientAge     = rf?.patientAge || '17';
-    const patientAddress = rf?.patientAddress || locStr;
+    const patientAddress = cleanLocation(rf?.patientAddress || locStr);
 
     const intoxicationDetail = rf?.intoxicationSuspected?.toLowerCase() === 'yes' ? 'was alcohol intoxicated, ' : '';
     const mechanismDetail    = rf?.mechanismOfInjury ? `crashed / suffered ${rf.mechanismOfInjury.toLowerCase()}, ` : '';

@@ -12,7 +12,15 @@ interface Props {
 }
 
 export default function ResolutionFormModal({ isOpen, onClose, onSubmit, incident, isSubmitting }: Props) {
-  const defaultDate = incident?.createdAt ? new Date(incident.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+  function getLocalIsoString(isoOrDate?: string | Date): string {
+    const d = isoOrDate ? new Date(isoOrDate) : new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  const defaultDate = getLocalIsoString(incident?.createdAt);
   const defaultTime = incident?.createdAt ? new Date(incident.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }) : '';
   const defaultLocation = incident ? getNearestBarangay(incident.latitude, incident.longitude) + ', Balayan, Batangas' : 'Balayan, Batangas';
 

@@ -65,9 +65,29 @@ export const getIncidents = async (req: Request, res: Response) => {
 
     // Date-range filter for report generation (e.g. daily/weekly/monthly)
     if (from || to) {
-      where.createdAt = {};
-      if (from) where.createdAt.gte = new Date(`${from}T00:00:00+08:00`);
-      if (to)   where.createdAt.lte = new Date(`${to}T23:59:59.999+08:00`);
+      const dateConditions: any[] = [];
+      
+      const createdAtCond: any = {};
+      if (from) createdAtCond.gte = new Date(`${from}T00:00:00+08:00`);
+      if (to)   createdAtCond.lte = new Date(`${to}T23:59:59.999+08:00`);
+      if (Object.keys(createdAtCond).length > 0) {
+        dateConditions.push({ createdAt: createdAtCond });
+      }
+
+      const resDateCond: any = {};
+      if (from) resDateCond.gte = from;
+      if (to)   resDateCond.lte = to;
+      if (Object.keys(resDateCond).length > 0) {
+        dateConditions.push({
+          resolutionForm: {
+            incidentDate: resDateCond,
+          },
+        });
+      }
+
+      if (dateConditions.length > 0) {
+        where.OR = dateConditions;
+      }
     }
 
     const incidents = await prisma.incident.findMany({

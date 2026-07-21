@@ -26,7 +26,6 @@ const runH = (t) => `<w:r>${rHeader}<w:t xml:space="preserve">${t}</w:t></w:r>`;
 const p = (pPr, ...runs) => `<w:p>${pPr}${runs.join('')}</w:p>`;
 const blank = () => `<w:p>${pEmpty}</w:p>`;
 
-// Function to generate 100% valid OpenXML drawing XML with explicit namespaces & unique IDs
 let drawingIdCounter = 1000;
 function makeSigDrawingXml() {
   const id = ++drawingIdCounter;
@@ -180,7 +179,6 @@ ${blank()}
 ${makeSigDrawingXml()}
 `;
 
-// Build document.xml while PRESERVING original <w:body> attributes & <w:sectPr> header/footer references
 function buildDocXml(originalXml, newBodyInner) {
   const bodyStartTagMatch = originalXml.match(/<w:body[^>]*>/);
   if (!bodyStartTagMatch) throw new Error('Could not find <w:body> tag in original XML');
@@ -207,25 +205,47 @@ async function buildTemplate(srcDocx, newBodyInner, outFile) {
   const srcBuf = readFileSync(srcDocx);
   const zip = await JSZip.loadAsync(srcBuf);
 
-  // 1. Replace document.xml body while preserving header/footer sectPr and root namespaces
-  const originalDocXml = await zip.file('word/document.xml').async('string');
-  const newDocXml = buildDocXml(originalDocXml, newBodyInner);
-  zip.file('word/document.xml', newDocXml);
+  // 1. Find all active image targets referenced in header1.xml.rels and footer1.xml.rels
+  const headerRels = await zip.file('word/_rels/header1.xml.rels')?.async('string') || '';
+  const footerRels = await zip.file('word/_rels/footer1.xml.rels')?.async('string') || '';
 
-  // 2. Inject official signature_block.png asset
+  const activeMedia = new Set(['signature_block.png']);
+  const headerImgMatch = headerRels.match(/Target="media\/([^"]+)"/);
+  if (headerImgMatch) activeMedia.add(headerImgMatch[1]);
+  const footerImgMatch = footerRels.match(/Target="media\/([^"]+)"/);
+  if (footerImgMatch) activeMedia.add(footerImgMatch[1]);
+
+  // 2. Remove unreferenced media files from word/media/
+  for (const file of Object.keys(zip.files)) {
+    if (file.startsWith('word/media/')) {
+      const name = file.replace('word/media/', '');
+      if (!activeMedia.has(name) && name !== '' && name !== 'signature_block.png') {
+        zip.remove(file);
+      }
+    }
+  }
+
+  // 3. Clean document.xml.rels to remove orphan image relationships (rId7 .. rId81)
+  let relsXml = await zip.file('word/_rels/document.xml.rels')?.async('string') || '';
+  const relRegex = /<Relationship Id="([^"]+)" Type="[^"]*image" Target="media\/([^"]+)"\/>/g;
+  relsXml = relsXml.replace(relRegex, (match, id, target) => {
+    if (activeMedia.has(target)) return match;
+    return ''; // Purge orphan image relationship!
+  });
+
+  // Inject signature_block.png relationship if not already added
+  if (!relsXml.includes('rIdSig')) {
+    relsXml = relsXml.replace(
+      '</Relationships>',
+      '<Relationship Id="rIdSig" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/signature_block.png"/></Relationships>'
+    );
+  }
+  zip.file('word/_rels/document.xml.rels', relsXml);
+
+  // 4. Inject signature_block.png into word/media/
   if (existsSync(SIG_IMG_PATH)) {
     const sigBuf = readFileSync(SIG_IMG_PATH);
     zip.file('word/media/signature_block.png', sigBuf);
-
-    // Update document.xml.rels
-    let relsXml = await zip.file('word/_rels/document.xml.rels')?.async('string') || '';
-    if (!relsXml.includes('rIdSig')) {
-      relsXml = relsXml.replace(
-        '</Relationships>',
-        '<Relationship Id="rIdSig" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/signature_block.png"/></Relationships>'
-      );
-      zip.file('word/_rels/document.xml.rels', relsXml);
-    }
 
     // Update [Content_Types].xml
     let contentTypes = await zip.file('[Content_Types].xml')?.async('string') || '';
@@ -238,6 +258,11 @@ async function buildTemplate(srcDocx, newBodyInner, outFile) {
     }
   }
 
+  // 5. Replace document.xml body while preserving header/footer sectPr and root namespaces
+  const originalDocXml = await zip.file('word/document.xml').async('string');
+  const newDocXml = buildDocXml(originalDocXml, newBodyInner);
+  zip.file('word/document.xml', newDocXml);
+
   const outBuf = await zip.generateAsync({
     type: 'nodebuffer',
     compression: 'DEFLATE',
@@ -245,11 +270,10 @@ async function buildTemplate(srcDocx, newBodyInner, outFile) {
   });
 
   writeFileSync(outFile, outBuf);
-  console.log(`✓ Created template: ${outFile} (${(outBuf.length / 1024).toFixed(1)} KB)`);
+  console.log(`✓ Created clean template: ${outFile} (${(outBuf.length / 1024).toFixed(1)} KB)`);
 }
 
 (async () => {
-  // Always load from original official government files in Downloads (31MB / 160KB files with official seals!)
   const dailySrc   = `${DOWNLOADS}/DAILY-INCIDENT-REPORT_MARCH-2026.docx`;
   const weeklySrc  = `${DOWNLOADS}/WEEKLY-INCIDENT-REPORT_MARCH-2026.docx`;
   const monthlySrc = `${DOWNLOADS}/MONTHLY-INCIDENT-REPORT_MARCH-2026.docx`;
@@ -258,5 +282,5 @@ async function buildTemplate(srcDocx, newBodyInner, outFile) {
   await buildTemplate(weeklySrc, weeklyBody, `${OUT_DIR}/weekly-template.docx`);
   await buildTemplate(monthlySrc, monthlyBody, `${OUT_DIR}/monthly-template.docx`);
 
-  console.log('✅ Official templates created with root namespaces, headers, footers & signature image!');
+  console.log('✅ All templates cleaned and generated successfully with 0 orphan rels!');
 })();

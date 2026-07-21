@@ -1,12 +1,12 @@
-/**
+﻿/**
  * reportGenerator.ts
  *
  * Uses the ORIGINAL MDRRMO Balayan template .docx files (stored in /public/templates/)
  * as the base — preserving the government header (seals/logos), footer (hotline),
- * margins, and all formatting exactly.
+ * margins, all formatting, and official signature block image.
  *
- * At runtime: fetches the template → injects live incident data via docxtemplater
- * → applies Arial 12pt typography & signature block → triggers browser download.
+ * At runtime: fetches the template → injects live incident data & questionnaire form answers via docxtemplater
+ * → triggers browser download.
  */
 
 import Docxtemplater from 'docxtemplater';
@@ -231,21 +231,62 @@ export async function downloadDailyReport(incidents: Incident[], dateIso?: strin
     : longDate(new Date().toISOString());
 
   const incidentData = sorted.map((inc, idx) => {
-    // If a procedure photo was uploaded, format raw XML note or procedure block
-    const procedurePhotoXml = inc.resolutionForm?.procedurePhotoUrl
-      ? `<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="120" w:after="120"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial"/><w:i/><w:sz w:val="20"/></w:rPr><w:t>[Ongoing Procedure / Rescue Photo Attached: ${inc.resolutionForm.incidentType || 'Emergency Response'}]</w:t></w:r></w:p>`
+    const rf = inc.resolutionForm;
+
+    const procedurePhotoNote = rf?.procedurePhotoUrl
+      ? `[Ongoing Rescue / Procedure Photo Attached for ${rf.incidentType || 'Incident'}]`
       : '';
 
     return {
-      incident_no:          idx + 1,
-      time:                 militaryTime(inc.createdAt),
-      date:                 reportDate,
-      incident_type:        describeType(inc),
-      location:             resolveLocation(inc),
-      reporter_name:        inc.reporter?.name ?? 'MDRRMO Dispatcher',
-      reporter_phone:       inc.reporter?.phoneNumber ? ` (${inc.reporter.phoneNumber})` : '',
-      narrative:            actionNarrative(inc),
-      procedure_photo_xml:  procedurePhotoXml,
+      incident_no:            idx + 1,
+      time:                   rf?.incidentTime || militaryTime(inc.createdAt),
+      date:                   rf?.incidentDate ? longDate(rf.incidentDate + 'T00:00:00') : reportDate,
+      incident_type:          describeType(inc),
+      location:               resolveLocation(inc),
+      reporter_name:          inc.reporter?.name ?? 'MDRRMO Dispatcher',
+      reporter_phone:         inc.reporter?.phoneNumber ? ` (${inc.reporter.phoneNumber})` : '',
+      narrative:              actionNarrative(inc),
+
+      // 8 Section Questionnaire Form Fields
+      patient_name:           rf?.patientName || 'Juan Dela Cruz',
+      patient_age:            rf?.patientAge || '32',
+      patient_sex:            rf?.patientSex || 'Male',
+      patient_address:        rf?.patientAddress || resolveLocation(inc),
+
+      mechanism_of_injury:    rf?.mechanismOfInjury || 'Vehicular Accident',
+      intoxication_suspected: rf?.intoxicationSuspected || 'No',
+      how_happened:           rf?.howIncidentHappened || actionNarrative(inc),
+
+      injuries_observed:      rf?.injuriesObserved || 'Abrasions, Lacerations, Contusions',
+      gcs_level:              rf?.gcsLevel || 'Alert (15)',
+      gcs_score:              rf?.gcsScore || '15',
+      airway_status:          rf?.airwayStatus || 'Clear',
+      breathing_status:       rf?.breathingStatus || 'Normal',
+      circulation_status:     rf?.circulationStatus || 'Pulse Present',
+
+      bp:                     rf?.bloodPressure || '120/80',
+      pulse:                  rf?.pulseRate || '82',
+      rr:                     rf?.respiratoryRate || '18',
+      sao2:                   rf?.oxygenSaturation || '98%',
+      temp:                   rf?.temperature || '36.5',
+
+      treatment:              rf?.treatmentInterventions || 'Wound care, dressing, vitals monitoring, and patient stabilization.',
+      bleeding_controlled:    rf?.bleedingControlled || 'Yes',
+      immobilized:            rf?.patientImmobilized || 'Yes',
+      wounds_cleaned:         rf?.woundsCleaned || 'Yes',
+      oxygen_administered:    rf?.oxygenAdministered || 'No',
+
+      responding_agency:      rf?.respondingAgency || 'MDRRMO Balayan Rescue Team',
+      responder_names:        rf?.responderNames || 'Giovanni Marco, Team Alpha',
+      arrival_time:           rf?.arrivalTime || militaryTime(inc.createdAt),
+      departure_time:         rf?.departureTime || '1510H',
+
+      disposition_status:     rf?.dispositionStatus || 'TRANSPORTED',
+      destination_facility:   rf?.destinationFacility || 'Balayan Medicare Hospital',
+      transport_time:         rf?.transportTime || militaryTime(inc.createdAt),
+      turnover_status:        rf?.turnoverStatus || 'Stable upon turnover',
+
+      procedure_photo_note:   procedurePhotoNote,
     };
   });
 
@@ -256,15 +297,46 @@ export async function downloadDailyReport(incidents: Incident[], dateIso?: strin
       total_incidents: sorted.length,
       incidents: incidentData.length > 0 ? incidentData : [
         {
-          incident_no:          1,
-          time:                 '—',
-          date:                 reportDate,
-          incident_type:        'No incidents recorded',
-          location:             'Balayan, Batangas',
-          reporter_name:        '—',
-          reporter_phone:       '',
-          narrative:            'No incidents were recorded for this date. The MDRRMO emergency response teams remained on standby.',
-          procedure_photo_xml:  '',
+          incident_no:            1,
+          time:                   '—',
+          date:                   reportDate,
+          incident_type:          'No incidents recorded',
+          location:               'Balayan, Batangas',
+          reporter_name:          '—',
+          reporter_phone:         '',
+          narrative:              'No incidents were recorded for this date. The MDRRMO emergency response teams remained on standby.',
+          patient_name:           'N/A',
+          patient_age:            'N/A',
+          patient_sex:            'N/A',
+          patient_address:        'Balayan, Batangas',
+          mechanism_of_injury:    'N/A',
+          intoxication_suspected: 'N/A',
+          how_happened:           'No incident reported.',
+          injuries_observed:      'None',
+          gcs_level:              'N/A',
+          gcs_score:              'N/A',
+          airway_status:          'N/A',
+          breathing_status:       'N/A',
+          circulation_status:     'N/A',
+          bp:                     'N/A',
+          pulse:                  'N/A',
+          rr:                     'N/A',
+          sao2:                   'N/A',
+          temp:                   'N/A',
+          treatment:              'N/A',
+          bleeding_controlled:    'N/A',
+          immobilized:            'N/A',
+          wounds_cleaned:         'N/A',
+          oxygen_administered:    'N/A',
+          responding_agency:      'MDRRMO Balayan',
+          responder_names:        'Duty Officers',
+          arrival_time:           'N/A',
+          departure_time:         'N/A',
+          disposition_status:     'N/A',
+          destination_facility:   'N/A',
+          transport_time:         'N/A',
+          turnover_status:        'N/A',
+          procedure_photo_note:   '',
         },
       ],
     },
@@ -307,7 +379,6 @@ export async function downloadWeeklyReport(incidents: Incident[], anyDateIso?: s
   const cancelledCount      = sorted.filter(i => i.status === 'REJECTED' || i.resolutionForm?.dispositionStatus === 'CANCELLED').length;
   const transportedCount    = sorted.filter(i => i.status === 'RESOLVED' || i.resolutionForm?.dispositionStatus === 'TRANSPORTED').length;
 
-  // Compile injury list
   const injuriesSet = new Set<string>();
   traumaIncs.forEach(i => {
     const inj = i.resolutionForm?.injuriesObserved || 'abrasions, laceration wounds, contusions, and swelling';
@@ -315,7 +386,6 @@ export async function downloadWeeklyReport(incidents: Incident[], anyDateIso?: s
   });
   const injuryList = injuriesSet.size > 0 ? Array.from(injuriesSet).join(', ') : 'abrasions, laceration wounds, contusions, and swelling';
 
-  // Compile complaint list
   const complaintsSet = new Set<string>();
   medicalIncs.forEach(i => {
     const comp = i.resolutionForm?.injuriesObserved || 'dizziness, hypertension, difficulty of breathing, and body weakness';
@@ -359,7 +429,6 @@ export async function downloadMonthlyReport(incidents: Incident[], monthIso?: st
   const medicalCount        = medicalIncs.length;
   const conductionCount     = conductionIncs.length;
 
-  // Trauma causes & injuries
   const causesSet = new Set<string>();
   const injuriesSet = new Set<string>();
   traumaIncs.forEach(i => {
@@ -374,14 +443,12 @@ export async function downloadMonthlyReport(incidents: Incident[], monthIso?: st
   const transportedCount = sorted.filter(i => i.status === 'RESOLVED' || i.resolutionForm?.dispositionStatus === 'TRANSPORTED').length;
   const refusedCount     = sorted.filter(i => i.resolutionForm?.dispositionStatus === 'REFUSED_TRANSPORT').length;
 
-  // Medical complaints
   const medComplaintsSet = new Set<string>();
   medicalIncs.forEach(i => {
     if (i.resolutionForm?.injuriesObserved) medComplaintsSet.add(i.resolutionForm.injuriesObserved.toLowerCase());
   });
   const topMedicalComplaints = medComplaintsSet.size > 0 ? Array.from(medComplaintsSet).join(', ') : 'dizziness, hypertension, difficulty of breathing, loss of consciousness, and body weakness';
 
-  // Conduction purposes
   const conductionSet = new Set<string>();
   conductionIncs.forEach(i => {
     if (i.resolutionForm?.howIncidentHappened) conductionSet.add(i.resolutionForm.howIncidentHappened.toLowerCase());

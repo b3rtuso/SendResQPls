@@ -9,9 +9,13 @@ const DOWNLOADS = 'C:/Users/angel/Downloads';
 const OUT_DIR = join(__dirname, 'public/templates');
 mkdirSync(OUT_DIR, { recursive: true });
 
-// ── XML building helpers for Arial 12pt ─────────────────────────────────────
+// ── XML building helpers for Arial 12pt (body) & Arial 11pt (signature block) ──
 const rBody = `<w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/><w:color w:val="000000"/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr>`;
 const rBold = `<w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/><w:b/><w:bCs/><w:color w:val="000000"/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr>`;
+
+// Signature block Arial 11pt (22 half-points)
+const rSig = `<w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/><w:color w:val="000000"/><w:sz w:val="22"/><w:szCs w:val="22"/></w:rPr>`;
+const rSigBold = `<w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/><w:b/><w:bCs/><w:color w:val="000000"/><w:sz w:val="22"/><w:szCs w:val="22"/></w:rPr>`;
 
 const pCenter = `<w:pPr><w:jc w:val="center"/><w:spacing w:before="120" w:after="120" w:line="240" w:lineRule="auto"/></w:pPr>`;
 const pBoth   = `<w:pPr><w:jc w:val="both"/><w:spacing w:before="120" w:after="120" w:line="240" w:lineRule="auto"/></w:pPr>`;
@@ -20,11 +24,14 @@ const pEmpty  = `<w:pPr><w:spacing w:after="120" w:line="240" w:lineRule="auto"/
 const run  = (t) => `<w:r>${rBody}<w:t xml:space="preserve">${t}</w:t></w:r>`;
 const runB = (t) => `<w:r>${rBold}<w:t xml:space="preserve">${t}</w:t></w:r>`;
 
+const runSig  = (t) => `<w:r>${rSig}<w:t xml:space="preserve">${t}</w:t></w:r>`;
+const runSigB = (t) => `<w:r>${rSigBold}<w:t xml:space="preserve">${t}</w:t></w:r>`;
+
 const p = (pPr, ...runs) => `<w:p>${pPr}${runs.join('')}</w:p>`;
 const blank = () => `<w:p>${pEmpty}</w:p>`;
 const pageBreak = () => `<w:p><w:r><w:br w:type="page"/></w:r></w:p>`;
 
-// Borderless 3-column signature block table (100% aligned, zero overlap, zero corruption)
+// Borderless 3-column signature block table in Arial 11pt
 const sigTable = `
 ${blank()}
 <w:tbl>
@@ -36,21 +43,20 @@ ${blank()}
     </w:tblBorders>
   </w:tblPr>
   <w:tr>
-    <w:tc><w:tcPr><w:tcW w:w="3120" w:type="dxa"/></w:tcPr>${p(pCenter, run('Prepared by:'))}</w:tc>
-    <w:tc><w:tcPr><w:tcW w:w="3120" w:type="dxa"/></w:tcPr>${p(pCenter, run('Checked by:'))}</w:tc>
-    <w:tc><w:tcPr><w:tcW w:w="3120" w:type="dxa"/></w:tcPr>${p(pCenter, run('Noted by:'))}</w:tc>
+    <w:tc><w:tcPr><w:tcW w:w="3120" w:type="dxa"/></w:tcPr>${p(pCenter, runSig('Prepared by:'))}</w:tc>
+    <w:tc><w:tcPr><w:tcW w:w="3120" w:type="dxa"/></w:tcPr>${p(pCenter, runSig('Checked by:'))}</w:tc>
+    <w:tc><w:tcPr><w:tcW w:w="3120" w:type="dxa"/></w:tcPr>${p(pCenter, runSig('Noted by:'))}</w:tc>
   </w:tr>
   <w:tr>
-    <w:tc><w:tcPr><w:tcW w:w="3120" w:type="dxa"/></w:tcPr>${blank()}${blank()}${p(pCenter, runB('Rosalinda Espinar'))}${p(pCenter, run('Incident Documentation Staff'))}</w:tc>
-    <w:tc><w:tcPr><w:tcW w:w="3120" w:type="dxa"/></w:tcPr>${blank()}${blank()}${p(pCenter, runB('Giovanni Marco'))}${p(pCenter, run('Operations-In-Charge'))}</w:tc>
-    <w:tc><w:tcPr><w:tcW w:w="3120" w:type="dxa"/></w:tcPr>${blank()}${blank()}${p(pCenter, runB('Christian Noel Villanueva'))}${p(pCenter, run('MGDH I \u2013 LDRRMO'))}</w:tc>
+    <w:tc><w:tcPr><w:tcW w:w="3120" w:type="dxa"/></w:tcPr>${blank()}${blank()}${p(pCenter, runSigB('Rosalinda Espinar'))}${p(pCenter, runSig('Incident Documentation Staff'))}</w:tc>
+    <w:tc><w:tcPr><w:tcW w:w="3120" w:type="dxa"/></w:tcPr>${blank()}${blank()}${p(pCenter, runSigB('Giovanni Marco'))}${p(pCenter, runSig('Operations-In-Charge'))}</w:tc>
+    <w:tc><w:tcPr><w:tcW w:w="3120" w:type="dxa"/></w:tcPr>${blank()}${blank()}${p(pCenter, runSigB('Christian Noel Villanueva'))}${p(pCenter, runSig('MGDH I \u2013 LDRRMO'))}</w:tc>
   </w:tr>
 </w:tbl>
 ${blank()}
 `;
 
 // ── DAILY Body ────────────────────────────────────────────────────────────────
-// 4 Narrative Paragraphs -> Procedure Photo -> Signature Table -> Page Break
 const dailyBody = `
 ${p(pEmpty, run('{#incidents}'))}
 ${p(pCenter, runB('INCIDENT REPORT'))}
@@ -66,60 +72,39 @@ ${pageBreak()}
 ${p(pEmpty, run('{/incidents}'))}
 `;
 
-// ── WEEKLY Body ───────────────────────────────────────────────────────────────
+// ── WEEKLY Body (Matching Reference File Verbatim) ───────────────────────────
 const weeklyBody = `
 ${p(pEmpty, run('{#weeks}'))}
 ${p(pCenter, runB('WEEKLY INCIDENT REPORT'))}
 ${blank()}
-${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 For the '), runB('{week_ordinal}'), run(' week of the month dated '), runB('{start_date}'), run(' to '), runB('{end_date}'), run(', the MDRRMO responded to '), runB('{total_incidents}'), run(' incidents.'))}
+${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 For the '), runB('{week_ordinal}'), run(' week of the Month Dated: '), runB('{date_range}'), run('. The Municipal Disaster Risk Reduction and Management Office ('), runB('MDRRMO'), run(') emergency responders responded to '), runB('{total_incidents_text}'), run(' incidents.'))}
 ${blank()}
-${p(pBoth, run('Of these,'))}
-${p(pBoth, runB('{trauma_count}'), run(' were Trauma Emergencies,'))}
-${p(pBoth, runB('{medical_count}'), run(' were Medical Emergencies, and'))}
-${p(pBoth, runB('{medical_conduction_count}'), run(' was a Medical Conduction.'))}
+${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 That '), runB('{trauma_count_text}'), run(' of the incidents were Trauma Emergencies, '), run('{trauma_breakdown}.'))}
 ${blank()}
-${p(pBoth, run('Among the Trauma Emergencies,'))}
-${p(pBoth, runB('{dead_count}'), run(' patients were reported dead on the spot,'))}
-${p(pBoth, runB('{cancelled_count}'), run(' incident was cancelled,'))}
-${p(pBoth, runB('{transported_count}'), run(' patients were transported after receiving proper care.'))}
+${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 That '), runB('{medical_count_text}'), run(' of the '), run('{total_count_word}'), run(' incidents were Medical Emergencies, '), run('{medical_breakdown}.'))}
 ${blank()}
-${p(pBoth, run('The common injuries observed were:'))}
-${p(pBoth, runB('{injury_list}'), run('.'))}
+${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 That the other '), runB('{conduction_count_text}'), run(' of the '), run('{total_count_word}'), run(' incidents was a Medical Conduction, '), run('{conduction_breakdown}.'))}
 ${blank()}
-${p(pBoth, run('Among the Medical Emergencies,'))}
-${p(pBoth, run('the recorded chief complaints included:'))}
-${p(pBoth, runB('{complaint_list}'), run('.'))}
-${blank()}
-${p(pBoth, run('The MDRRMO teams successfully performed their emergency response duties throughout the reporting period.'))}
+${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 That the Four (4) teams of the Municipal Disaster and Risk Reduction and Management Office ('), runB('MDRRMO'), run('), emergency responders, radio operators, and the operation sections diligently and effectively did their duties.'))}
 ${sigTable}
 ${p(pEmpty, run('{/weeks}'))}
 `;
 
-// ── MONTHLY Body ──────────────────────────────────────────────────────────────
+// ── MONTHLY Body (Matching Reference File Verbatim) ──────────────────────────
 const monthlyBody = `
 ${p(pCenter, runB('MONTHLY INCIDENT REPORT'))}
 ${blank()}
-${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 For the month of '), runB('{month_name}'), run(','))}
+${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 For the month of '), runB('{month_name_upper}'), run(' '), runB('{year}'), run(', the Municipal Disaster Risk Reduction and Management Office ('), runB('MDRRMO'), run(') emergency responders handled a total of '), runB('{total_incidents_text}'), run(' incidents.'))}
 ${blank()}
-${p(pBoth, run('the MDRRMO handled a total of '), runB('{total_incidents}'), run(' incidents.'))}
+${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 These included '), runB('{trauma_count_text}'), run(' Trauma Emergencies, '), runB('{medical_count_text}'), run(' Medical Emergencies, and '), runB('{conduction_count_text}'), run(' Medical Conductions.'))}
 ${blank()}
-${p(pBoth, run('These included'))}
-${p(pBoth, runB('{trauma_count}'), run(' Trauma Emergencies,'))}
-${p(pBoth, runB('{medical_count}'), run(' Medical Emergencies,'))}
-${p(pBoth, run('and '), runB('{medical_conduction_count}'), run(' Medical Conductions.'))}
+${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 Most trauma cases involved '), runB('{top_trauma_causes}'), run(' resulting in '), runB('{common_injuries}'), run(', while some patients were under alcohol intoxication. '), run('{trauma_disposition_narrative}'))}
 ${blank()}
-${p(pBoth, run('Most trauma cases involved '), runB('{top_trauma_causes}'), run(', resulting in '), runB('{common_injuries}'), run('.'))}
+${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 Medical emergencies commonly involved '), runB('{top_medical_complaints}'), run('.'))}
 ${blank()}
-${p(pBoth, runB('{dead_count}'), run(' patients were reported dead on the spot, while '), runB('{transported_count}'), run(' were transported after receiving proper care, except for '), runB('{refused_count}'), run(' patient who refused transport.'))}
+${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 Medical conduction cases involved '), runB('{medical_conduction_purposes}'), run('.'))}
 ${blank()}
-${p(pBoth, run('Medical emergencies commonly involved '))}
-${p(pBoth, runB('{top_medical_complaints}'), run('.'))}
-${blank()}
-${p(pBoth, run('Medical conduction cases involved '))}
-${p(pBoth, runB('{medical_conduction_purposes}'), run('.'))}
-${blank()}
-${p(pBoth, run('Throughout the month, '))}
-${p(pBoth, runB('{team_count}'), run(' MDRRMO teams effectively responded to all reported incidents.'))}
+${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 Throughout the month, the four (4) teams of the MDRRMO emergency responders, radio operators, and operations personnel diligently and effectively performed their duties in responding to all reported incidents.'))}
 ${sigTable}
 `;
 
@@ -164,5 +149,5 @@ async function buildTemplate(srcDocx, newBodyInner, outFile) {
   await buildTemplate(weeklySrc, weeklyBody, `${OUT_DIR}/weekly-template.docx`);
   await buildTemplate(monthlySrc, monthlyBody, `${OUT_DIR}/monthly-template.docx`);
 
-  console.log('✅ All templates recreated with 100% valid OpenXML formatting!');
+  console.log('✅ All templates recreated with 100% valid OpenXML formatting & Arial 11pt signature block!');
 })();

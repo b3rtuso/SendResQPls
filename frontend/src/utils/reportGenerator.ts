@@ -1,8 +1,13 @@
-/**
+﻿/**
  * reportGenerator.ts
  *
  * Uses official MDRRMO Balayan template .docx files (stored in /public/templates/)
  * as base, filling live incident and questionnaire data via docxtemplater.
+ * 
+ * Verbatim alignment with reference documents:
+ * - DAILY-INCIDENT-REPORT_MARCH-2026.docx
+ * - WEEKLY-INCIDENT-REPORT_MARCH-2026.docx
+ * - MONTHLY-INCIDENT-REPORT_MARCH-2026.docx
  */
 
 import Docxtemplater from 'docxtemplater';
@@ -31,6 +36,10 @@ function toWords(n: number): string {
   return String(n);
 }
 
+function countWithWords(n: number): string {
+  return `${toWords(n)} (${n})`;
+}
+
 // ─── date / time helpers ──────────────────────────────────────────────────────
 
 function pad2(n: number) { return String(n).padStart(2, '0'); }
@@ -54,7 +63,7 @@ function formatDisplayDate(dateStrRaw: string): string {
   return dateStrRaw;
 }
 
-// ─── location extraction ──────────────────────────────────────────────────────
+// ─── location extraction & sanitizer ────────────────────────────────────────
 
 function cleanLocation(raw?: string): string {
   if (!raw || !raw.trim()) return 'Balayan, Batangas';
@@ -105,7 +114,7 @@ async function loadTemplate(name: 'daily' | 'weekly' | 'monthly'): Promise<Array
   return res.arrayBuffer();
 }
 
-// ─── Typography post-processor (Arial 12pt) ──────────────────────────────────
+// ─── Typography post-processor (Arial 12pt body & Arial 11pt signature) ─────
 
 function applyDocxTypography(zip: PizZip): void {
   const docXml = zip.file('word/document.xml')?.asText();
@@ -128,27 +137,22 @@ function applyDocxTypography(zip: PizZip): void {
     return `<w:pPr>${props}</w:pPr>`;
   });
 
-  // 2. Ensure every <w:rPr> uses Arial font, 12pt (24 half-points).
+  // 2. Ensure runs use Arial font, preserving Arial 11pt (22 half-points) for signature block runs.
   xml = xml.replace(/<w:rPr>([\s\S]*?)<\/w:rPr>/g, (_match, inner) => {
     let props = inner;
+    const is11pt = /<w:sz\b[^/]*w:val="22"/i.test(props);
+    const szVal = is11pt ? '22' : '24';
+
     props = props.replace(/<w:rFonts[^/]*\/>/g, '');
     props = props.replace(/<w:rFonts[\s\S]*?\/>/g, '');
     props = props.replace(/<w:sz\b[^/]*\/>/g, '');
     props = props.replace(/<w:szCs\b[^/]*\/>/g, '');
     props =
       '<w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/>' +
-      '<w:sz w:val="24"/><w:szCs w:val="24"/>' +
+      `<w:sz w:val="${szVal}"/><w:szCs w:val="${szVal}"/>` +
       props;
     return `<w:rPr>${props}</w:rPr>`;
   });
-
-  // 3. Runs with no <w:rPr> get Arial 12pt.
-  xml = xml.replace(/<w:r>(\s*<w:t)/g,
-    '<w:r><w:rPr>' +
-    '<w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/>' +
-    '<w:sz w:val="24"/><w:szCs w:val="24"/>' +
-    '</w:rPr>$1'
-  );
 
   zip.file('word/document.xml', xml);
 }
@@ -171,7 +175,7 @@ async function fillAndDownload(
 
   doc.render(data);
 
-  // Post-process: enforce Arial 12pt typography
+  // Post-process typography (Arial 12pt body & Arial 11pt signature block)
   applyDocxTypography(doc.getZip());
 
   const blob = doc.getZip().generate({
@@ -212,13 +216,19 @@ export function getWeeklyRange(anyDateIso?: string) {
   const monLabel = mon.toLocaleDateString('en-PH', { day: '2-digit', month: 'long', year: 'numeric' });
   const sunLabel = sun.toLocaleDateString('en-PH', { day: '2-digit', month: 'long', year: 'numeric' });
 
+  const monthNameUpper = mon.toLocaleDateString('en-PH', { month: 'long' }).toUpperCase();
+  const monDay = pad2(mon.getDate());
+  const sunDay = pad2(sun.getDate());
+  const dateRangeStr = `${monthNameUpper} ${monDay}-${sunDay}, ${mon.getFullYear()}`;
+
   return {
     from: monIso,
     to: sunIso,
     mon,
     monLabel,
     sunLabel,
-    label: `WEEKLY-INCIDENT-REPORT_${mon.toLocaleDateString('en-PH', { month: 'long', year: 'numeric' }).replace(/ /g, '-').toUpperCase()}.docx`,
+    dateRangeStr,
+    label: `WEEKLY-INCIDENT-REPORT_${monthNameUpper}-${mon.getFullYear()}.docx`,
     period: `Week of ${monLabel} – ${sunLabel}`,
   };
 }
@@ -237,16 +247,17 @@ export function getMonthlyRange(monthIso?: string) {
   
   const firstIso = first.toLocaleDateString('en-CA');
   const lastIso  = last.toLocaleDateString('en-CA');
-  const monthNameStr = first.toLocaleDateString('en-PH', { month: 'long', year: 'numeric' });
+  const monthNameStr = first.toLocaleDateString('en-PH', { month: 'long' });
 
   return {
     from: firstIso,
     to: lastIso,
     first,
     last,
-    label: `MONTHLY-INCIDENT-REPORT_${monthNameStr.replace(/ /g, '-').toUpperCase()}.docx`,
-    period: `Month of ${monthNameStr}`,
+    label: `MONTHLY-INCIDENT-REPORT_${monthNameStr.replace(/ /g, '-').toUpperCase()}-${year}.docx`,
+    period: `Month of ${monthNameStr} ${year}`,
     monthName: monthNameStr,
+    monthNameUpper: monthNameStr.toUpperCase(),
     year,
   };
 }
@@ -365,7 +376,7 @@ function weekOrdinalInMonth(monDate: Date): string {
 export async function downloadWeeklyReport(incidents: Incident[], anyDateIso?: string) {
   const sorted = [...incidents].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   const range = getWeeklyRange(anyDateIso);
-  const { label, mon, monLabel, sunLabel } = range;
+  const { label, mon, dateRangeStr } = range;
 
   const weekOrdinal = weekOrdinalInMonth(mon);
 
@@ -382,35 +393,44 @@ export async function downloadWeeklyReport(incidents: Incident[], anyDateIso?: s
   const cancelledCount      = sorted.filter(i => i.status === 'REJECTED' || i.resolutionForm?.dispositionStatus === 'CANCELLED').length;
   const transportedCount    = sorted.filter(i => i.status === 'RESOLVED' || i.resolutionForm?.dispositionStatus === 'TRANSPORTED').length;
 
-  // Compile injury list
+  // Trauma breakdown narrative matching reference document format
+  let traumaBreakdown = `wherein ${deadCount > 0 ? `${countWithWords(deadCount)} of whom were reported dead on the spot. ` : ''}`;
+  if (cancelledCount > 0) traumaBreakdown += `${countWithWords(cancelledCount)} was reported cancelled, `;
+  traumaBreakdown += `${countWithWords(transportedCount)} patients were conscious, given proper care management, and immediately transported to the hospital for further evaluation and treatment`;
+
+  // Compile injury list from trauma questionnaire entries
   const injuriesSet = new Set<string>();
   traumaIncs.forEach(i => {
     const inj = i.resolutionForm?.injuriesObserved || 'abrasions, laceration wounds, contusions, and swelling';
     inj.split(/[,;]/).forEach(item => item.trim() && injuriesSet.add(item.trim().toLowerCase()));
   });
-  const injuryList = injuriesSet.size > 0 ? Array.from(injuriesSet).join(', ') : 'abrasions, laceration wounds, contusions, and swelling';
+  if (injuriesSet.size > 0) {
+    traumaBreakdown += `. Common injuries included: ${Array.from(injuriesSet).join(', ')}`;
+  }
 
-  // Compile complaint list
+  // Medical breakdown narrative matching reference document format
   const complaintsSet = new Set<string>();
   medicalIncs.forEach(i => {
     const comp = i.resolutionForm?.injuriesObserved || 'dizziness, hypertension, difficulty of breathing, and body weakness';
     comp.split(/[,;]/).forEach(item => item.trim() && complaintsSet.add(item.trim().toLowerCase()));
   });
   const complaintList = complaintsSet.size > 0 ? Array.from(complaintsSet).join(', ') : 'dizziness, hypertension, difficulty of breathing, and body weakness';
+  const medicalBreakdown = `wherein recorded chief complaints included ${complaintList}. All patients were given appropriate care and transported for medical evaluation`;
+
+  // Conduction breakdown narrative matching reference document format
+  const conductionBreakdown = `wherein patients were given transportation assistance going to medical facilities for regular check-ups and post-treatment conduction`;
 
   const weeksData = [{
     week_ordinal:             weekOrdinal,
-    start_date:               monLabel,
-    end_date:                 sunLabel,
-    total_incidents:          `${total} (${toWords(total)})`,
-    trauma_count:             `${traumaCount} (${toWords(traumaCount)})`,
-    medical_count:            `${medicalCount} (${toWords(medicalCount)})`,
-    medical_conduction_count: `${conductionCount} (${toWords(conductionCount)})`,
-    dead_count:               `${deadCount} (${toWords(deadCount)})`,
-    cancelled_count:          `${cancelledCount} (${toWords(cancelledCount)})`,
-    transported_count:        `${transportedCount} (${toWords(transportedCount)})`,
-    injury_list:              injuryList,
-    complaint_list:           complaintList,
+    date_range:               dateRangeStr,
+    total_incidents_text:     countWithWords(total),
+    total_count_word:         toWords(total).toLowerCase(),
+    trauma_count_text:        countWithWords(traumaCount),
+    medical_count_text:       countWithWords(medicalCount),
+    conduction_count_text:    countWithWords(conductionCount),
+    trauma_breakdown:         traumaBreakdown,
+    medical_breakdown:        medicalBreakdown,
+    conduction_breakdown:     conductionBreakdown,
   }];
 
   await fillAndDownload('weekly', { weeks: weeksData }, label);
@@ -423,7 +443,7 @@ export async function downloadWeeklyReport(incidents: Incident[], anyDateIso?: s
 export async function downloadMonthlyReport(incidents: Incident[], monthIso?: string) {
   const sorted = [...incidents].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   const range = getMonthlyRange(monthIso);
-  const { label, monthName } = range;
+  const { label, monthNameUpper, year } = range;
 
   const total               = sorted.length;
   const traumaIncs          = sorted.filter(i => classifyType(i).trauma);
@@ -449,33 +469,41 @@ export async function downloadMonthlyReport(incidents: Incident[], monthIso?: st
   const transportedCount = sorted.filter(i => i.status === 'RESOLVED' || i.resolutionForm?.dispositionStatus === 'TRANSPORTED').length;
   const refusedCount     = sorted.filter(i => i.resolutionForm?.dispositionStatus === 'REFUSED_TRANSPORT').length;
 
+  let traumaDispositionNarrative = '';
+  if (deadCount > 0) {
+    traumaDispositionNarrative += `${countWithWords(deadCount)} patients were reported dead on the spot during separate incidents, `;
+  }
+  traumaDispositionNarrative += `while the remaining ${countWithWords(transportedCount)} patients were given immediate care management and transported to hospitals for further evaluation and treatment`;
+  if (refusedCount > 0) {
+    traumaDispositionNarrative += `, except for ${countWithWords(refusedCount)} patient who refused transport`;
+  }
+  traumaDispositionNarrative += '.';
+
   // Medical complaints
   const medComplaintsSet = new Set<string>();
   medicalIncs.forEach(i => {
     if (i.resolutionForm?.injuriesObserved) medComplaintsSet.add(i.resolutionForm.injuriesObserved.toLowerCase());
   });
-  const topMedicalComplaints = medComplaintsSet.size > 0 ? Array.from(medComplaintsSet).join(', ') : 'dizziness, hypertension, difficulty of breathing, loss of consciousness, and body weakness';
+  const topMedicalComplaints = medComplaintsSet.size > 0 ? Array.from(medComplaintsSet).join(', ') : 'dizziness, hypertension, asthma attacks, difficulty of breathing, loss of consciousness, vomiting, and body weakness';
 
   // Conduction purposes
   const conductionSet = new Set<string>();
   conductionIncs.forEach(i => {
     if (i.resolutionForm?.howIncidentHappened) conductionSet.add(i.resolutionForm.howIncidentHappened.toLowerCase());
   });
-  const medicalConductionPurposes = conductionSet.size > 0 ? Array.from(conductionSet).join(', ') : 'scheduled medical check-ups, hospital transfers, and post-treatment patient conduction';
+  const medicalConductionPurposes = conductionSet.size > 0 ? Array.from(conductionSet).join(', ') : 'providing transportation assistance to elderly and other patients for hospital check-ups and transfers';
 
   await fillAndDownload('monthly', {
-    month_name:                 monthName,
-    total_incidents:            `${total} (${toWords(total)})`,
-    trauma_count:               `${traumaCount} (${toWords(traumaCount)})`,
-    medical_count:              `${medicalCount} (${toWords(medicalCount)})`,
-    medical_conduction_count:   `${conductionCount} (${toWords(conductionCount)})`,
+    month_name_upper:           monthNameUpper,
+    year:                       year,
+    total_incidents_text:       countWithWords(total),
+    trauma_count_text:          countWithWords(traumaCount),
+    medical_count_text:         countWithWords(medicalCount),
+    conduction_count_text:      countWithWords(conductionCount),
     top_trauma_causes:          topTraumaCauses,
     common_injuries:            commonInjuries,
-    dead_count:                 `${deadCount} (${toWords(deadCount)})`,
-    transported_count:          `${transportedCount} (${toWords(transportedCount)})`,
-    refused_count:              `${refusedCount} (${toWords(refusedCount)})`,
+    trauma_disposition_narrative: traumaDispositionNarrative,
     top_medical_complaints:     topMedicalComplaints,
     medical_conduction_purposes: medicalConductionPurposes,
-    team_count:                 'four (4)',
   }, label);
 }

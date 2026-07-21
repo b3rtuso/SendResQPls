@@ -117,9 +117,6 @@ export default function Analytics() {
   const [reportCounts, setReportCounts] = useState<Record<RangeKey, number | null>>({
     daily: null, weekly: null, monthly: null,
   });
-  const [reportIncidents, setReportIncidents] = useState<Record<RangeKey, Incident[]>>({
-    daily: [], weekly: [], monthly: [],
-  });
   const [downloading, setDownloading] = useState<RangeKey | null>(null);
   const [downloadDone, setDownloadDone] = useState<RangeKey | null>(null);
 
@@ -176,16 +173,13 @@ export default function Analytics() {
         getIncidentsByRange(from, to).then(res => ({ key, data: res.data as Incident[] }))
       )
     );
-    const counts: Record<RangeKey, number | null>   = { daily: null, weekly: null, monthly: null };
-    const incidents: Record<RangeKey, Incident[]>   = { daily: [], weekly: [], monthly: [] };
+    const counts: Record<RangeKey, number | null> = { daily: null, weekly: null, monthly: null };
     results.forEach(res => {
       if (res.status === 'fulfilled') {
-        counts[res.value.key]    = res.value.data.length;
-        incidents[res.value.key] = res.value.data;
+        counts[res.value.key] = res.value.data.length;
       }
     });
     setReportCounts(counts);
-    setReportIncidents(incidents);
   }, [todayIso]);
 
   useEffect(() => {
@@ -195,12 +189,21 @@ export default function Analytics() {
   const handleDownload = async (key: RangeKey) => {
     setDownloading(key);
     try {
-      const incs = reportIncidents[key];
+      let from = selectedDay, to = selectedDay;
+      if (key === 'weekly')  { from = pickerRanges.weekFrom; to = pickerRanges.weekTo; }
+      if (key === 'monthly') { from = pickerRanges.monthFrom; to = pickerRanges.monthTo; }
+
+      // Fetch fresh live incidents directly from backend for the selected date range
+      const res = await getIncidentsByRange(from, to);
+      const incs = (res.data || []) as Incident[];
+
       if (key === 'daily')   await downloadDailyReport(incs, selectedDay);
       if (key === 'weekly')  await downloadWeeklyReport(incs, selectedWeek);
       if (key === 'monthly') await downloadMonthlyReport(incs, selectedMonth);
       setDownloadDone(key);
       setTimeout(() => setDownloadDone(null), 3000);
+    } catch (err) {
+      console.error('Error downloading report:', err);
     } finally {
       setDownloading(null);
     }

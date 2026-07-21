@@ -21,7 +21,7 @@ import {
 } from '../data/mdrrmo-data';
 import {
   downloadDailyReport, downloadWeeklyReport, downloadMonthlyReport,
-  getDailyRange,
+  getDailyRange, isoDate,
 } from '../utils/reportGenerator';
 import { getIncidentsByRange } from '../api/client';
 import type { Incident } from '../types';
@@ -127,7 +127,7 @@ export default function Analytics() {
   const [distYear, setDistYear] = useState<'all' | '2023' | '2024' | '2025' | '2026'>('all');
 
   // Per-card date pickers
-  const todayIso = new Date().toISOString().split('T')[0];
+  const todayIso = isoDate();
   const [selectedDay, setSelectedDay]   = useState(todayIso);
   const [selectedWeek, setSelectedWeek] = useState(getDailyRange().from);   // Monday of current week
   const [selectedMonth, setSelectedMonth] = useState(todayIso.slice(0, 7)); // YYYY-MM

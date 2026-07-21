@@ -1,4 +1,4 @@
-﻿/**
+/**
  * reportGenerator.ts
  *
  * Uses the ORIGINAL MDRRMO Balayan template .docx files (stored in /public/templates/)
@@ -54,8 +54,11 @@ function monthYear(d: Date): string {
   return d.toLocaleDateString('en-PH', { month: 'long', year: 'numeric' });
 }
 
-function isoDate(d: Date): string {
-  return d.toISOString().split('T')[0];
+export function isoDate(d: Date = new Date()): string {
+  const year  = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day   = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 function dateStr(d: Date): string {

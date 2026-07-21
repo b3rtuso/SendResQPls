@@ -80,7 +80,7 @@ ${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 That the incident was repor
 ${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 That the Municipal Disaster Risk Reduction and Management Office ('), runB('MDRRMO'), run(') emergency responders immediately responded to the scene to assess the situation and provide proper care management in accordance with standard operating procedures.'))}
 ${blank()}
 
-${makeSectionHeader('INCIDENT RESOLUTION & QUESTIONNAIRE DETAILS')}
+${makeSectionHeader('INCIDENT RESOLUTION &amp; QUESTIONNAIRE DETAILS')}
 ${blank()}
 
 ${p(pBoth, runB('1. Patient Information:'))}
@@ -88,25 +88,25 @@ ${p(pBoth, run('• Name: '), runB('{patient_name}'), run('\u00A0\u00A0|\u00A0\u
 ${p(pBoth, run('• Address: '), run('{patient_address}'))}
 ${blank()}
 
-${p(pBoth, runB('2. Incident Cause & Mechanism:'))}
+${p(pBoth, runB('2. Incident Cause &amp; Mechanism:'))}
 ${p(pBoth, run('• Mechanism of Injury / Cause: '), runB('{mechanism_of_injury}'))}
 ${p(pBoth, run('• Intoxication Suspected (Alcohol/Drugs): '), runB('{intoxication_suspected}'))}
 ${p(pBoth, run('• Event Description: '), run('{how_happened}'))}
 ${blank()}
 
-${p(pBoth, runB('3. Patient Assessment & Vital Signs:'))}
+${p(pBoth, runB('3. Patient Assessment &amp; Vital Signs:'))}
 ${p(pBoth, run('• Observed Injuries / Complaints: '), runB('{injuries_observed}'))}
 ${p(pBoth, run('• Consciousness (GCS): '), run('{gcs_level}'), run(' (Score: '), runB('{gcs_score}'), run(')'))}
 ${p(pBoth, run('• Airway: '), run('{airway_status}'), run('\u00A0\u00A0|\u00A0\u00A0Breathing: '), run('{breathing_status}'), run('\u00A0\u00A0|\u00A0\u00A0Circulation: '), run('{circulation_status}'))}
 ${p(pBoth, run('• Vital Signs: BP: '), runB('{bp}'), run(' mmHg | Pulse: '), runB('{pulse}'), run(' bpm | RR: '), runB('{rr}'), run(' cpm | SaO₂: '), runB('{sao2}'), run(' | Temp: '), runB('{temp}'), run('°C'))}
 ${blank()}
 
-${p(pBoth, runB('4. Pre-Hospital Care & Interventions:'))}
+${p(pBoth, runB('4. Pre-Hospital Care &amp; Interventions:'))}
 ${p(pBoth, run('• Interventions Provided: '), run('{treatment}'))}
 ${p(pBoth, run('• Bleeding Controlled: '), runB('{bleeding_controlled}'), run('\u00A0\u00A0|\u00A0\u00A0Immobilized: '), runB('{immobilized}'), run('\u00A0\u00A0|\u00A0\u00A0Wounds Cleaned: '), runB('{wounds_cleaned}'), run('\u00A0\u00A0|\u00A0\u00A0Oxygen Administered: '), runB('{oxygen_administered}'))}
 ${blank()}
 
-${p(pBoth, runB('5. Response & Patient Disposition:'))}
+${p(pBoth, runB('5. Response &amp; Patient Disposition:'))}
 ${p(pBoth, run('• Responding Agency: '), runB('{responding_agency}'), run(' | Responders: '), run('{responder_names}'))}
 ${p(pBoth, run('• Arrival Time: '), run('{arrival_time}'), run(' | Departure Time: '), run('{departure_time}'))}
 ${p(pBoth, run('• Disposition Status: '), runB('{disposition_status}'))}

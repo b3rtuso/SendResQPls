@@ -52,7 +52,7 @@ ${blank()}
 // ── DAILY Body ────────────────────────────────────────────────────────────────
 // 4 Narrative Paragraphs -> Procedure Photo -> Signature Table -> Page Break
 const dailyBody = `
-{#incidents}
+${p(pEmpty, run('{#incidents}'))}
 ${p(pCenter, runB('INCIDENT REPORT'))}
 ${blank()}
 ${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 That on or about '), runB('{time}'), run(' of '), runB('{date}'), run(', a '), runB('{incident_type}'), run(' occurred in '), runB('{location}.'))}
@@ -63,12 +63,12 @@ ${blank()}
 {@procedure_photo_xml}
 ${sigTable}
 ${pageBreak()}
-{/incidents}
+${p(pEmpty, run('{/incidents}'))}
 `;
 
 // ── WEEKLY Body ───────────────────────────────────────────────────────────────
 const weeklyBody = `
-{#weeks}
+${p(pEmpty, run('{#weeks}'))}
 ${p(pCenter, runB('WEEKLY INCIDENT REPORT'))}
 ${blank()}
 ${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 For the '), runB('{week_ordinal}'), run(' week of the month dated '), runB('{start_date}'), run(' to '), runB('{end_date}'), run(', the MDRRMO responded to '), runB('{total_incidents}'), run(' incidents.'))}
@@ -92,7 +92,7 @@ ${p(pBoth, runB('{complaint_list}'), run('.'))}
 ${blank()}
 ${p(pBoth, run('The MDRRMO teams successfully performed their emergency response duties throughout the reporting period.'))}
 ${sigTable}
-{/weeks}
+${p(pEmpty, run('{/weeks}'))}
 `;
 
 // ── MONTHLY Body ──────────────────────────────────────────────────────────────

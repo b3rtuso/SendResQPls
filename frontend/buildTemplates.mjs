@@ -19,45 +19,50 @@ const pEmpty  = `<w:pPr><w:spacing w:after="120" w:line="240" w:lineRule="auto"/
 
 const run  = (t) => `<w:r>${rBody}<w:t xml:space="preserve">${t}</w:t></w:r>`;
 const runB = (t) => `<w:r>${rBold}<w:t xml:space="preserve">${t}</w:t></w:r>`;
-const tab  = () => `<w:r>${rBody}<w:tab/></w:r>`;
 
 const p = (pPr, ...runs) => `<w:p>${pPr}${runs.join('')}</w:p>`;
 const blank = () => `<w:p>${pEmpty}</w:p>`;
+const pageBreak = () => `<w:p><w:r><w:br w:type="page"/></w:r></w:p>`;
 
-// Official MDRRMO Signature Block formatted cleanly in OpenXML (100% valid, zero corruption)
-const sigBlock = `
+// Borderless 3-column signature block table (100% aligned, zero overlap, zero corruption)
+const sigTable = `
 ${blank()}
+<w:tbl>
+  <w:tblPr>
+    <w:tblW w:w="9360" w:type="dxa"/>
+    <w:tblBorders>
+      <w:top w:val="none"/><w:left w:val="none"/><w:bottom w:val="none"/><w:right w:val="none"/>
+      <w:insideH w:val="none"/><w:insideV w:val="none"/>
+    </w:tblBorders>
+  </w:tblPr>
+  <w:tr>
+    <w:tc><w:tcPr><w:tcW w:w="3120" w:type="dxa"/></w:tcPr>${p(pCenter, run('Prepared by:'))}</w:tc>
+    <w:tc><w:tcPr><w:tcW w:w="3120" w:type="dxa"/></w:tcPr>${p(pCenter, run('Checked by:'))}</w:tc>
+    <w:tc><w:tcPr><w:tcW w:w="3120" w:type="dxa"/></w:tcPr>${p(pCenter, run('Noted by:'))}</w:tc>
+  </w:tr>
+  <w:tr>
+    <w:tc><w:tcPr><w:tcW w:w="3120" w:type="dxa"/></w:tcPr>${blank()}${blank()}${p(pCenter, runB('Rosalinda Espinar'))}${p(pCenter, run('Incident Documentation Staff'))}</w:tc>
+    <w:tc><w:tcPr><w:tcW w:w="3120" w:type="dxa"/></w:tcPr>${blank()}${blank()}${p(pCenter, runB('Giovanni Marco'))}${p(pCenter, run('Operations-In-Charge'))}</w:tc>
+    <w:tc><w:tcPr><w:tcW w:w="3120" w:type="dxa"/></w:tcPr>${blank()}${blank()}${p(pCenter, runB('Christian Noel Villanueva'))}${p(pCenter, run('MGDH I \u2013 LDRRMO'))}</w:tc>
+  </w:tr>
+</w:tbl>
 ${blank()}
-${p(pCenter,
-  run('Prepared by:'), tab(), tab(), tab(),
-  run('Checked by:'), tab(), tab(), tab(),
-  run('Noted by:'),
-)}
-${blank()}
-${p(pCenter,
-  runB('Rosalinda Espinar'), tab(), tab(),
-  runB('Giovanni Marco'), tab(), tab(),
-  runB('Christian Noel Villanueva'),
-)}
-${p(pCenter,
-  run('Incident Documentation Staff'), tab(),
-  run('Operations-In-Charge'), tab(), tab(),
-  run('MGDH I \u2013 LDRRMO'),
-)}
 `;
 
 // ── DAILY Body ────────────────────────────────────────────────────────────────
-// Explanation -> Procedure Photo -> Signature Block
+// 4 Narrative Paragraphs -> Procedure Photo -> Signature Table -> Page Break
 const dailyBody = `
 {#incidents}
 ${p(pCenter, runB('INCIDENT REPORT'))}
 ${blank()}
-${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 That on or about '), runB('{time}'), run(' of '), runB('{date}'), run(', a '), runB('{incident_type}'), run(' occurred at '), runB('{location}.'))}
-${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 That the incident was reported by '), runB('{reporter_name}'), run('{reporter_phone}. {narrative}'))}
-${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 That the Municipal Disaster Risk Reduction and Management Office ('), runB('MDRRMO'), run(') emergency responders immediately responded to the scene to assess the situation and provide proper care management in accordance with standard operating procedures.'))}
+${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 That on or about '), runB('{time}'), run(' of '), runB('{date}'), run(', a '), runB('{incident_type}'), run(' occurred in '), runB('{location}.'))}
+${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 That the patient, '), runB('{patient_name}'), run(', '), run('{patient_sex}'), run(', '), run('{patient_age}'), run(' years old, and a resident of '), run('{patient_address}'), run(', '), run('{intoxication_detail}'), run('{mechanism_detail}'), run('and obtained '), run('{injuries_observed}.'))}
+${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 That the Municipal Disaster Risk Reduction and Management Office ('), runB('MDRRMO'), run(') emergency responders, '), runB('{responders}'), run(', immediately arrived at the scene of the incident to assess the patient and gave proper care management, '), run('{interventions_detail}'), run('and checking of vital signs, with '), run('{vitals_detail}.'))}
+${p(pBoth, run('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 After giving proper care management, the patient was '), run('{disposition_detail}.'))}
 ${blank()}
 {@procedure_photo_xml}
-${sigBlock}
+${sigTable}
+${pageBreak()}
 {/incidents}
 `;
 
@@ -86,7 +91,7 @@ ${p(pBoth, run('the recorded chief complaints included:'))}
 ${p(pBoth, runB('{complaint_list}'), run('.'))}
 ${blank()}
 ${p(pBoth, run('The MDRRMO teams successfully performed their emergency response duties throughout the reporting period.'))}
-${sigBlock}
+${sigTable}
 {/weeks}
 `;
 
@@ -115,7 +120,7 @@ ${p(pBoth, runB('{medical_conduction_purposes}'), run('.'))}
 ${blank()}
 ${p(pBoth, run('Throughout the month, '))}
 ${p(pBoth, runB('{team_count}'), run(' MDRRMO teams effectively responded to all reported incidents.'))}
-${sigBlock}
+${sigTable}
 `;
 
 function buildDocXml(originalXml, newBodyInner) {

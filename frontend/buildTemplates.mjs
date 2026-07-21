@@ -22,25 +22,31 @@ const pEmpty  = `<w:pPr><w:spacing w:after="100" w:line="240" w:lineRule="auto"/
 const run  = (t) => `<w:r>${rBody}<w:t xml:space="preserve">${t}</w:t></w:r>`;
 const runB = (t) => `<w:r>${rBold}<w:t xml:space="preserve">${t}</w:t></w:r>`;
 const runH = (t) => `<w:r>${rHeader}<w:t xml:space="preserve">${t}</w:t></w:r>`;
-const tab  = () => `<w:r>${rBody}<w:tab/></w:r>`;
 
 const p = (pPr, ...runs) => `<w:p>${pPr}${runs.join('')}</w:p>`;
 const blank = () => `<w:p>${pEmpty}</w:p>`;
 
-// Inline Drawing XML for official signature block image
-const sigDrawingXml = `
+// Function to generate 100% valid OpenXML drawing XML with explicit namespaces & unique IDs
+let drawingIdCounter = 1000;
+function makeSigDrawingXml() {
+  const id = ++drawingIdCounter;
+  return `
 <w:p>
   <w:pPr><w:jc w:val="center"/><w:spacing w:before="240" w:after="240"/></w:pPr>
   <w:r>
     <w:drawing>
-      <wp:inline distT="0" distB="0" distL="0" distR="0">
+      <wp:inline distT="0" distB="0" distL="0" distR="0"
+                 xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"
+                 xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+                 xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"
+                 xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
         <wp:extent cx="5400000" cy="1800000"/>
-        <wp:docPr id="500" name="Signature Block"/>
-        <a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+        <wp:docPr id="${id}" name="Signature Block ${id}"/>
+        <a:graphic>
           <a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/main">
-            <pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">
+            <pic:pic>
               <pic:nvPicPr>
-                <pic:cNvPr id="500" name="signature_block.png"/>
+                <pic:cNvPr id="${id}" name="signature_block.png"/>
                 <pic:cNvPicPr/>
               </pic:nvPicPr>
               <pic:blipFill>
@@ -59,15 +65,6 @@ const sigDrawingXml = `
   </w:r>
 </w:p>
 `;
-
-// Helper to create clean OpenXML table rows for questionnaire answers
-function makeDetailRow(label1, val1, label2 = '', val2 = '') {
-  const cell1 = `<w:tc><w:tcPr><w:tcW w:w="4650" w:type="dxa"/></w:tcPr>${p(pBoth, runB(label1 + ': '), run('{'+val1+'}'))}</w:tc>`;
-  if (!label2) {
-    return `<w:tr><w:trPr><w:cantSplit/></w:trPr>${cell1}</w:tr>`;
-  }
-  const cell2 = `<w:tc><w:tcPr><w:tcW w:w="4650" w:type="dxa"/></w:tcPr>${p(pBoth, runB(label2 + ': '), run('{'+val2+'}'))}</w:tc>`;
-  return `<w:tr><w:trPr><w:cantSplit/></w:trPr>${cell1}${cell2}</w:tr>`;
 }
 
 function makeSectionHeader(title) {
@@ -119,9 +116,9 @@ ${p(pBoth, run('• Destination Facility: '), runB('{destination_facility}'), ru
 ${p(pBoth, run('• Status Upon Turnover: '), run('{turnover_status}'))}
 ${blank()}
 
-{procedure_photo_note}
+${p(pBoth, run('{procedure_photo_note}'))}
 ${blank()}
-${sigDrawingXml}
+${makeSigDrawingXml()}
 {/incidents}
 `;
 
@@ -151,7 +148,7 @@ ${p(pBoth, runB('{complaint_list}'), run('.'))}
 ${blank()}
 ${p(pBoth, run('The MDRRMO teams successfully performed their emergency response duties throughout the reporting period.'))}
 ${blank()}
-${sigDrawingXml}
+${makeSigDrawingXml()}
 {/weeks}
 `;
 
@@ -181,7 +178,7 @@ ${blank()}
 ${p(pBoth, run('Throughout the month, '))}
 ${p(pBoth, runB('{team_count}'), run(' MDRRMO teams effectively responded to all reported incidents.'))}
 ${blank()}
-${sigDrawingXml}
+${makeSigDrawingXml()}
 `;
 
 // Build document.xml while PRESERVING original <w:body> attributes & <w:sectPr> header/footer references
@@ -225,10 +222,10 @@ async function buildTemplate(srcDocx, newBodyInner, outFile) {
 
     // Update [Content_Types].xml
     let contentTypes = await zip.file('[Content_Types].xml')?.async('string') || '';
-    if (!contentTypes.includes('signature_block.png') && !contentTypes.includes('Extension="png"')) {
+    if (!contentTypes.includes('signature_block.png')) {
       contentTypes = contentTypes.replace(
         '</Types>',
-        '<Default Extension="png" ContentType="image/png"/></Types>'
+        '<Override PartName="/word/media/signature_block.png" ContentType="image/png"/></Types>'
       );
       zip.file('[Content_Types].xml', contentTypes);
     }
@@ -254,5 +251,5 @@ async function buildTemplate(srcDocx, newBodyInner, outFile) {
   await buildTemplate(weeklySrc, weeklyBody, `${OUT_DIR}/weekly-template.docx`);
   await buildTemplate(monthlySrc, monthlyBody, `${OUT_DIR}/monthly-template.docx`);
 
-  console.log('✅ Official templates created with headers, footers, full questionnaire fields, Arial 12pt & signature image!');
+  console.log('✅ Official templates created with valid XML namespaces & unique drawing IDs!');
 })();

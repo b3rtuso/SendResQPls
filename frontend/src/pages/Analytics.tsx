@@ -7,7 +7,7 @@ import {
 } from 'recharts';
 import {
   TrendingUp, FileText, Download, MapPin, BarChart3, Calendar, Loader2, CheckCircle2,
-  Flame, Waves, Stethoscope, Activity, ShieldAlert, Info, Car, Wind, Mountain
+  Flame, Waves, Stethoscope, Activity, ShieldAlert, Info, Car, Wind, Mountain, AlertTriangle
 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -467,7 +467,7 @@ export default function Analytics() {
               </div>
             </div>
 
-            {/* Clickable Map Risk Stats Bar */}
+            {/* Clickable Map Risk Stats Bar (Icon on left, text to the right after icon) */}
             <div className="map-stats-bar" style={{ marginTop: 16 }}>
               <div
                 className="map-stat-card"
@@ -478,10 +478,29 @@ export default function Analytics() {
                   border: riskFilter === 'HIGH' ? '2.5px solid #EF4444' : '1px solid var(--border)',
                   boxShadow: riskFilter === 'HIGH' ? '0 0 12px rgba(239, 68, 68, 0.3)' : 'none',
                   transition: 'all 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  padding: '14px 16px',
+                  textAlign: 'left',
                 } as React.CSSProperties}
               >
-                <div className="stat-number">{riskStats.high}</div>
-                <div className="stat-label">High Risk Areas {riskFilter === 'HIGH' && '✓'}</div>
+                <div style={{
+                  width: 42, height: 42, borderRadius: 10,
+                  background: 'rgba(239, 68, 68, 0.12)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#EF4444', flexShrink: 0,
+                }}>
+                  <AlertTriangle size={22} />
+                </div>
+                <div>
+                  <div className="stat-number" style={{ fontSize: 24, fontWeight: 800, color: '#EF4444', lineHeight: 1, marginBottom: 4 }}>
+                    {riskStats.high}
+                  </div>
+                  <div className="stat-label" style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>
+                    High Risk Areas {riskFilter === 'HIGH' && '✓'}
+                  </div>
+                </div>
               </div>
 
               <div
@@ -493,10 +512,29 @@ export default function Analytics() {
                   border: riskFilter === 'MEDIUM' ? '2.5px solid #F59E0B' : '1px solid var(--border)',
                   boxShadow: riskFilter === 'MEDIUM' ? '0 0 12px rgba(245, 158, 11, 0.3)' : 'none',
                   transition: 'all 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  padding: '14px 16px',
+                  textAlign: 'left',
                 } as React.CSSProperties}
               >
-                <div className="stat-number">{riskStats.medium}</div>
-                <div className="stat-label">Medium Risk Areas {riskFilter === 'MEDIUM' && '✓'}</div>
+                <div style={{
+                  width: 42, height: 42, borderRadius: 10,
+                  background: 'rgba(245, 158, 11, 0.12)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#F59E0B', flexShrink: 0,
+                }}>
+                  <Info size={22} />
+                </div>
+                <div>
+                  <div className="stat-number" style={{ fontSize: 24, fontWeight: 800, color: '#F59E0B', lineHeight: 1, marginBottom: 4 }}>
+                    {riskStats.medium}
+                  </div>
+                  <div className="stat-label" style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>
+                    Medium Risk Areas {riskFilter === 'MEDIUM' && '✓'}
+                  </div>
+                </div>
               </div>
 
               <div
@@ -508,10 +546,29 @@ export default function Analytics() {
                   border: riskFilter === 'LOW' ? '2.5px solid #22C55E' : '1px solid var(--border)',
                   boxShadow: riskFilter === 'LOW' ? '0 0 12px rgba(34, 197, 94, 0.3)' : 'none',
                   transition: 'all 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  padding: '14px 16px',
+                  textAlign: 'left',
                 } as React.CSSProperties}
               >
-                <div className="stat-number">{riskStats.low}</div>
-                <div className="stat-label">Low Risk Areas {riskFilter === 'LOW' && '✓'}</div>
+                <div style={{
+                  width: 42, height: 42, borderRadius: 10,
+                  background: 'rgba(34, 197, 94, 0.12)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#22C55E', flexShrink: 0,
+                }}>
+                  <CheckCircle2 size={22} />
+                </div>
+                <div>
+                  <div className="stat-number" style={{ fontSize: 24, fontWeight: 800, color: '#22C55E', lineHeight: 1, marginBottom: 4 }}>
+                    {riskStats.low}
+                  </div>
+                  <div className="stat-label" style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>
+                    Low Risk Areas {riskFilter === 'LOW' && '✓'}
+                  </div>
+                </div>
               </div>
 
               <div
@@ -523,10 +580,29 @@ export default function Analytics() {
                   border: riskFilter === 'ALL' ? `2.5px solid ${currentIncident?.color || '#3B82F6'}` : '1px solid var(--border)',
                   boxShadow: riskFilter === 'ALL' ? `0 0 12px ${currentIncident?.color || '#3B82F6'}33` : 'none',
                   transition: 'all 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  padding: '14px 16px',
+                  textAlign: 'left',
                 } as React.CSSProperties}
               >
-                <div className="stat-number">{riskStats.total}</div>
-                <div className="stat-label">Total Barangays {riskFilter === 'ALL' && '(All Shown)'}</div>
+                <div style={{
+                  width: 42, height: 42, borderRadius: 10,
+                  background: `${currentIncident?.color || '#3B82F6'}18`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: currentIncident?.color || '#3B82F6', flexShrink: 0,
+                }}>
+                  <MapPin size={22} />
+                </div>
+                <div>
+                  <div className="stat-number" style={{ fontSize: 24, fontWeight: 800, color: currentIncident?.color || '#3B82F6', lineHeight: 1, marginBottom: 4 }}>
+                    {riskStats.total}
+                  </div>
+                  <div className="stat-label" style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>
+                    Total Barangays {riskFilter === 'ALL' && '(All Shown)'}
+                  </div>
+                </div>
               </div>
             </div>
 

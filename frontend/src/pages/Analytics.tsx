@@ -18,9 +18,9 @@ import {
   type Barangay,
 } from '../data/balayan-data';
 import {
-  forecastData, distributionData, yearlySummary,
-  incidentTrendsData, yearlyTotals,
-  TYPE_COLORS,
+  forecastData, distributionData, reportData, yearlySummary,
+  incidentTrendsData, yearlyTotals, topLocations,
+  TYPE_COLORS, downloadReport, generateFullReport,
 } from '../data/mdrrmo-data';
 import {
   downloadDailyReport, downloadWeeklyReport, downloadMonthlyReport,
@@ -305,6 +305,7 @@ function getRiskExplanation(type: string, riskTier: 'ALL' | 'HIGH' | 'MEDIUM' | 
 export default function Analytics() {
   const [tab, setTab] = useState<'map' | 'forecast' | 'reports'>('map');
   const [selectedType, setSelectedType] = useState('fire');
+  const [reportFilter, setReportFilter] = useState('All Types');
   const [trendYear, setTrendYear] = useState<string>('all');
   const [riskFilter, setRiskFilter] = useState<'ALL' | 'HIGH' | 'MEDIUM' | 'LOW'>('ALL');
 
@@ -375,6 +376,10 @@ export default function Analytics() {
       setDownloading(null);
     }
   };
+
+  const filteredReports = reportFilter === 'All Types'
+    ? reportData
+    : reportData.filter(r => r.type === reportFilter);
 
   return (
     <>
@@ -733,8 +738,45 @@ export default function Analytics() {
         {/* ============ REPORTS TAB ============ */}
         {tab === 'reports' && (
           <div className="fade-in">
+            {/* ── KPI Stat Cards — TOP ── */}
+            <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: 24 }}>
+              <div className="stat-card">
+                <div className="stat-info">
+                  <h3>Total Reports</h3>
+                  <div className="stat-value">{reportData.length}</div>
+                  <div className="stat-change up">Available for download</div>
+                </div>
+                <div className="stat-icon blue"><FileText size={22} /></div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-info">
+                  <h3>Data Coverage</h3>
+                  <div className="stat-value">2023–2026</div>
+                  <div className="stat-change up">4 years of data</div>
+                </div>
+                <div className="stat-icon purple"><Calendar size={22} /></div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-info">
+                  <h3>Total Records</h3>
+                  <div className="stat-value">1,260</div>
+                  <div className="stat-change up">MDRRMO incident reports</div>
+                </div>
+                <div className="stat-icon green"><BarChart3 size={22} /></div>
+              </div>
+            </div>
+
+            {/* ── Divider ── */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '0 0 24px' }}>
+              <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+              <span style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Generate Official Word Reports (.docx)
+              </span>
+              <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+            </div>
+
             {/* Direct Official MDRRMO Report Download Cards */}
-            <div className="grid-3" style={{ marginBottom: 24 }}>
+            <div className="grid-3" style={{ marginBottom: 28 }}>
               {/* DAILY REPORT CARD */}
               <div className="card" style={{ borderTop: '4px solid #2563EB' }}>
                 <div className="card-header" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -873,6 +915,87 @@ export default function Analytics() {
                       <><Download size={16} /> Download Monthly Report (.docx)</>
                     )}
                   </button>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Generated Reports Data Table Section ── */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Available Generated Reports</h3>
+                <select
+                  className="filter-select"
+                  value={reportFilter}
+                  onChange={e => setReportFilter(e.target.value)}
+                >
+                  <option value="All Types">All Types</option>
+                  <option value="Monthly">Monthly</option>
+                  <option value="Quarterly">Quarterly</option>
+                  <option value="Annual">Annual</option>
+                </select>
+              </div>
+              <button className="btn btn-primary btn-sm" onClick={() => generateFullReport()}>
+                <Download size={14} /> Export Full Report (CSV)
+              </button>
+            </div>
+
+            <div className="card" style={{ marginBottom: 24 }}>
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Report ID</th>
+                    <th>Title</th>
+                    <th>Type</th>
+                    <th>Generated</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredReports.map((r) => (
+                    <tr key={r.id}>
+                      <td style={{ fontWeight: 600 }}>{r.id}</td>
+                      <td>{r.title}</td>
+                      <td>
+                        <span className={`badge ${r.type === 'Annual' ? 'resolved' : r.type === 'Monthly' ? 'reviewing' : 'dispatched'}`}>
+                          {r.type}
+                        </span>
+                      </td>
+                      <td>{r.generated}</td>
+                      <td>
+                        <button className="btn btn-outline btn-sm" onClick={() => downloadReport(r.id)}>
+                          <Download size={14} /> Download CSV
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* ── Top Incident Locations Table Card ── */}
+            <div className="card">
+              <div className="card-header">
+                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>Top Incident Locations (All Years)</h3>
+              </div>
+              <div className="card-body">
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+                  {topLocations.map((loc, i) => (
+                    <div key={loc.name} style={{
+                      display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
+                      background: i < 3 ? 'rgba(239, 68, 68, 0.05)' : 'var(--bg-card-hover)',
+                      borderRadius: 10, border: i < 3 ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid var(--border)',
+                    }}>
+                      <div style={{
+                        width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 12, fontWeight: 800, color: 'white',
+                        background: i === 0 ? '#EF4444' : i === 1 ? '#F59E0B' : i === 2 ? '#3B82F6' : '#94A3B8',
+                      }}>{i + 1}</div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600 }}>{loc.name}</div>
+                      </div>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: i < 3 ? '#EF4444' : 'var(--text-primary)' }}>{loc.count}</div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>

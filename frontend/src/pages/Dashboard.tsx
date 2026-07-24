@@ -5,14 +5,14 @@ import { DashboardSkeleton } from '../components/PageLoader';
 import {
   AlertTriangle, Clock, Truck, CheckCircle,
   RefreshCw, ArrowRight, Phone, Flame,
-  Stethoscope, HardHat, Anchor, ShieldCheck,
+  Stethoscope, HardHat, Anchor, ShieldCheck, Calendar,
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
 import type { Incident, Status } from '../types';
 import { getIncidents, getIncidentStats } from '../api/client';
 import { getNearestBarangay } from '../data/balayan-data';
 import { normalizeIncidentType } from '../utils/normalizeIncidentType';
-import { dashboardChartData, monthlyByType2024, monthlyByType2025, yearlyTotals } from '../data/mdrrmo-data';
+import { dashboardChartData, monthlyByType2024, monthlyByType2025, yearlyTotals, monthlyDetails } from '../data/mdrrmo-data';
 
 const DEPARTMENTS = [
   { label: 'BFP',         sub: 'Bureau of Fire Protection', icon: Flame,       color: '#EF4444', bg: '#FEF2F2', tel: 'tel:(043) 211-6387' },
@@ -198,6 +198,63 @@ export default function Dashboard() {
     <>
       <Header title="Dashboard" subtitle="Real-time overview of disaster incidents" />
       <div className="page-content" style={{ paddingTop: 8 }}>
+
+        {/* ── Monthly Incident Forecast Hero Banner ─────────────────────────── */}
+        {(() => {
+          const currentMonthShort = new Date().toLocaleDateString('en-PH', { month: 'short' });
+          const currentMonthFull  = new Date().toLocaleDateString('en-PH', { month: 'long', year: 'numeric' });
+          const forecast = monthlyDetails.find(m => m.month.toLowerCase() === currentMonthShort.toLowerCase()) || monthlyDetails[new Date().getMonth()];
+          
+          return (
+            <div className="fade-in" style={{
+              marginBottom: 20,
+              background: 'linear-gradient(135deg, #0F172A 0%, #1E3A5F 100%)',
+              borderRadius: 16,
+              padding: '20px 24px',
+              color: 'white',
+              boxShadow: '0 8px 24px rgba(15, 23, 42, 0.15)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              position: 'relative',
+              overflow: 'hidden',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{
+                    width: 40, height: 40, borderRadius: 10,
+                    background: 'rgba(59, 130, 246, 0.25)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: '#60A5FA', border: '1px solid rgba(96, 165, 250, 0.3)',
+                  }}>
+                    <Calendar size={22} />
+                  </div>
+                  <div>
+                    <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#93C5FD' }}>
+                      CURRENT MONTH FORECAST & ALERT PROFILE
+                    </span>
+                    <h2 style={{ fontSize: 18, fontWeight: 800, margin: '2px 0 0', color: 'white', letterSpacing: '-0.2px' }}>
+                      {currentMonthFull} Incident Risk Forecast
+                    </h2>
+                  </div>
+                </div>
+
+                <span style={{
+                  padding: '6px 14px', borderRadius: 20,
+                  background: forecast?.typeClass === 'trauma' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(34, 197, 94, 0.2)',
+                  color: forecast?.typeClass === 'trauma' ? '#FBBF24' : '#4ADE80',
+                  border: `1px solid ${forecast?.typeClass === 'trauma' ? 'rgba(245, 158, 11, 0.4)' : 'rgba(34, 197, 94, 0.4)'}`,
+                  fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6,
+                }}>
+                  {forecast?.typeClass === 'trauma' ? <AlertTriangle size={14} /> : <Stethoscope size={14} />}
+                  Dominant: {forecast?.type} Emergency Risk
+                </span>
+              </div>
+
+              <p style={{ fontSize: 13, lineHeight: 1.6, color: '#CBD5E1', margin: 0, maxWidth: 960 }}>
+                {forecast?.desc}
+              </p>
+            </div>
+          );
+        })()}
 
         {/* ── Emergency Banner ─────────────────────────────── */}
         {pendingCount > 0 && (

@@ -1,32 +1,42 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Header from '../components/Header';
 import {
   Line, LineChart, AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
-  PieChart, Pie, Cell,
+  Cell,
 } from 'recharts';
-import { TrendingUp, FileText, Download, MapPin, BarChart3, Calendar, Loader2, CheckCircle2 } from 'lucide-react';
+import {
+  TrendingUp, FileText, Download, MapPin, BarChart3, Calendar, Loader2, CheckCircle2,
+  Flame, Waves, Stethoscope, Activity, ShieldAlert, Info
+} from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './analytics-map.css';
 import {
-  BALAYAN_CENTER, BALAYAN_BOUNDS, BARANGAYS, INCIDENT_TYPES,
+  BALAYAN_CENTER, BALAYAN_BOUNDS, BARANGAYS,
   type Barangay,
 } from '../data/balayan-data';
 import {
-  forecastData, distributionData, monthlyDetails, reportData, yearlySummary,
-  incidentTrendsData, yearlyTotals, topLocations,
-  TYPE_COLORS, downloadReport, generateFullReport,
+  forecastData, distributionData, yearlySummary,
+  incidentTrendsData, yearlyTotals,
+  TYPE_COLORS,
 } from '../data/mdrrmo-data';
 import {
   downloadDailyReport, downloadWeeklyReport, downloadMonthlyReport,
-  getDailyRange,
 } from '../utils/reportGenerator';
 import { getIncidentsByRange } from '../api/client';
 import type { Incident } from '../types';
 
-// Fix Leaflet default icon issue with bundlers
+// SVG Icon Incident Types
+const INCIDENT_TYPES_SVG = [
+  { id: 'fire',      label: 'Fire',       icon: Flame,       color: '#EF4444', desc: 'Structural and wildland fires across barangays' },
+  { id: 'flood',     label: 'Flood',      icon: Waves,       color: '#3B82F6', desc: 'Monsoon flooding & riverbank spillover risk' },
+  { id: 'medical',   label: 'Medical',    icon: Stethoscope, color: '#22C55E', desc: 'Medical emergencies & patient transport calls' },
+  { id: 'trauma',    label: 'Trauma',     icon: Activity,    color: '#F59E0B', desc: 'Vehicular accidents & severe physical injuries' },
+  { id: 'crime',     label: 'Crime',      icon: ShieldAlert, color: '#8B5CF6', desc: 'Security, disturbance & assault incidents' },
+];
+
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -40,8 +50,6 @@ const tooltipStyle = {
   borderRadius: 'var(--radius-md)',
   fontSize: '13px',
 };
-
-// ---- Map Utilities ----
 
 function createMarkerIcon(riskLevel: string): L.DivIcon {
   const riskClass = `risk-${riskLevel.toLowerCase()}`;
@@ -59,7 +67,6 @@ function createMarkerIcon(riskLevel: string): L.DivIcon {
   });
 }
 
-// Component to restrict map bounds
 function MapBoundsController() {
   const map = useMap();
   useEffect(() => {
@@ -73,18 +80,17 @@ function MapBoundsController() {
   return null;
 }
 
-// ---- Popup Content Builder ----
 function buildPopupContent(brgy: Barangay, incidentType: string): string {
   const risk = brgy.riskProfile[incidentType];
   if (!risk) return '';
-  const incType = INCIDENT_TYPES.find(t => t.id === incidentType);
+  const incType = INCIDENT_TYPES_SVG.find(t => t.id === incidentType);
   const riskClass = risk.riskLevel.toLowerCase();
 
   return `
     <div class="map-popup">
       <div class="popup-header">
-        <div class="popup-icon" style="background: ${incType?.color || '#3B82F6'}22; color: ${incType?.color || '#3B82F6'};">
-          ${incType?.icon || '📍'}
+        <div class="popup-icon" style="background: ${incType?.color || '#3B82F6'}22; color: ${incType?.color || '#3B82F6'}; font-weight: bold;">
+          🛡️
         </div>
         <div>
           <div class="popup-title">${brgy.name}</div>
@@ -103,24 +109,140 @@ function buildPopupContent(brgy: Barangay, incidentType: string): string {
   `;
 }
 
+function getRiskExplanation(type: string, riskTier: 'ALL' | 'HIGH' | 'MEDIUM' | 'LOW') {
+  const t = type.toLowerCase();
+  const expMap: Record<string, Record<string, { title: string; explanation: string; factors: string[] }>> = {
+    fire: {
+      ALL: {
+        title: 'Fire Incident Vulnerability & Risk Profile in Balayan',
+        explanation: 'Fire risk across Balayan is heavily driven by urban structural density in Poblacion, commercial electrical loads, and narrow inner residential streets.',
+        factors: ['Commercial structural density in Poblacion', 'Dry season vegetation burn-off risk', 'Narrow barangay streets limiting fire truck turnaround']
+      },
+      HIGH: {
+        title: 'Why High Risk Areas: Commercial & Dense Housing Hubs',
+        explanation: 'Barangays tagged HIGH RISK for Fire (such as Poblacion 1-12 & Caloocan) feature high commercial building concentration, older wiring infrastructure, and narrow residential alleys that impede rapid fire engine access.',
+        factors: ['Dense wooden & concrete commercial structures', 'High electrical power load demand', 'Narrow interior alleys restricting fire hose deployment']
+      },
+      MEDIUM: {
+        title: 'Why Medium Risk Areas: Mixed Residential-Agricultural Zones',
+        explanation: 'Barangays tagged MEDIUM RISK feature moderate structural spacing and main road access, but carry seasonal dry-vegetation fire risks.',
+        factors: ['Moderate structural spacing', 'Accessible secondary roadways', 'Dry season agricultural burning']
+      },
+      LOW: {
+        title: 'Why Low Risk Areas: Open Rural & Coastal Zones',
+        explanation: 'Barangays tagged LOW RISK consist of sparse agricultural acreage, wide structural separation, and low electrical power loads.',
+        factors: ['Sparse population density', 'Wide structural separation', 'Immediate natural coastal water access']
+      }
+    },
+    flood: {
+      ALL: {
+        title: 'Flood Vulnerability & Hydrological Risk in Balayan',
+        explanation: 'Balayan sits along Balayan Bay with major river channels like Palico River. Flood hazards stem from tidal surges and severe monsoon river spillover.',
+        factors: ['Coastal proximity to Balayan Bay', 'Palico river spillover in low-lying barangays', 'Monsoon drainage overflow']
+      },
+      HIGH: {
+        title: 'Why High Risk Areas: Low-Lying Coastal & Riverbank Basins',
+        explanation: 'Barangays tagged HIGH RISK for Flood (such as Sambat & Carenahan) sit at low sea-level elevation directly adjacent to river outlets and Balayan Bay, experiencing immediate surge inundation.',
+        factors: ['Low elevation near river mouths', 'Storm surge & high tide vulnerability', 'Slow natural rainwater discharge']
+      },
+      MEDIUM: {
+        title: 'Why Medium Risk Areas: Interior Lowland Plains',
+        explanation: 'Barangays tagged MEDIUM RISK experience temporary localized flash flooding during heavy downpours due to culvert capacity limits.',
+        factors: ['Flat terrain causing temporary pooling', 'Drainage culvert capacity limits during typhoons']
+      },
+      LOW: {
+        title: 'Why Low Risk Areas: Elevated Inland Barangays',
+        explanation: 'Barangays tagged LOW RISK sit at higher natural inland elevations ensuring rapid natural water runoff towards river channels.',
+        factors: ['Elevated natural topography', 'Effective natural slope runoff']
+      }
+    },
+    trauma: {
+      ALL: {
+        title: 'Trauma & Road Collision Risk Profile in Balayan',
+        explanation: 'Trauma emergencies are predominantly driven by motorcycle and vehicular collisions along high-speed highway corridors in Balayan.',
+        factors: ['Heavy motorcycle commuter volume', 'High-speed intersections at Sambat & Lanatan', 'Heavy cargo truck traffic']
+      },
+      HIGH: {
+        title: 'Why High Risk Areas: Highway Junctions & Critical Intersections',
+        explanation: 'Barangays tagged HIGH RISK for Trauma (such as Sambat & Lanatan) encompass major provincial highway junctions with the highest recorded motorcycle crashes and multi-vehicle collisions.',
+        factors: ['Intersecting high-speed national highway corridors', 'Night motorcycle traffic with low visibility', 'High historical collision frequency']
+      },
+      MEDIUM: {
+        title: 'Why Medium Risk Areas: Secondary Arterial Roads',
+        explanation: 'Barangays tagged MEDIUM RISK connect residential sectors to main highways with moderate vehicle speeds and occasional motorcycle slips.',
+        factors: ['Moderate traffic speeds', 'Connecting barangay arterial roads']
+      },
+      LOW: {
+        title: 'Why Low Risk Areas: Quiet Residential Interior Streets',
+        explanation: 'Barangays tagged LOW RISK feature low speed limits and minimal vehicular flow.',
+        factors: ['Quiet residential streets', 'Minimal vehicular traffic']
+      }
+    },
+    medical: {
+      ALL: {
+        title: 'Medical Emergency Response Profile',
+        explanation: 'Medical calls account for over 45% of MDRRMO dispatches in Balayan, driven by senior citizen population density and distance from primary hospitals.',
+        factors: ['High senior population density', 'Distance to Balayan Medicare & hospitals', 'Prevalence of acute cardiac & respiratory calls']
+      },
+      HIGH: {
+        title: 'Why High Risk Areas: High Call Volume & Senior Demographics',
+        explanation: 'Barangays tagged HIGH RISK for Medical Emergencies log the highest call frequency for stroke, cardiac events, severe hypertension, and acute respiratory distress.',
+        factors: ['High elderly demographic concentration', 'Elevated history of acute medical dispatches', 'Frequent medical conduction requests']
+      },
+      MEDIUM: {
+        title: 'Why Medium Risk Areas: Moderate Emergency Demand',
+        explanation: 'Barangays tagged MEDIUM RISK maintain steady call rates for seasonal illnesses and scheduled transport assistance.',
+        factors: ['Moderate emergency call frequency', 'Proximity to local barangay health stations']
+      },
+      LOW: {
+        title: 'Why Low Risk Areas: Low Emergency Call History',
+        explanation: 'Barangays tagged LOW RISK have lower population density and quick access to municipal health centers.',
+        factors: ['Lower population density', 'Direct access to main health facilities']
+      }
+    },
+    crime: {
+      ALL: {
+        title: 'Public Safety & Security Assessment',
+        explanation: 'Security incidents center on commercial districts, transport terminals, and late-night venue areas.',
+        factors: ['High foot traffic around public markets', 'Night establishment concentration', 'PNP & Tanod patrol sectors']
+      },
+      HIGH: {
+        title: 'Why High Risk Areas: Commercial & Transport Hubs',
+        explanation: 'Barangays tagged HIGH RISK for Security encompass commercial strips and bus/jeepney terminals with higher night-time foot traffic and disturbance reports.',
+        factors: ['High night-time commercial activity', 'Transport terminal crowds', 'Frequent order management calls']
+      },
+      MEDIUM: {
+        title: 'Why Medium Risk Areas: Suburban Corridors',
+        explanation: 'Barangays tagged MEDIUM RISK experience occasional minor disputes managed by barangay tanod patrols.',
+        factors: ['Moderate residential density', 'Active barangay tanod patrols']
+      },
+      LOW: {
+        title: 'Why Low Risk Areas: Peaceful Rural Neighborhoods',
+        explanation: 'Barangays tagged LOW RISK maintain near-zero security incident reports.',
+        factors: ['Quiet rural environment', 'Strong neighborhood watch']
+      }
+    }
+  };
 
+  const defaultExp = {
+    title: `${type.toUpperCase()} Risk Profile — Balayan, Batangas`,
+    explanation: `Detailed risk assessment for ${type} incidents across all 48 barangays of Balayan.`,
+    factors: ['Geographic hazard indicators', 'Historical emergency logs', 'Emergency service response times']
+  };
 
-// ---- Main Component ----
+  return (expMap[t] && expMap[t][riskTier]) || defaultExp;
+}
+
 export default function Analytics() {
   const [tab, setTab] = useState<'map' | 'forecast' | 'reports'>('map');
   const [selectedType, setSelectedType] = useState('fire');
-  const [reportFilter, setReportFilter] = useState('All Types');
   const [trendYear, setTrendYear] = useState<string>('all');
+  const [riskFilter, setRiskFilter] = useState<'ALL' | 'HIGH' | 'MEDIUM' | 'LOW'>('ALL');
 
-  // ── Live report counts & download state ──────────────────────────────
   type RangeKey = 'daily' | 'weekly' | 'monthly';
-  const [reportCounts, setReportCounts] = useState<Record<RangeKey, number | null>>({
-    daily: null, weekly: null, monthly: null,
-  });
   const [downloading, setDownloading] = useState<RangeKey | null>(null);
   const [downloadDone, setDownloadDone] = useState<RangeKey | null>(null);
 
-  // Local timezone date helper (prevents UTC offset shifting dates backwards)
   function getLocalIsoDate(d = new Date()): string {
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -128,88 +250,11 @@ export default function Analytics() {
     return `${year}-${month}-${day}`;
   }
 
-  // ── Distribution chart year filter ────────────────────────────────
-  const [distYear, setDistYear] = useState<'all' | '2023' | '2024' | '2025' | '2026'>('all');
-
-  // Per-card date pickers
   const todayIso = getLocalIsoDate(new Date());
   const [selectedDay, setSelectedDay]   = useState(todayIso);
   const [selectedWeek, setSelectedWeek] = useState(todayIso);
-  const [selectedMonth, setSelectedMonth] = useState(todayIso.slice(0, 7)); // YYYY-MM
+  const [selectedMonth, setSelectedMonth] = useState(todayIso.slice(0, 7));
 
-  // Compute ranges from picker values
-  const pickerRanges = useMemo(() => {
-    // Daily: just the chosen day
-    const dailyFrom = selectedDay;
-    const dailyTo   = selectedDay;
-
-    // Weekly: Mon of chosen week → Sun
-    const wd  = new Date(selectedWeek + 'T00:00:00');
-    const day = wd.getDay();
-    const mon = new Date(wd); mon.setDate(wd.getDate() - (day === 0 ? 6 : day - 1));
-    const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
-    const weekFrom = getLocalIsoDate(mon);
-    const weekTo   = getLocalIsoDate(sun);
-
-    // Monthly: first day of chosen month → last day
-    const [y, m]  = selectedMonth.split('-').map(Number);
-    const first   = new Date(y, m - 1, 1);
-    const last    = new Date(y, m, 0);
-    const monthFrom = getLocalIsoDate(first);
-    const monthTo   = getLocalIsoDate(last);
-
-    return { dailyFrom, dailyTo, weekFrom, weekTo, monthFrom, monthTo };
-  }, [selectedDay, selectedWeek, selectedMonth]);
-
-  const fetchReportCounts = useCallback(async (ranges?: { dailyFrom: string; dailyTo: string; weekFrom: string; weekTo: string; monthFrom: string; monthTo: string }) => {
-    const r = ranges ?? { dailyFrom: todayIso, dailyTo: todayIso, weekFrom: getDailyRange().from, weekTo: todayIso, monthFrom: todayIso.slice(0, 8) + '01', monthTo: todayIso };
-    const fetches: { key: RangeKey; from: string; to: string }[] = [
-      { key: 'daily',   from: r.dailyFrom, to: r.dailyTo   },
-      { key: 'weekly',  from: r.weekFrom,  to: r.weekTo    },
-      { key: 'monthly', from: r.monthFrom, to: r.monthTo   },
-    ];
-    const results = await Promise.allSettled(
-      fetches.map(({ key, from, to }) =>
-        getIncidentsByRange(from, to).then(res => ({ key, data: res.data as Incident[] }))
-      )
-    );
-    const counts: Record<RangeKey, number | null> = { daily: null, weekly: null, monthly: null };
-    results.forEach(res => {
-      if (res.status === 'fulfilled') {
-        counts[res.value.key] = res.value.data.length;
-      }
-    });
-    setReportCounts(counts);
-  }, [todayIso]);
-
-  useEffect(() => {
-    if (tab === 'reports') fetchReportCounts(pickerRanges);
-  }, [tab, fetchReportCounts, pickerRanges]);
-
-  const handleDownload = async (key: RangeKey) => {
-    setDownloading(key);
-    try {
-      let from = selectedDay, to = selectedDay;
-      if (key === 'weekly')  { from = pickerRanges.weekFrom; to = pickerRanges.weekTo; }
-      if (key === 'monthly') { from = pickerRanges.monthFrom; to = pickerRanges.monthTo; }
-
-      // Fetch fresh live incidents directly from backend for the selected date range
-      const res = await getIncidentsByRange(from, to);
-      const incs = (res.data || []) as Incident[];
-
-      if (key === 'daily')   await downloadDailyReport(incs, selectedDay);
-      if (key === 'weekly')  await downloadWeeklyReport(incs, selectedWeek);
-      if (key === 'monthly') await downloadMonthlyReport(incs, selectedMonth);
-      setDownloadDone(key);
-      setTimeout(() => setDownloadDone(null), 3000);
-    } catch (err) {
-      console.error('Error downloading report:', err);
-    } finally {
-      setDownloading(null);
-    }
-  };
-
-  // Compute stats for current incident type
   const riskStats = useMemo(() => {
     let high = 0, medium = 0, low = 0;
     BARANGAYS.forEach(b => {
@@ -223,11 +268,44 @@ export default function Analytics() {
     return { high, medium, low, total: BARANGAYS.length };
   }, [selectedType]);
 
-  const currentIncident = INCIDENT_TYPES.find(t => t.id === selectedType);
+  const currentIncident = INCIDENT_TYPES_SVG.find(t => t.id === selectedType);
+  const IconComp = currentIncident?.icon || Flame;
 
-  const filteredReports = reportFilter === 'All Types'
-    ? reportData
-    : reportData.filter(r => r.type === reportFilter);
+  const riskExplanation = useMemo(() => {
+    return getRiskExplanation(selectedType, riskFilter);
+  }, [selectedType, riskFilter]);
+
+  const handleDownload = async (key: RangeKey) => {
+    setDownloading(key);
+    try {
+      let fromStr = selectedDay, toStr = selectedDay;
+      if (key === 'weekly') {
+        const wd = new Date(selectedWeek + 'T00:00:00');
+        const day = wd.getDay();
+        const mon = new Date(wd); mon.setDate(wd.getDate() - (day === 0 ? 6 : day - 1));
+        const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+        fromStr = getLocalIsoDate(mon);
+        toStr   = getLocalIsoDate(sun);
+      } else if (key === 'monthly') {
+        const [y, m] = selectedMonth.split('-').map(Number);
+        fromStr = getLocalIsoDate(new Date(y, m - 1, 1));
+        toStr   = getLocalIsoDate(new Date(y, m, 0));
+      }
+
+      const res = await getIncidentsByRange(fromStr, toStr);
+      const incs: Incident[] = res.data || [];
+
+      if (key === 'daily')   await downloadDailyReport(incs, selectedDay);
+      if (key === 'weekly')  await downloadWeeklyReport(incs, selectedWeek);
+      if (key === 'monthly') await downloadMonthlyReport(incs, selectedMonth);
+      setDownloadDone(key);
+      setTimeout(() => setDownloadDone(null), 3000);
+    } catch (err) {
+      console.error('Error downloading report:', err);
+    } finally {
+      setDownloading(null);
+    }
+  };
 
   return (
     <>
@@ -249,23 +327,24 @@ export default function Analytics() {
         {tab === 'map' && (
           <div className="fade-in">
             <div className="analytics-map-wrapper">
-              {/* Floating Filter Bar */}
               <div className="map-filter-bar">
                 <span className="filter-label">Filter by</span>
-                {INCIDENT_TYPES.map(t => (
-                  <button
-                    key={t.id}
-                    className={`incident-pill ${selectedType === t.id ? 'active' : ''}`}
-                    style={{ '--pill-color': t.color } as React.CSSProperties}
-                    onClick={() => setSelectedType(t.id)}
-                  >
-                    <span className="pill-emoji">{t.icon}</span>
-                    {t.label}
-                  </button>
-                ))}
+                {INCIDENT_TYPES_SVG.map(t => {
+                  const Icon = t.icon;
+                  return (
+                    <button
+                      key={t.id}
+                      className={`incident-pill ${selectedType === t.id ? 'active' : ''}`}
+                      style={{ '--pill-color': t.color } as React.CSSProperties}
+                      onClick={() => { setSelectedType(t.id); setRiskFilter('ALL'); }}
+                    >
+                      <Icon size={14} style={{ marginRight: 4 }} />
+                      {t.label}
+                    </button>
+                  );
+                })}
               </div>
 
-              {/* Leaflet Map — OSM tiles show correct PH barangay names */}
               <MapContainer
                 center={[BALAYAN_CENTER.lat, BALAYAN_CENTER.lng]}
                 zoom={13}
@@ -283,6 +362,7 @@ export default function Analytics() {
                 {BARANGAYS.map(brgy => {
                   const risk = brgy.riskProfile[selectedType];
                   if (!risk) return null;
+                  if (riskFilter !== 'ALL' && risk.riskLevel !== riskFilter) return null;
                   return (
                     <Marker
                       key={brgy.name}
@@ -297,7 +377,6 @@ export default function Analytics() {
                 })}
               </MapContainer>
 
-              {/* Legend */}
               <div className="map-legend">
                 <div className="legend-item">
                   <div className="legend-dot" style={{ background: '#EF4444' }}></div>
@@ -314,42 +393,101 @@ export default function Analytics() {
               </div>
             </div>
 
-            {/* Stats Bar */}
-            <div className="map-stats-bar">
-              <div className="map-stat-card" style={{ '--stat-color': '#EF4444' } as React.CSSProperties}>
+            {/* Clickable Map Risk Stats Bar */}
+            <div className="map-stats-bar" style={{ marginTop: 16 }}>
+              <div
+                className="map-stat-card"
+                onClick={() => setRiskFilter(prev => prev === 'HIGH' ? 'ALL' : 'HIGH')}
+                style={{
+                  '--stat-color': '#EF4444',
+                  cursor: 'pointer',
+                  border: riskFilter === 'HIGH' ? '2.5px solid #EF4444' : '1px solid var(--border)',
+                  boxShadow: riskFilter === 'HIGH' ? '0 0 12px rgba(239, 68, 68, 0.3)' : 'none',
+                  transition: 'all 0.2s ease',
+                } as React.CSSProperties}
+              >
                 <div className="stat-number">{riskStats.high}</div>
-                <div className="stat-label">High Risk Areas</div>
+                <div className="stat-label">High Risk Areas {riskFilter === 'HIGH' && '✓'}</div>
               </div>
-              <div className="map-stat-card" style={{ '--stat-color': '#F59E0B' } as React.CSSProperties}>
+
+              <div
+                className="map-stat-card"
+                onClick={() => setRiskFilter(prev => prev === 'MEDIUM' ? 'ALL' : 'MEDIUM')}
+                style={{
+                  '--stat-color': '#F59E0B',
+                  cursor: 'pointer',
+                  border: riskFilter === 'MEDIUM' ? '2.5px solid #F59E0B' : '1px solid var(--border)',
+                  boxShadow: riskFilter === 'MEDIUM' ? '0 0 12px rgba(245, 158, 11, 0.3)' : 'none',
+                  transition: 'all 0.2s ease',
+                } as React.CSSProperties}
+              >
                 <div className="stat-number">{riskStats.medium}</div>
-                <div className="stat-label">Medium Risk Areas</div>
+                <div className="stat-label">Medium Risk Areas {riskFilter === 'MEDIUM' && '✓'}</div>
               </div>
-              <div className="map-stat-card" style={{ '--stat-color': '#22C55E' } as React.CSSProperties}>
+
+              <div
+                className="map-stat-card"
+                onClick={() => setRiskFilter(prev => prev === 'LOW' ? 'ALL' : 'LOW')}
+                style={{
+                  '--stat-color': '#22C55E',
+                  cursor: 'pointer',
+                  border: riskFilter === 'LOW' ? '2.5px solid #22C55E' : '1px solid var(--border)',
+                  boxShadow: riskFilter === 'LOW' ? '0 0 12px rgba(34, 197, 94, 0.3)' : 'none',
+                  transition: 'all 0.2s ease',
+                } as React.CSSProperties}
+              >
                 <div className="stat-number">{riskStats.low}</div>
-                <div className="stat-label">Low Risk Areas</div>
+                <div className="stat-label">Low Risk Areas {riskFilter === 'LOW' && '✓'}</div>
               </div>
-              <div className="map-stat-card" style={{ '--stat-color': currentIncident?.color || '#3B82F6' } as React.CSSProperties}>
+
+              <div
+                className="map-stat-card"
+                onClick={() => setRiskFilter('ALL')}
+                style={{
+                  '--stat-color': currentIncident?.color || '#3B82F6',
+                  cursor: 'pointer',
+                  border: riskFilter === 'ALL' ? `2.5px solid ${currentIncident?.color || '#3B82F6'}` : '1px solid var(--border)',
+                  boxShadow: riskFilter === 'ALL' ? `0 0 12px ${currentIncident?.color || '#3B82F6'}33` : 'none',
+                  transition: 'all 0.2s ease',
+                } as React.CSSProperties}
+              >
                 <div className="stat-number">{riskStats.total}</div>
-                <div className="stat-label">Total Barangays</div>
+                <div className="stat-label">Total Barangays {riskFilter === 'ALL' && '(All Shown)'}</div>
               </div>
             </div>
 
-            {/* Incident Type Info Card */}
+            {/* Dynamic & Meaningful Incident Type & Risk Tier Info Card */}
             <div className="card" style={{ marginTop: 16 }}>
-              <div className="card-header" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ fontSize: 24 }}>{currentIncident?.icon}</span>
+              <div className="card-header" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{
+                  width: 40, height: 40, borderRadius: 10,
+                  background: `${currentIncident?.color}18`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: currentIncident?.color,
+                }}>
+                  <IconComp size={22} />
+                </div>
                 <div>
-                  <h3 style={{ margin: 0 }}>{currentIncident?.label} Risk Assessment — Balayan, Batangas</h3>
-                  <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-secondary)' }}>{currentIncident?.description}</p>
+                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>{riskExplanation.title}</h3>
+                  <p style={{ margin: '3px 0 0', fontSize: 12, color: 'var(--text-secondary)' }}>
+                    Showing {riskFilter === 'ALL' ? 'all risk levels' : `${riskFilter} RISK barangays`} for {currentIncident?.label} incidents in Balayan, Batangas
+                  </p>
                 </div>
               </div>
               <div className="card-body">
-                <p style={{ fontSize: 13, lineHeight: 1.7, color: 'var(--text-secondary)' }}>
-                  This map displays the risk assessment for <strong style={{ color: currentIncident?.color }}>{currentIncident?.label}</strong> incidents
-                  across all 48 barangays of Balayan, Batangas. Click on any marker to view the detailed prescription
-                  and recommended actions for that specific area. Risk levels are determined by geographic factors,
-                  historical incident data, and proximity to hazard zones.
+                <p style={{ fontSize: 13, lineHeight: 1.7, color: 'var(--text-secondary)', marginBottom: 14 }}>
+                  {riskExplanation.explanation}
                 </p>
+                <div style={{ background: 'var(--bg-card-hover)', borderRadius: 10, padding: '12px 16px', border: '1px solid var(--border)' }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Info size={14} color="#3B82F6" /> Primary Contributing Factors:
+                  </div>
+                  <ul style={{ margin: 0, paddingLeft: 20, fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                    {riskExplanation.factors.map((f, i) => (
+                      <li key={i}>{f}</li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             </div>
           </div>
@@ -408,28 +546,17 @@ export default function Analytics() {
               </div>
             </div>
 
-            {/* Year-Over-Year Trends + Type Distribution Pie */}
+            {/* Year-Over-Year Trends + Coupled Yearly Incident Totals by Category */}
             <div className="grid-2" style={{ marginTop: 20 }}>
               <div className="card">
                 <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <h3>Year-Over-Year Incident Trends</h3>
-                  <select className="filter-select" value={trendYear} onChange={e => setTrendYear(e.target.value)} style={{ minWidth: 120 }}>
-                    {(() => {
-                      // Detect which year-columns have at least one non-null data point
-                      const yearKeys = Object.keys(incidentTrendsData[0] || {}).filter(k => k.startsWith('y'));
-                      const yearsWithData = yearKeys
-                        .filter(k => incidentTrendsData.some(row => (row as any)[k] != null))
-                        .map(k => k.replace('y', ''))  // 'y2023' -> '2023'
-                        .sort();
-                      return (
-                        <>
-                          <option value="all">All Years</option>
-                          {yearsWithData.map(yr => (
-                            <option key={yr} value={yr}>{yr}</option>
-                          ))}
-                        </>
-                      );
-                    })()}
+                  <select className="filter-select" value={trendYear} onChange={e => setTrendYear(e.target.value)} style={{ minWidth: 130 }}>
+                    <option value="all">All Years (2023–2026)</option>
+                    <option value="2023">2023</option>
+                    <option value="2024">2024</option>
+                    <option value="2025">2025</option>
+                    <option value="2026">2026</option>
                   </select>
                 </div>
                 <div className="card-body">
@@ -480,118 +607,54 @@ export default function Analytics() {
                 </div>
               </div>
 
+              {/* Coupled Yearly Incident Totals by Category (Bar Chart) */}
               <div className="card">
-                <div className="card-header">
-                  <h3>Incident Type Distribution</h3>
-                  <select
-                    className="filter-select"
-                    value={distYear}
-                    onChange={e => setDistYear(e.target.value as typeof distYear)}
-                    style={{ marginLeft: 'auto' }}
-                  >
-                    {(() => {
-                      const yearsWithData = yearlyTotals.filter(y => y.total > 0);
-                      const minYear = yearsWithData[0]?.year;
-                      const maxYear = yearsWithData[yearsWithData.length - 1]?.year;
-                      return (
-                        <>
-                          <option value="all">
-                            All Years{minYear && maxYear ? ` (${minYear}–${maxYear})` : ''}
-                          </option>
-                          {yearsWithData.map(y => (
-                            <option key={y.year} value={String(y.year)}>
-                              {y.year}{y.year === new Date().getFullYear() ? ` (Jan–${new Date().toLocaleDateString('en-PH', { month: 'short' })})` : ''}
-                            </option>
-                          ))}
-                        </>
-                      );
-                    })()}
-                  </select>
+                <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3>Yearly Incident Totals by Category</h3>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', background: 'var(--bg-card-hover)', padding: '4px 10px', borderRadius: 6 }}>
+                    {trendYear === 'all' ? 'All Years (2023–2026)' : `Year ${trendYear}`}
+                  </span>
                 </div>
-                <div className="card-body" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 16, alignItems: 'center' }}>
+                <div className="card-body">
                   {(() => {
-                    // Per-year type totals from yearlyTotals
-                    const row = distYear === 'all'
+                    const row = trendYear === 'all'
                       ? { Medical: 569, Trauma: 608, Accident: 44, Fire: 2, Crime: 10, Other: 27 }
-                      : yearlyTotals.find(y => String(y.year) === distYear) ?? { Medical: 0, Trauma: 0, Accident: 0, Fire: 0, Crime: 0, Other: 0 };
-                    const total = (row.Medical||0)+(row.Trauma||0)+(row.Accident||0)+(row.Fire||0)+(row.Crime||0);
-                    const dist = [
-                      { name: 'Medical',  value: row.Medical  || 0, color: TYPE_COLORS.Medical  },
-                      { name: 'Trauma',   value: row.Trauma   || 0, color: TYPE_COLORS.Trauma   },
-                      { name: 'Accident', value: row.Accident || 0, color: TYPE_COLORS.Accident },
-                      { name: 'Fire',     value: row.Fire     || 0, color: TYPE_COLORS.Fire     },
-                      { name: 'Crime',    value: row.Crime    || 0, color: TYPE_COLORS.Crime    },
-                    ].filter(d => d.value > 0);
+                      : yearlyTotals.find(y => String(y.year) === trendYear) ?? { Medical: 0, Trauma: 0, Accident: 0, Fire: 0, Crime: 0, Other: 0 };
+                    
+                    const yearlyCategoryData = [
+                      { category: 'Medical',  count: row.Medical  || 0, fill: TYPE_COLORS.Medical  },
+                      { category: 'Trauma',   count: row.Trauma   || 0, fill: TYPE_COLORS.Trauma   },
+                      { category: 'Accident', count: row.Accident || 0, fill: TYPE_COLORS.Accident },
+                      { category: 'Fire',     count: row.Fire     || 0, fill: TYPE_COLORS.Fire     },
+                      { category: 'Crime',    count: row.Crime    || 0, fill: TYPE_COLORS.Crime    },
+                    ].filter(d => d.count > 0);
+
+                    const totalCount = yearlyCategoryData.reduce((acc, c) => acc + c.count, 0);
+
                     return (
                       <>
                         <div className="chart-container" style={{ height: 260 }}>
                           <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                              <Pie data={dist} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={55} outerRadius={95} paddingAngle={3}>
-                                {dist.map((entry, i) => <Cell key={i} fill={entry.color} stroke="none" />)}
-                              </Pie>
+                            <BarChart data={yearlyCategoryData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                              <XAxis dataKey="category" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
+                              <YAxis tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
                               <Tooltip contentStyle={tooltipStyle} />
-                            </PieChart>
+                              <Bar dataKey="count" name="Incidents" radius={[6, 6, 0, 0]}>
+                                {yearlyCategoryData.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={entry.fill} />
+                                ))}
+                              </Bar>
+                            </BarChart>
                           </ResponsiveContainer>
                         </div>
-                        <div>
-                          {dist.map(t => (
-                            <div key={t.name} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                              <div style={{ width: 12, height: 12, borderRadius: 3, background: t.color, flexShrink: 0 }} />
-                              <div style={{ flex: 1 }}>
-                                <div style={{ fontSize: 13, fontWeight: 600, fontFamily: 'var(--font)', color: 'var(--text-primary)' }}>{t.name}</div>
-                                <div style={{ fontSize: 11, fontFamily: 'var(--font)', color: 'var(--text-secondary)' }}>{t.value} incidents ({total > 0 ? ((t.value / total) * 100).toFixed(1) : 0}%)</div>
-                              </div>
-                            </div>
-                          ))}
-                          <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--border)', fontSize: 12, fontFamily: 'var(--font)', color: 'var(--text-muted)', fontWeight: 600 }}>
-                            Total: {total.toLocaleString()} incidents
-                          </div>
+                        <div style={{ marginTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', borderTop: '1px solid var(--border)', paddingTop: 10 }}>
+                          <span>Total Incidents ({trendYear === 'all' ? 'All Years' : trendYear}):</span>
+                          <span style={{ fontSize: 15, color: '#2563EB' }}>{totalCount.toLocaleString()} Incidents</span>
                         </div>
                       </>
                     );
                   })()}
-                </div>
-              </div>
-            </div>
-
-            {/* Yearly Totals Bar Chart */}
-            <div className="card" style={{ marginTop: 20 }}>
-              <div className="card-header"><h3>Yearly Incident Totals by Category</h3></div>
-              <div className="card-body">
-                <div className="chart-container" style={{ height: 280 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={yearlyTotals} barCategoryGap="30%">
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                      <XAxis dataKey="year" tick={{ fontSize: 12, fill: 'var(--text-secondary)' }} />
-                      <YAxis tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
-                      <Tooltip contentStyle={tooltipStyle} />
-                      <Legend />
-                      <Bar dataKey="Medical" fill={TYPE_COLORS.Medical} radius={[3, 3, 0, 0]} stackId="a" />
-                      <Bar dataKey="Trauma" fill={TYPE_COLORS.Trauma} radius={[0, 0, 0, 0]} stackId="a" />
-                      <Bar dataKey="Accident" fill={TYPE_COLORS.Accident} radius={[0, 0, 0, 0]} stackId="a" />
-                      <Bar dataKey="Fire" fill={TYPE_COLORS.Fire} radius={[0, 0, 0, 0]} stackId="a" />
-                      <Bar dataKey="Crime" fill={TYPE_COLORS.Crime} radius={[3, 3, 0, 0]} stackId="a" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </div>
-
-            {/* Monthly Forecast Details */}
-            <div className="card" style={{ marginTop: 20 }}>
-              <div className="card-header"><h3>Monthly Incident Forecast Details</h3></div>
-              <div className="card-body">
-                <div className="forecast-details-grid">
-                  {monthlyDetails.map((m) => (
-                    <div className="forecast-month-card" key={m.month}>
-                      <div className="fm-header">
-                        <span className="fm-month">{m.month}</span>
-                        <span className={`fm-type ${m.typeClass}`}>{m.type}</span>
-                      </div>
-                      <p className="fm-desc">{m.desc}</p>
-                    </div>
-                  ))}
                 </div>
               </div>
             </div>
@@ -601,247 +664,146 @@ export default function Analytics() {
         {/* ============ REPORTS TAB ============ */}
         {tab === 'reports' && (
           <div className="fade-in">
-
-            {/* ── KPI Stat Cards — TOP ── */}
-            <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: 24 }}>
-              <div className="stat-card"><div className="stat-info"><h3>Total Reports</h3><div className="stat-value">{reportData.length}</div><div className="stat-change up">Available for download</div></div><div className="stat-icon blue"><FileText size={22} /></div></div>
-              <div className="stat-card"><div className="stat-info"><h3>Data Coverage</h3><div className="stat-value">2023–2026</div><div className="stat-change up">4 years of data</div></div><div className="stat-icon purple"><Calendar size={22} /></div></div>
-              <div className="stat-card"><div className="stat-info"><h3>Total Records</h3><div className="stat-value">1,260</div><div className="stat-change up">MDRRMO incident reports</div></div><div className="stat-icon green"><BarChart3 size={22} /></div></div>
-            </div>
-
-            {/* ── Divider ── */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '0 0 24px' }}>
-              <div style={{ flex: 1, height: 1, background: '#E2E8F0' }} />
-              <span style={{ fontSize: 11, color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Generate Reports
-              </span>
-              <div style={{ flex: 1, height: 1, background: '#E2E8F0' }} />
-            </div>
-
-            {/* ── Live Report Cards ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20, marginBottom: 28 }}>
-
-              {/* ── DAILY ─────────────────────────────────────────────────────── */}
-              <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                <div className="card-header" style={{ borderBottom: '1px solid var(--border-light)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--primary-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Calendar size={18} color="var(--primary)" />
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font)', letterSpacing: '-0.2px' }}>Daily Report</div>
-                      <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font)', marginTop: 1 }}>Single-day incident summary</div>
-                    </div>
+            {/* Direct Official MDRRMO Report Download Cards */}
+            <div className="grid-3" style={{ marginBottom: 24 }}>
+              {/* DAILY REPORT CARD */}
+              <div className="card" style={{ borderTop: '4px solid #2563EB' }}>
+                <div className="card-header" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <FileText size={20} color="#2563EB" />
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: 15 }}>Daily Incident Report</h3>
+                    <p style={{ margin: 0, fontSize: 12, color: 'var(--text-secondary)' }}>MDRRMO Official Document</p>
                   </div>
                 </div>
-                <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                  <div>
-                    <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', fontFamily: 'var(--font)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>Select Date</label>
+                <div className="card-body">
+                  <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }}>
+                    Generate the official MDRRMO Daily Report for all incidents logged on the selected date.
+                  </p>
+
+                  <div style={{ marginBottom: 12 }}>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>
+                      Select Date:
+                    </label>
                     <input
                       type="date"
-                      className="filter-select"
-                      style={{ width: '100%', boxSizing: 'border-box' }}
                       value={selectedDay}
-                      min="2023-01-01"
-                      max={todayIso}
                       onChange={e => setSelectedDay(e.target.value)}
+                      style={{
+                        padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)',
+                        background: 'var(--bg-card-hover)', color: 'var(--text-primary)',
+                        fontSize: 13, width: '100%', boxSizing: 'border-box',
+                      }}
                     />
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'var(--bg-secondary)', borderRadius: 10, border: '1px solid var(--border)' }}>
-                    {reportCounts.daily === null ? (
-                      <Loader2 size={15} color="var(--primary)" style={{ animation: 'spin 1s linear infinite' }} />
-                    ) : (
-                      <>
-                        <span style={{ fontSize: 26, fontWeight: 800, color: 'var(--primary)', fontFamily: 'var(--font)', lineHeight: 1 }}>{reportCounts.daily}</span>
-                        <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'var(--font)', fontWeight: 600 }}>{reportCounts.daily === 1 ? 'incident' : 'incidents'} recorded</span>
-                      </>
-                    )}
-                  </div>
+
                   <button
                     className="btn btn-primary"
-                    style={{ width: '100%', justifyContent: 'center', gap: 8, background: downloadDone === 'daily' ? 'var(--success)' : undefined, transition: 'background 0.3s' }}
+                    style={{ width: '100%', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: 8 }}
                     onClick={() => handleDownload('daily')}
-                    disabled={downloading === 'daily' || reportCounts.daily === null}
+                    disabled={downloading === 'daily'}
                   >
-                    {downloading === 'daily' ? <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> Generating…</> : downloadDone === 'daily' ? <><CheckCircle2 size={15} /> Downloaded!</> : <><Download size={15} /> Download .docx</>}
+                    {downloading === 'daily' ? (
+                      <><Loader2 size={16} className="spin" /> Generating .docx...</>
+                    ) : downloadDone === 'daily' ? (
+                      <><CheckCircle2 size={16} /> Downloaded!</>
+                    ) : (
+                      <><Download size={16} /> Download Daily Report (.docx)</>
+                    )}
                   </button>
-                  <div style={{ fontSize: 10.5, color: 'var(--text-muted)', fontFamily: 'var(--font)', textAlign: 'center' }}>Microsoft Word · MDRRMO soft copy format</div>
                 </div>
               </div>
 
-              {/* ── WEEKLY ────────────────────────────────────────────────────── */}
-              <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                <div className="card-header" style={{ borderBottom: '1px solid var(--border-light)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(124,58,237,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <BarChart3 size={18} color="#7C3AED" />
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font)', letterSpacing: '-0.2px' }}>Weekly Report</div>
-                      <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font)', marginTop: 1 }}>Mon – Sun week block</div>
-                    </div>
+              {/* WEEKLY REPORT CARD */}
+              <div className="card" style={{ borderTop: '4px solid #F59E0B' }}>
+                <div className="card-header" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <FileText size={20} color="#F59E0B" />
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: 15 }}>Weekly Incident Report</h3>
+                    <p style={{ margin: 0, fontSize: 12, color: 'var(--text-secondary)' }}>MDRRMO Official Document</p>
                   </div>
                 </div>
-                <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                  <div>
-                    <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', fontFamily: 'var(--font)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>Any Date in That Week</label>
+                <div className="card-body">
+                  <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }}>
+                    Generate the official MDRRMO Weekly Report with classified incident breakdown.
+                  </p>
+
+                  <div style={{ marginBottom: 12 }}>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>
+                      Select Week (Pick Any Day):
+                    </label>
                     <input
                       type="date"
-                      className="filter-select"
-                      style={{ width: '100%', boxSizing: 'border-box' }}
                       value={selectedWeek}
-                      min="2023-01-01"
-                      max={todayIso}
                       onChange={e => setSelectedWeek(e.target.value)}
+                      style={{
+                        padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)',
+                        background: 'var(--bg-card-hover)', color: 'var(--text-primary)',
+                        fontSize: 13, width: '100%', boxSizing: 'border-box',
+                      }}
                     />
-                    {selectedWeek && (() => {
-                      const d = new Date(selectedWeek + 'T00:00:00');
-                      const day = d.getDay();
-                      const mon = new Date(d); mon.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
-                      const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
-                      const fmt = (dt: Date) => dt.toLocaleDateString('en-PH', { month: 'short', day: 'numeric' });
-                      return <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font)', marginTop: 5 }}>Week: {fmt(mon)} – {fmt(sun)}</div>;
-                    })()}
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'var(--bg-secondary)', borderRadius: 10, border: '1px solid var(--border)' }}>
-                    {reportCounts.weekly === null ? (
-                      <Loader2 size={15} color="#7C3AED" style={{ animation: 'spin 1s linear infinite' }} />
-                    ) : (
-                      <>
-                        <span style={{ fontSize: 26, fontWeight: 800, color: '#7C3AED', fontFamily: 'var(--font)', lineHeight: 1 }}>{reportCounts.weekly}</span>
-                        <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'var(--font)', fontWeight: 600 }}>{reportCounts.weekly === 1 ? 'incident' : 'incidents'} recorded</span>
-                      </>
-                    )}
-                  </div>
+
                   <button
                     className="btn btn-primary"
-                    style={{ width: '100%', justifyContent: 'center', gap: 8, background: downloadDone === 'weekly' ? 'var(--success)' : '#7C3AED', transition: 'background 0.3s' }}
+                    style={{ width: '100%', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: 8, background: '#F59E0B', borderColor: '#D97706' }}
                     onClick={() => handleDownload('weekly')}
-                    disabled={downloading === 'weekly' || reportCounts.weekly === null}
+                    disabled={downloading === 'weekly'}
                   >
-                    {downloading === 'weekly' ? <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> Generating…</> : downloadDone === 'weekly' ? <><CheckCircle2 size={15} /> Downloaded!</> : <><Download size={15} /> Download .docx</>}
+                    {downloading === 'weekly' ? (
+                      <><Loader2 size={16} className="spin" /> Generating .docx...</>
+                    ) : downloadDone === 'weekly' ? (
+                      <><CheckCircle2 size={16} /> Downloaded!</>
+                    ) : (
+                      <><Download size={16} /> Download Weekly Report (.docx)</>
+                    )}
                   </button>
-                  <div style={{ fontSize: 10.5, color: 'var(--text-muted)', fontFamily: 'var(--font)', textAlign: 'center' }}>Microsoft Word · MDRRMO soft copy format</div>
                 </div>
               </div>
 
-              {/* ── MONTHLY ───────────────────────────────────────────────────── */}
-              <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                <div className="card-header" style={{ borderBottom: '1px solid var(--border-light)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(5,150,105,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <FileText size={18} color="#059669" />
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font)', letterSpacing: '-0.2px' }}>Monthly Report</div>
-                      <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font)', marginTop: 1 }}>Full month summary</div>
-                    </div>
+              {/* MONTHLY REPORT CARD */}
+              <div className="card" style={{ borderTop: '4px solid #22C55E' }}>
+                <div className="card-header" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <FileText size={20} color="#22C55E" />
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: 15 }}>Monthly Incident Report</h3>
+                    <p style={{ margin: 0, fontSize: 12, color: 'var(--text-secondary)' }}>MDRRMO Official Document</p>
                   </div>
                 </div>
-                <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                  <div>
-                    <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', fontFamily: 'var(--font)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>Select Month</label>
+                <div className="card-body">
+                  <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }}>
+                    Generate the official MDRRMO Monthly Report in complete narrative sentence format.
+                  </p>
+
+                  <div style={{ marginBottom: 12 }}>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>
+                      Select Month:
+                    </label>
                     <input
                       type="month"
-                      className="filter-select"
-                      style={{ width: '100%', boxSizing: 'border-box' }}
                       value={selectedMonth}
-                      min="2023-01"
-                      max={todayIso.slice(0, 7)}
                       onChange={e => setSelectedMonth(e.target.value)}
+                      style={{
+                        padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)',
+                        background: 'var(--bg-card-hover)', color: 'var(--text-primary)',
+                        fontSize: 13, width: '100%', boxSizing: 'border-box',
+                      }}
                     />
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'var(--bg-secondary)', borderRadius: 10, border: '1px solid var(--border)' }}>
-                    {reportCounts.monthly === null ? (
-                      <Loader2 size={15} color="#059669" style={{ animation: 'spin 1s linear infinite' }} />
-                    ) : (
-                      <>
-                        <span style={{ fontSize: 26, fontWeight: 800, color: '#059669', fontFamily: 'var(--font)', lineHeight: 1 }}>{reportCounts.monthly}</span>
-                        <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'var(--font)', fontWeight: 600 }}>{reportCounts.monthly === 1 ? 'incident' : 'incidents'} recorded</span>
-                      </>
-                    )}
-                  </div>
+
                   <button
                     className="btn btn-primary"
-                    style={{ width: '100%', justifyContent: 'center', gap: 8, background: downloadDone === 'monthly' ? 'var(--success)' : '#059669', transition: 'background 0.3s' }}
+                    style={{ width: '100%', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: 8, background: '#22C55E', borderColor: '#16A34A' }}
                     onClick={() => handleDownload('monthly')}
-                    disabled={downloading === 'monthly' || reportCounts.monthly === null}
+                    disabled={downloading === 'monthly'}
                   >
-                    {downloading === 'monthly' ? <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> Generating…</> : downloadDone === 'monthly' ? <><CheckCircle2 size={15} /> Downloaded!</> : <><Download size={15} /> Download .docx</>}
+                    {downloading === 'monthly' ? (
+                      <><Loader2 size={16} className="spin" /> Generating .docx...</>
+                    ) : downloadDone === 'monthly' ? (
+                      <><CheckCircle2 size={16} /> Downloaded!</>
+                    ) : (
+                      <><Download size={16} /> Download Monthly Report (.docx)</>
+                    )}
                   </button>
-                  <div style={{ fontSize: 10.5, color: 'var(--text-muted)', fontFamily: 'var(--font)', textAlign: 'center' }}>Microsoft Word · MDRRMO soft copy format</div>
-                </div>
-              </div>
-
-            </div>
-
-
-            {/* ── Divider ── */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '4px 0 20px' }}>
-              <div style={{ flex: 1, height: 1, background: '#E2E8F0' }} />
-              <span style={{ fontSize: 11, color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Historical Reports Archive
-              </span>
-              <div style={{ flex: 1, height: 1, background: '#E2E8F0' }} />
-            </div>
-
-            <div className="filters-bar">
-              <select
-                className="filter-select"
-                value={reportFilter}
-                onChange={e => setReportFilter(e.target.value)}
-              >
-                <option>All Types</option>
-                <option>Monthly</option>
-                <option>Quarterly</option>
-                <option>Annual</option>
-              </select>
-              <div style={{ flex: 1 }} />
-              <button className="btn btn-primary btn-sm" onClick={() => generateFullReport()}>
-                <Download size={14} /> Export Full Report (CSV)
-              </button>
-            </div>
-            <div className="card">
-              <table className="data-table">
-                <thead><tr><th>Report ID</th><th>Title</th><th>Type</th><th>Generated</th><th>Action</th></tr></thead>
-                <tbody>
-                  {filteredReports.map((r) => (
-                    <tr key={r.id}>
-                      <td style={{ fontWeight: 600 }}>{r.id}</td>
-                      <td>{r.title}</td>
-                      <td><span className={`badge ${r.type === 'Annual' ? 'resolved' : r.type === 'Monthly' ? 'reviewing' : 'dispatched'}`}>{r.type}</span></td>
-                      <td>{r.generated}</td>
-                      <td><button className="btn btn-outline btn-sm" onClick={() => downloadReport(r.id)}><Download size={14} /> Download CSV</button></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Top Locations Table */}
-            <div className="card" style={{ marginTop: 20 }}>
-              <div className="card-header">
-                <h3>Top Incident Locations (All Years)</h3>
-              </div>
-              <div className="card-body">
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
-                  {topLocations.map((loc, i) => (
-                    <div key={loc.name} style={{
-                      display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
-                      background: i < 3 ? 'rgba(239, 68, 68, 0.04)' : 'var(--bg-secondary)',
-                      borderRadius: 10, border: i < 3 ? '1px solid rgba(239, 68, 68, 0.12)' : '1px solid var(--border)',
-                    }}>
-                      <div style={{
-                        width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 12, fontWeight: 800, color: 'white',
-                        background: i === 0 ? '#EF4444' : i === 1 ? '#F59E0B' : i === 2 ? '#3B82F6' : '#94A3B8',
-                      }}>{i + 1}</div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 13, fontWeight: 600 }}>{loc.name}</div>
-                      </div>
-                      <div style={{ fontSize: 15, fontWeight: 800, color: i < 3 ? '#EF4444' : 'var(--text-primary)' }}>{loc.count}</div>
-                    </div>
-                  ))}
                 </div>
               </div>
             </div>
@@ -851,4 +813,3 @@ export default function Analytics() {
     </>
   );
 }
-

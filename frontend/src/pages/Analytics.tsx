@@ -7,7 +7,7 @@ import {
 } from 'recharts';
 import {
   TrendingUp, FileText, Download, MapPin, BarChart3, Calendar, Loader2, CheckCircle2,
-  Flame, Waves, Stethoscope, Activity, ShieldAlert, Info
+  Flame, Waves, Stethoscope, Activity, ShieldAlert, Info, Car, Wind, Mountain
 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -28,13 +28,16 @@ import {
 import { getIncidentsByRange } from '../api/client';
 import type { Incident } from '../types';
 
-// SVG Icon Incident Types
+// SVG Icon Incident Types (8 Official Types)
 const INCIDENT_TYPES_SVG = [
   { id: 'fire',      label: 'Fire',       icon: Flame,       color: '#EF4444', desc: 'Structural and wildland fires across barangays' },
   { id: 'flood',     label: 'Flood',      icon: Waves,       color: '#3B82F6', desc: 'Monsoon flooding & riverbank spillover risk' },
   { id: 'medical',   label: 'Medical',    icon: Stethoscope, color: '#22C55E', desc: 'Medical emergencies & patient transport calls' },
-  { id: 'trauma',    label: 'Trauma',     icon: Activity,    color: '#F59E0B', desc: 'Vehicular accidents & severe physical injuries' },
+  { id: 'trauma',    label: 'Trauma',     icon: Activity,    color: '#F59E0B', desc: 'Physical injuries & severe trauma dispatches' },
+  { id: 'accident',  label: 'Accident',   icon: Car,         color: '#3B82F6', desc: 'Vehicular collisions & road traffic accidents' },
   { id: 'crime',     label: 'Crime',      icon: ShieldAlert, color: '#8B5CF6', desc: 'Security, disturbance & assault incidents' },
+  { id: 'typhoon',   label: 'Typhoon',    icon: Wind,        color: '#8B5CF6', desc: 'Tropical storms & typhoon wind/rain damage' },
+  { id: 'landslide', label: 'Landslide',  icon: Mountain,    color: '#78716C', desc: 'Ground movement, mudslides & slope erosion' },
 ];
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -220,6 +223,72 @@ function getRiskExplanation(type: string, riskTier: 'ALL' | 'HIGH' | 'MEDIUM' | 
         title: 'Why Low Risk Areas: Peaceful Rural Neighborhoods',
         explanation: 'Barangays tagged LOW RISK maintain near-zero security incident reports.',
         factors: ['Quiet rural environment', 'Strong neighborhood watch']
+      }
+    },
+    accident: {
+      ALL: {
+        title: 'Vehicular Accident Risk Profile in Balayan',
+        explanation: 'Road traffic collisions primarily occur along major thoroughfares, steep curves, and busy intersections connecting Balayan to neighboring municipalities.',
+        factors: ['Palico-Balayan Highway traffic density', 'Blind curves & unlit rural roads at night', 'High motorcycle and tricycle commuter volume']
+      },
+      HIGH: {
+        title: 'Why High Risk Areas: High-Density Traffic Highways',
+        explanation: 'Barangays tagged HIGH RISK for Accidents encompass major highway routes with heavy vehicular volume, high transit speeds, and frequent multi-vehicle crashes.',
+        factors: ['High-speed national highway corridors', 'Frequent heavy truck transit', 'High collision history']
+      },
+      MEDIUM: {
+        title: 'Why Medium Risk Areas: Secondary Connecting Roads',
+        explanation: 'Barangays tagged MEDIUM RISK connect residential sectors with moderate vehicle speeds and occasional motorcycle slips.',
+        factors: ['Moderate traffic speeds', 'Secondary feeder roads']
+      },
+      LOW: {
+        title: 'Why Low Risk Areas: Quiet Residential Interior Streets',
+        explanation: 'Barangays tagged LOW RISK feature minimal vehicle flow and strict local speed limits.',
+        factors: ['Low speed residential streets', 'Minimal vehicular traffic']
+      }
+    },
+    typhoon: {
+      ALL: {
+        title: 'Typhoon & Wind Damage Vulnerability Profile',
+        explanation: 'Balayan lies in the path of seasonal typhoons from the Pacific. Coastal and open agricultural barangays face high wind damage and roof loss.',
+        factors: ['Exposure to coastal storm winds along Balayan Bay', 'Light material housing vulnerability', 'Fallen tree & powerline hazards']
+      },
+      HIGH: {
+        title: 'Why High Risk Areas: Exposed Coastal & Open Terrain',
+        explanation: 'Barangays tagged HIGH RISK for Typhoon sit directly on the Balayan coastline or open agricultural fields without natural windbreaks.',
+        factors: ['Unobstructed ocean storm winds', 'High concentration of light material structures', 'High storm surge exposure']
+      },
+      MEDIUM: {
+        title: 'Why Medium Risk Areas: Inland Semi-Urban Barangays',
+        explanation: 'Barangays tagged MEDIUM RISK have partial wind protection from urban buildings but face tree branch and powerline hazards.',
+        factors: ['Partial building windbreaks', 'Fallen tree and powerline risks']
+      },
+      LOW: {
+        title: 'Why Low Risk Areas: Sheltered Lowland Interiors',
+        explanation: 'Barangays tagged LOW RISK are sheltered by inland terrain and possess robust concrete building construction.',
+        factors: ['Reinforced concrete structures', 'Protected inland topography']
+      }
+    },
+    landslide: {
+      ALL: {
+        title: 'Landslide & Soil Slope Erosion Profile',
+        explanation: 'Landslide hazards in Balayan are concentrated in hilly northern barangays with steep slopes vulnerable to soil saturation during prolonged typhoons.',
+        factors: ['Steep slope inclination in northern barangays', 'Soil saturation from monsoon rainfall', 'Unstable road cuts along mountain passes']
+      },
+      HIGH: {
+        title: 'Why High Risk Areas: Steep Mountain Slopes & Loose Soil',
+        explanation: 'Barangays tagged HIGH RISK for Landslide feature steep slope angles, loose topsoil, and proximity to active slope movement zones.',
+        factors: ['Steep terrain elevation and loose topsoil', 'High rainfall saturation risk', 'History of slope movement']
+      },
+      MEDIUM: {
+        title: 'Why Medium Risk Areas: Moderate Slopes & Rolling Hills',
+        explanation: 'Barangays tagged MEDIUM RISK contain rolling hills with moderate vegetation cover.',
+        factors: ['Moderate slope angles', 'Partial vegetation root anchorage']
+      },
+      LOW: {
+        title: 'Why Low Risk Areas: Flat Lowland Terrain',
+        explanation: 'Barangays tagged LOW RISK are situated on flat lowland plains with zero slope slope hazard.',
+        factors: ['Flat ground topography', 'Zero slope collapse hazard']
       }
     }
   };

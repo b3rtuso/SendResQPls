@@ -312,7 +312,7 @@ export default function Analytics() {
   type RangeKey = 'daily' | 'weekly' | 'monthly';
   const [downloading, setDownloading] = useState<RangeKey | null>(null);
   const [downloadDone, setDownloadDone] = useState<RangeKey | null>(null);
-  const [noReportModal, setNoReportModal] = useState<{ open: boolean; period: string } | null>(null);
+  const [emptyModal, setEmptyModal] = useState<{ open: boolean; periodName: string } | null>(null);
 
   function getLocalIsoDate(d = new Date()): string {
     const year = d.getFullYear();
@@ -367,8 +367,12 @@ export default function Analytics() {
       const incs: Incident[] = res.data || [];
 
       if (incs.length === 0) {
-        const periodName = key === 'daily' ? `date ${fromStr}` : key === 'weekly' ? `week of ${fromStr} to ${toStr}` : `month ${selectedMonth}`;
-        setNoReportModal({ open: true, period: periodName });
+        const periodName = key === 'daily'
+          ? `date (${selectedDay})`
+          : key === 'weekly'
+          ? `week period (${fromStr} to ${toStr})`
+          : `month (${selectedMonth})`;
+        setEmptyModal({ open: true, periodName });
         return;
       }
 
@@ -1089,92 +1093,111 @@ export default function Analytics() {
         )}
       </div>
 
-      {/* ── High-End Agency Warning Modal Popup (Zero Incidents Guard) ── */}
-      {noReportModal?.open && (
+      {/* ── High-End Taste Skill Warning Pop-Up Modal (No Incident Data Found) ── */}
+      {emptyModal?.open && (
         <div style={{
-          position: 'fixed', inset: 0, zIndex: 9999,
-          background: 'rgba(10, 14, 26, 0.82)',
-          backdropFilter: 'blur(20px) saturate(1.8)',
-          WebkitBackdropFilter: 'blur(20px) saturate(1.8)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: 16, animation: 'fadeIn 0.2s ease-out',
+          position: 'fixed',
+          inset: 0,
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 20,
+          background: 'rgba(10, 14, 26, 0.75)',
+          backdropFilter: 'blur(16px) saturate(1.8)',
+          WebkitBackdropFilter: 'blur(16px) saturate(1.8)',
+          animation: 'fadeIn 0.2s ease-out',
         }}>
-          {/* Doppelrand / Double-Bezel Outer Shell */}
           <div style={{
-            background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)',
+            maxWidth: 460,
+            width: '100%',
+            background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 41, 59, 0.98) 100%)',
             borderRadius: 24,
             padding: 8,
-            border: '1px solid rgba(245, 158, 11, 0.35)',
-            boxShadow: '0 25px 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(245, 158, 11, 0.2)',
-            maxWidth: 440,
-            width: '100%',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            boxShadow: '0 25px 60px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.15)',
           }}>
-            {/* Concentric Inner Core */}
             <div style={{
-              background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.92) 0%, rgba(10, 14, 26, 0.96) 100%)',
+              background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.8) 100%)',
               borderRadius: 'calc(24px - 8px)',
               padding: '28px 24px',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
+              textAlign: 'center',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              textAlign: 'center',
             }}>
-              {/* Centered Glowing Icon Badge */}
+              {/* Warning Icon Badge */}
               <div style={{
-                width: 52, height: 52, borderRadius: 16,
-                background: 'rgba(245, 158, 11, 0.15)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: '#F59E0B', border: '1px solid rgba(245, 158, 11, 0.4)',
+                width: 52,
+                height: 52,
+                borderRadius: 16,
+                background: 'rgba(245, 158, 11, 0.18)',
+                border: '1px solid rgba(245, 158, 11, 0.35)',
+                color: '#FBBF24',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
                 boxShadow: '0 0 24px rgba(245, 158, 11, 0.25)',
-                marginBottom: 14,
+                marginBottom: 16,
               }}>
-                <AlertTriangle size={28} />
+                <AlertTriangle size={26} />
               </div>
 
-              {/* Eyebrow Pill */}
+              {/* Micro Eyebrow */}
               <span style={{
-                fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.15em',
-                color: '#FBBF24', background: 'rgba(245, 158, 11, 0.15)',
-                padding: '4px 12px', borderRadius: 20, border: '1px solid rgba(245, 158, 11, 0.3)',
-                marginBottom: 8,
+                fontSize: 10,
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.18em',
+                color: '#FBBF24',
+                background: 'rgba(245, 158, 11, 0.12)',
+                padding: '4px 12px',
+                borderRadius: 20,
+                border: '1px solid rgba(245, 158, 11, 0.25)',
+                marginBottom: 10,
               }}>
-                NO INCIDENT RECORD AVAILABLE
+                REPORT DATA WARNING
               </span>
 
-              {/* Modal Headline */}
-              <h3 style={{ fontSize: 18, fontWeight: 800, margin: '0 0 10px', color: 'white', letterSpacing: '-0.2px' }}>
-                Report Generation Cancelled
+              {/* Headline */}
+              <h3 style={{
+                fontSize: 18,
+                fontWeight: 800,
+                color: 'white',
+                margin: '0 0 8px',
+                letterSpacing: '-0.2px',
+              }}>
+                No Emergency Incidents Found
               </h3>
 
-              {/* Body Text */}
-              <p style={{ fontSize: 13, lineHeight: 1.6, color: '#94A3B8', margin: '0 0 22px', maxWidth: 360 }}>
-                There are no emergency incidents logged for <strong style={{ color: '#E2E8F0' }}>{noReportModal.period}</strong>. Word document generation was safely halted.
+              {/* Description */}
+              <p style={{
+                fontSize: 13,
+                lineHeight: 1.6,
+                color: '#94A3B8',
+                margin: '0 0 20px',
+              }}>
+                There are no logged emergency incidents for the selected <strong style={{ color: '#E2E8F0' }}>{emptyModal.periodName}</strong>. Official report generation has been safely cancelled.
               </p>
 
-              {/* Tactile Island Action Button */}
+              {/* Island Button */}
               <button
-                onClick={() => setNoReportModal(null)}
+                onClick={() => setEmptyModal(null)}
                 style={{
                   width: '100%',
                   padding: '12px 20px',
                   borderRadius: 14,
-                  background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+                  background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
                   color: 'white',
                   fontWeight: 700,
-                  fontSize: 13.5,
-                  letterSpacing: '0.02em',
-                  border: 'none',
+                  fontSize: 13,
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  boxShadow: '0 4px 16px rgba(37, 99, 235, 0.35)',
                   cursor: 'pointer',
-                  boxShadow: '0 4px 16px rgba(245, 158, 11, 0.35)',
                   transition: 'all 0.2s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 8,
                 }}
               >
-                <CheckCircle2 size={16} /> Acknowledge & Close
+                Acknowledge & Close
               </button>
             </div>
           </div>

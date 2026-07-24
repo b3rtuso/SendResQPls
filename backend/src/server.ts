@@ -14,6 +14,16 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// ── Cache-Control Headers Middleware ──────────────────────────────────────────
+app.use((req, res, next) => {
+  if (req.method === 'GET') {
+    res.setHeader('Cache-Control', 'private, no-cache, must-revalidate');
+  } else {
+    res.setHeader('Cache-Control', 'no-store');
+  }
+  next();
+});
+
 // ── Rate Limiters ─────────────────────────────────────────────────────────────
 
 // 1. Global limiter — applies to every route

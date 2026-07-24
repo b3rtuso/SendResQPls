@@ -1,4 +1,4 @@
-﻿/**
+/**
  * reportGenerator.ts
  *
  * Uses official MDRRMO Balayan template .docx files (stored in /public/templates/)
@@ -95,12 +95,21 @@ function describeType(inc: Incident): string {
   return raw.replace(/\b\w/g, c => c.toUpperCase());
 }
 
-// ─── fetch template from public/templates/ ────────────────────────────────────
+// ─── fetch template from public/templates/ (with persistent caching) ─────────
+
+const _templateCache = new Map<string, ArrayBuffer>();
 
 async function loadTemplate(name: 'daily' | 'weekly' | 'monthly'): Promise<ArrayBuffer> {
+  const cacheKey = `tpl_${name}`;
+  if (_templateCache.has(cacheKey)) {
+    return _templateCache.get(cacheKey)!;
+  }
+
   const res = await fetch(`/templates/${name}-template.docx`);
   if (!res.ok) throw new Error(`Failed to load template: ${name}-template.docx`);
-  return res.arrayBuffer();
+  const buf = await res.arrayBuffer();
+  _templateCache.set(cacheKey, buf);
+  return buf;
 }
 
 // ─── Typography post-processor (Arial 12pt body & Arial 11pt signature) ─────

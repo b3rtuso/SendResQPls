@@ -132,13 +132,25 @@ export default function RequestDetails() {
   }, [incident?.latitude, incident?.longitude]);
 
   const handleStatusUpdate = async (status: Status, resolutionForm?: ResolutionForm) => {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      showToast('error', 'No Internet Connection', 'Internet connection is required to sync status changes with the server.');
+      return;
+    }
+
     if (status === 'RESOLVED' && !resolutionForm) {
       setShowResolutionModal(true);
       return;
     }
 
+    // Optimistic UI Update
+    const prevStatus = currentStatus;
+    const prevIncident = incident;
+
     setCurrentStatus(status);
+    setIncident((prev) => prev ? { ...prev, status, resolutionForm: resolutionForm || prev.resolutionForm } : prev);
+    setShowResolutionModal(false);
     setSaving(true);
+
     try {
       await updateIncidentStatus(id!, { status, resolutionForm });
       showToast(
@@ -146,38 +158,54 @@ export default function RequestDetails() {
         `Status updated to ${status} 📱`,
         `Incident ${id?.slice(0, 8)}... marked as ${status}. Push notification sent to the reporter's mobile app.`
       );
-      // Update local state
-      setIncident((prev) => prev ? { ...prev, status, resolutionForm: resolutionForm || prev.resolutionForm } : prev);
-      setShowResolutionModal(false);
     } catch {
-      showToast('error', 'Failed to update status', 'The server returned an error. Please try again.');
+      // Automatic Rollback on failure
+      setCurrentStatus(prevStatus);
+      setIncident(prevIncident);
+      showToast('error', 'Status update reverted', 'Server returned an error while syncing status change. Rolling back.');
     } finally {
       setSaving(false);
     }
   };
 
   const handleSaveNotes = async () => {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      showToast('error', 'No Internet Connection', 'Internet connection is required to save notes.');
+      return;
+    }
+
+    const prevNotes = incident?.adminNotes || '';
+    setIncident((prev) => prev ? { ...prev, adminNotes: notes } : prev);
     setSaving(true);
+
     try {
       await updateIncidentStatus(id!, { status: currentStatus, adminNotes: notes });
       showToast('success', 'Notes saved', 'Admin notes have been updated successfully.');
-      setIncident((prev) => prev ? { ...prev, adminNotes: notes } : prev);
     } catch {
-      showToast('error', 'Failed to save notes', 'Please try again.');
+      setIncident((prev) => prev ? { ...prev, adminNotes: prevNotes } : prev);
+      showToast('error', 'Failed to save notes', 'Server returned an error. Notes reverted.');
     } finally {
       setSaving(false);
     }
   };
 
   const handleAssignDept = async (deptKey: string) => {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      showToast('error', 'No Internet Connection', 'Internet connection is required to assign departments.');
+      return;
+    }
+
+    const prevDept = incident?.assignedDepartment;
+    setIncident((prev) => prev ? { ...prev, assignedDepartment: deptKey as any } : prev);
     setSaving(true);
+
     try {
       await updateIncidentStatus(id!, { assignedDepartment: deptKey });
-      setIncident((prev) => prev ? { ...prev, assignedDepartment: deptKey as any } : prev);
       const dept = departments.find(d => d.key === deptKey);
       showToast('success', `Department assigned: ${dept?.name}`, `Contact: ${dept?.contact} — You can now call them directly.`);
     } catch {
-      showToast('error', 'Failed to assign department', 'Please try again.');
+      setIncident((prev) => prev ? { ...prev, assignedDepartment: prevDept } : prev);
+      showToast('error', 'Failed to assign department', 'Server returned an error. Reverting department assignment.');
     } finally {
       setSaving(false);
     }

@@ -94,6 +94,10 @@ export default function ResolutionFormModal({ isOpen, onClose, onSubmit, inciden
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      alert('Cannot submit resolution questionnaire. Active internet connection is required to sync changes.');
+      return;
+    }
     onSubmit(formData);
   };
 

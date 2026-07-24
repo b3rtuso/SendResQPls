@@ -1,8 +1,9 @@
-import { useState, useRef, useCallback } from 'react';
+﻿import { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, AlertTriangle, Camera, Loader } from 'lucide-react';
+import { ChevronLeft, AlertTriangle, Camera, Loader, WifiOff } from 'lucide-react';
 import { reportIncident } from '../../api/client';
 import { isWithinBalayan } from '../../data/balayan-data';
+import { useNetworkStatus } from '../../utils/useNetworkStatus';
 import BottomNav from '../../components/BottomNav';
 import FcmBannerOverlay from '../../components/FcmBannerOverlay';
 import Toast, { type ToastType } from '../../components/Toast';
@@ -17,6 +18,8 @@ interface ToastState {
 export default function MobileReport() {
   const navigate = useNavigate();
   const fileRef = useRef<HTMLInputElement>(null);
+  const isOnline = useNetworkStatus();
+
   const [photo, setPhoto] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
@@ -35,6 +38,11 @@ export default function MobileReport() {
   };
 
   const handleSend = async () => {
+    if (!isOnline) {
+      showToast('error', 'No Internet Connection', 'Emergency alerts require an active internet connection. Please check your network and try again.');
+      return;
+    }
+
     if (!photo) {
       showToast('warning', 'No photo', 'Please capture or upload an image of the emergency.');
       return;
@@ -75,6 +83,9 @@ export default function MobileReport() {
       formData.append('latitude', lat);
       formData.append('longitude', lng);
 
+      // Optimistic state submission feedback
+      showToast('info', 'Submitting Emergency Alert...', 'Sending photo and location to MDRRMO emergency dispatch.');
+
       const response = await reportIncident(formData);
       const { incident } = response.data;
 
@@ -87,7 +98,7 @@ export default function MobileReport() {
       setPhoto(null);
       setPreview(null);
 
-      setTimeout(() => navigate('/mobile/history'), 3000);
+      setTimeout(() => navigate('/mobile/history'), 2500);
 
     } catch (error: any) {
       const detail = error?.response?.data?.details || error?.message || 'Please check your connection and try again.';
@@ -144,6 +155,31 @@ export default function MobileReport() {
           </div>
         </div>
 
+        {/* Offline Warning Banner */}
+        {!isOnline && (
+          <div style={{
+            background: '#FEF3C7',
+            border: '1px solid #F59E0B',
+            borderRadius: 12,
+            padding: '12px 16px',
+            marginBottom: 16,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            color: '#92400E',
+            fontSize: 13,
+            fontWeight: 600,
+          }}>
+            <WifiOff size={20} color="#D97706" style={{ flexShrink: 0 }} />
+            <div>
+              <div style={{ fontWeight: 700 }}>No Internet Connection</div>
+              <div style={{ fontSize: 11, fontWeight: 400, marginTop: 2 }}>
+                Emergency alerts require an active internet connection. The SOS button is disabled until connection is restored.
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="report-hero">
           <div className="alert-icon"><AlertTriangle size={28} /></div>
           <h2>Need Help?</h2>
@@ -175,11 +211,21 @@ export default function MobileReport() {
           {photo && !preview && <p className="file-name">{photo.name}</p>}
         </div>
 
-        <button className="sos-btn" onClick={handleSend} disabled={!photo || sending}>
+        <button
+          className="sos-btn"
+          onClick={handleSend}
+          disabled={!photo || sending || !isOnline}
+          style={!isOnline ? { opacity: 0.5, cursor: 'not-allowed', background: '#9CA3AF' } : undefined}
+        >
           {sending ? (
             <>
               <Loader size={20} className="spin" />
               SENDING TO MDRRMO...
+            </>
+          ) : !isOnline ? (
+            <>
+              <WifiOff size={20} />
+              NO INTERNET — ALERT DISABLED
             </>
           ) : (
             <>
@@ -188,7 +234,11 @@ export default function MobileReport() {
             </>
           )}
         </button>
-        <p className="report-note">* Location and photo are required to send the alert</p>
+        <p className="report-note">
+          {!isOnline
+            ? '* Internet connection, location, and photo are required to send the alert'
+            : '* Location and photo are required to send the alert'}
+        </p>
       </div>
       <BottomNav />
       <FcmBannerOverlay />

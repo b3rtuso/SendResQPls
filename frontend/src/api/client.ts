@@ -1,4 +1,6 @@
-import axios from 'axios';
+﻿import axios from 'axios';
+import { CacheManager } from './cacheManager';
+import type { ResolutionForm } from '../types';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 console.log('[API] Using base URL:', API_BASE);
@@ -26,7 +28,7 @@ api.interceptors.response.use(
     if (!config || config._retried) return Promise.reject(error);
     const status = error.response?.status;
     const isNetworkError = !error.response;
-    const isServerError = status >= 500;
+    const isServerError = status && status >= 500;
     if (isNetworkError || isServerError) {
       config._retried = true;
       await new Promise((r) => setTimeout(r, 800)); // wait 800ms then retry
@@ -36,27 +38,26 @@ api.interceptors.response.use(
   }
 );
 
-// ── Simple in-memory GET cache (20s TTL) ─────────────────────────────────────
-// Prevents re-fetching data the user just loaded when navigating between pages
-const _cache = new Map<string, { data: any; expiresAt: number }>();
-
+// ── Persistent SWR Cache Layer ────────────────────────────────────────────────
 export function cachedGet(url: string, ttlMs = 20000) {
-  const hit = _cache.get(url);
-  if (hit && Date.now() < hit.expiresAt) {
-    return Promise.resolve({ data: hit.data });
+  const cached = CacheManager.get<any>(url);
+  if (cached) {
+    // Return cached immediately, revalidate in background if online
+    if (typeof navigator === 'undefined' || navigator.onLine) {
+      api.get(url).then(res => CacheManager.set(url, res.data, ttlMs)).catch(() => {});
+    }
+    return Promise.resolve({ data: cached });
   }
+
   return api.get(url).then((res) => {
-    _cache.set(url, { data: res.data, expiresAt: Date.now() + ttlMs });
+    CacheManager.set(url, res.data, ttlMs);
     return res;
   });
 }
 
 export function invalidateCache(pattern?: string) {
-  if (!pattern) { _cache.clear(); return; }
-  _cache.forEach((_, key) => { if (key.includes(pattern)) _cache.delete(key); });
+  CacheManager.invalidatePattern(pattern);
 }
-// ─────────────────────────────────────────────────────────────────────────────
-
 
 // === AUTH ===
 export const login = (email: string, password: string) =>
@@ -81,41 +82,50 @@ export const resetPassword = (token: string, newPassword: string) =>
 export const reportIncident = (formData: FormData) =>
   api.post('/incidents/report', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
+  }).then(res => {
+    invalidateCache('incidents');
+    return res;
   });
 
-import type { ResolutionForm } from '../types';
-
 export const updateIncidentStatus = (id: string, data: { status?: string; adminNotes?: string; assignedDepartment?: string; resolutionForm?: ResolutionForm }) =>
-  api.patch(`/incidents/${id}/status`, data);
+  api.patch(`/incidents/${id}/status`, data).then(res => {
+    invalidateCache('incidents');
+    return res;
+  });
 
-export const getIncidents = () => api.get('/incidents');
+export const getIncidents = () => cachedGet('/incidents', 60000);
 export const getIncidentsByRange = (from: string, to: string) =>
-  api.get('/incidents', { params: { from, to } });
-export const getIncident = (id: string) => api.get(`/incidents/${id}`);
-export const getIncidentStats = () => api.get('/incidents/stats');
-export const getMyIncidents = (userId: string) => api.get(`/incidents/my/${userId}`);
+  cachedGet(`/incidents?from=${from}&to=${to}`, 60000);
+export const getIncident = (id: string) => cachedGet(`/incidents/${id}`, 30000);
+export const getIncidentStats = () => cachedGet('/incidents/stats', 60000);
+export const getMyIncidents = (userId: string) => cachedGet(`/incidents/my/${userId}`, 30000);
+
 export const reverseGeocode = (lat: number, lng: number) =>
-  api.get('/incidents/geocode/reverse', { params: { lat, lng } });
+  cachedGet(`/incidents/geocode/reverse?lat=${lat}&lng=${lng}`, 300000);
 
-// === CALL LOGS (NOT in backend) ===
-export const getCallLogs = () => api.get('/call-logs');
-
-// === ANALYTICS (NOT in backend) ===
-export const getAnalytics = () => api.get('/analytics/forecast');
+// === CALL LOGS & ANALYTICS ===
+export const getCallLogs = () => cachedGet('/call-logs', 30000);
+export const getAnalytics = () => cachedGet('/analytics/forecast', 60000);
 export const generateReport = (params: { startDate: string; endDate: string; department?: string }) =>
   api.get('/reports/generate', { params });
 
 // === DEPARTMENTS ===
-export const getDepartments = () => api.get('/departments');
-export const createDepartment = (data: any) => api.post('/departments', data);
-export const updateDepartment = (id: string, data: any) => api.put(`/departments/${id}`, data);
-export const deleteDepartment = (id: string) => api.delete(`/departments/${id}`);
+export const getDepartments = () => cachedGet('/departments', 300000);
+export const createDepartment = (data: any) =>
+  api.post('/departments', data).then(res => { invalidateCache('departments'); return res; });
+export const updateDepartment = (id: string, data: any) =>
+  api.put(`/departments/${id}`, data).then(res => { invalidateCache('departments'); return res; });
+export const deleteDepartment = (id: string) =>
+  api.delete(`/departments/${id}`).then(res => { invalidateCache('departments'); return res; });
 
 // === SETTINGS ===
 export const getProfile = (userId: string) =>
-  api.get(`/auth/profile/${userId}`);
+  cachedGet(`/auth/profile/${userId}`, 60000);
 export const updateProfile = (data: Record<string, any>) =>
-  api.patch('/auth/profile', { ...data, userId: localStorage.getItem('userId') });
+  api.patch('/auth/profile', { ...data, userId: localStorage.getItem('userId') }).then(res => {
+    invalidateCache('profile');
+    return res;
+  });
 export const changePassword = (data: { currentPassword: string; newPassword: string }) =>
   api.patch('/auth/password', { ...data, userId: localStorage.getItem('userId') });
 

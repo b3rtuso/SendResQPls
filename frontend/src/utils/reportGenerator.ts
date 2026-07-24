@@ -112,7 +112,7 @@ async function loadTemplate(name: 'daily' | 'weekly' | 'monthly'): Promise<Array
   return buf;
 }
 
-// ─── Typography post-processor (Arial 12pt body & Arial 11pt signature) ─────
+// ─── Typography & Page Setup Post-Processor (Letter Portrait, 1" Margins) ───
 
 function applyDocxTypography(zip: PizZip): void {
   const docXml = zip.file('word/document.xml')?.asText();
@@ -120,7 +120,7 @@ function applyDocxTypography(zip: PizZip): void {
 
   let xml = docXml;
 
-  // 1. Ensure every <w:pPr> has justified alignment and single spacing.
+  // 1. Ensure every <w:pPr> has justified alignment and clean line spacing (1.15x).
   xml = xml.replace(/<w:pPr>([\s\S]*?)<\/w:pPr>/g, (match, inner) => {
     if (/<w:pStyle[^/]*w:val="Heading/i.test(inner)) return match;
     if (/<w:pStyle[^/]*w:val="(TOC|Caption|Title|Subtitle)/i.test(inner)) return match;
@@ -130,12 +130,12 @@ function applyDocxTypography(zip: PizZip): void {
       props += '<w:jc w:val="both"/>';
     }
     if (!/<w:spacing\b/.test(props)) {
-      props += '<w:spacing w:after="120" w:before="120" w:line="240" w:lineRule="auto"/>';
+      props += '<w:spacing w:after="120" w:before="60" w:line="276" w:lineRule="auto"/>';
     }
     return `<w:pPr>${props}</w:pPr>`;
   });
 
-  // 2. Ensure runs use Arial font, preserving Arial 11pt (22 half-points) for signature block runs.
+  // 2. Ensure runs use Arial font (12pt body & 11pt signature block)
   xml = xml.replace(/<w:rPr>([\s\S]*?)<\/w:rPr>/g, (_match, inner) => {
     let props = inner;
     const is11pt = /<w:sz\b[^/]*w:val="22"/i.test(props);
@@ -151,6 +151,29 @@ function applyDocxTypography(zip: PizZip): void {
       props;
     return `<w:rPr>${props}</w:rPr>`;
   });
+
+  // 3. Enforce Standard Letter Page Size (8.5" x 11"), Portrait Orientation, 1-Inch Margins (1440 dxa)
+  if (/<w:sectPr\b/.test(xml)) {
+    xml = xml.replace(/<w:sectPr\b[\s\S]*?<\/w:sectPr>/g, (match) => {
+      let sect = match;
+      if (/<w:pgSz\b/.test(sect)) {
+        sect = sect.replace(/<w:pgSz\b[^/>]*(\/>|><\/w:pgSz>)/g, '<w:pgSz w:w="12240" w:h="15840" w:orient="portrait"/>');
+      } else {
+        sect = sect.replace('<w:sectPr>', '<w:sectPr><w:pgSz w:w="12240" w:h="15840" w:orient="portrait"/>');
+      }
+      if (/<w:pgMar\b/.test(sect)) {
+        sect = sect.replace(/<w:pgMar\b[^/>]*(\/>|><\/w:pgMar>)/g, '<w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/>');
+      } else {
+        sect = sect.replace('<w:sectPr>', '<w:sectPr><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/>');
+      }
+      return sect;
+    });
+  } else {
+    xml = xml.replace('</w:body>', '<w:sectPr><w:pgSz w:w="12240" w:h="15840" w:orient="portrait"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr></w:body>');
+  }
+
+  // 4. Ensure tables adjust dynamically to 100% printable width
+  xml = xml.replace(/<w:tblW\b[^/>]*(\/>|><\/w:tblW>)/g, '<w:tblW w:w="5000" w:type="pct"/>');
 
   zip.file('word/document.xml', xml);
 }

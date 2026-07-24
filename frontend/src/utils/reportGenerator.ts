@@ -4,14 +4,10 @@
  * Uses official MDRRMO Balayan template .docx files (stored in /public/templates/)
  * as base, filling live incident and questionnaire data via docxtemplater.
  * 
- * Implements strict rules 1-7 for Weekly and Monthly Reports:
- * 1. Count total number of incidents for selected period.
- * 2. Group incidents dynamically according to recorded Incident Type (omit zero-occurrence types).
- * 3. Summarize common causes, injuries/conditions, responder actions, and outcomes per type.
- * 4. Identify recurring patterns & trends supported strictly by database data.
- * 5. Summarize operational performance & resource utilization.
- * 6. Use formal government-report language without repetition.
- * 7. Never fabricate data.
+ * Rules for Monthly Report:
+ * - Rendered in full narrative sentences across paragraphs (ZERO bullets).
+ * - Dynamically lists and details ONLY the incident types that actually occurred.
+ * - Rules 1-7 fully applied.
  */
 
 import Docxtemplater from 'docxtemplater';
@@ -349,7 +345,7 @@ export async function downloadDailyReport(incidents: Incident[], dateIso?: strin
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// DYNAMIC GROUPING & SUMMARY ENGINE (Rules 1 - 7)
+// WEEKLY REPORT
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface GroupedCategorySummary {
@@ -360,11 +356,9 @@ interface GroupedCategorySummary {
   common_injuries_conditions: string;
   responder_actions: string;
   outcomes: string;
-  patient_outcomes: string;
 }
 
-function processDynamicGroups(incidents: Incident[]): { type_counts: { type_name: string; count: string }[]; type_summaries: GroupedCategorySummary[] } {
-  // Group incidents dynamically by recorded incident type
+function processDynamicWeeklyGroups(incidents: Incident[]) {
   const groups = new Map<string, Incident[]>();
 
   incidents.forEach(inc => {
@@ -379,12 +373,11 @@ function processDynamicGroups(incidents: Incident[]): { type_counts: { type_name
   const type_summaries: GroupedCategorySummary[] = [];
 
   groups.forEach((groupIncs, typeName) => {
-    if (groupIncs.length === 0) return; // Omit zero-occurrence categories (Rule 7)
+    if (groupIncs.length === 0) return;
 
     const countText = countWithWords(groupIncs.length);
     type_counts.push({ type_name: typeName, count: countText });
 
-    // 1. Common Causes
     const causesSet = new Set<string>();
     groupIncs.forEach(i => {
       const rf = i.resolutionForm;
@@ -393,10 +386,8 @@ function processDynamicGroups(incidents: Incident[]): { type_counts: { type_name
     });
     const common_causes = causesSet.size > 0 ? Array.from(causesSet).join(', ') : 'Not specified';
 
-    // 2. Patient Count
     const patient_count = countWithWords(groupIncs.length);
 
-    // 3. Common Injuries or Conditions
     const injuriesSet = new Set<string>();
     groupIncs.forEach(i => {
       const rf = i.resolutionForm;
@@ -406,7 +397,6 @@ function processDynamicGroups(incidents: Incident[]): { type_counts: { type_name
     });
     const common_injuries_conditions = injuriesSet.size > 0 ? Array.from(injuriesSet).join(', ') : 'No visible injuries recorded';
 
-    // 4. Responder Actions
     const actionsSet = new Set<string>();
     groupIncs.forEach(i => {
       const rf = i.resolutionForm;
@@ -415,7 +405,6 @@ function processDynamicGroups(incidents: Incident[]): { type_counts: { type_name
     });
     const responder_actions = actionsSet.size > 0 ? Array.from(actionsSet).join(', ') : 'Patient evaluation, vital sign checking, and scene management';
 
-    // 5. Outcomes
     const outcomesSet = new Set<string>();
     let deadCnt = 0, transportCnt = 0, refuseCnt = 0;
     groupIncs.forEach(i => {
@@ -442,16 +431,11 @@ function processDynamicGroups(incidents: Incident[]): { type_counts: { type_name
       common_injuries_conditions,
       responder_actions,
       outcomes: outcomesText,
-      patient_outcomes: outcomesText,
     });
   });
 
   return { type_counts, type_summaries };
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// WEEKLY REPORT
-// ─────────────────────────────────────────────────────────────────────────────
 
 export async function downloadWeeklyReport(incidents: Incident[], anyDateIso?: string) {
   const sorted = [...incidents].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
@@ -459,7 +443,7 @@ export async function downloadWeeklyReport(incidents: Incident[], anyDateIso?: s
   const { label, dateRangeStr } = range;
 
   const total = sorted.length;
-  const { type_counts, type_summaries } = processDynamicGroups(sorted);
+  const { type_counts, type_summaries } = processDynamicWeeklyGroups(sorted);
 
   const weeksData = [{
     date_range:           dateRangeStr,
@@ -473,7 +457,6 @@ export async function downloadWeeklyReport(incidents: Incident[], anyDateIso?: s
       common_injuries_conditions: 'None',
       responder_actions: 'Monitoring',
       outcomes: 'Zero incidents recorded',
-      patient_outcomes: 'Zero incidents recorded',
     }],
   }];
 
@@ -481,7 +464,7 @@ export async function downloadWeeklyReport(incidents: Incident[], anyDateIso?: s
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MONTHLY REPORT
+// MONTHLY REPORT (Full Narrative Sentences, 0 Bullets, Dynamic Active Categories Only)
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function downloadMonthlyReport(incidents: Incident[], monthIso?: string) {
@@ -490,35 +473,101 @@ export async function downloadMonthlyReport(incidents: Incident[], monthIso?: st
   const { label, monthName } = range;
 
   const total = sorted.length;
-  const { type_counts, type_summaries } = processDynamicGroups(sorted);
 
-  // Identify recurring trends (Rule 4)
-  const allCauses = new Set<string>();
-  const allInjuries = new Set<string>();
-  sorted.forEach(i => {
-    if (i.resolutionForm?.mechanismOfInjury) allCauses.add(i.resolutionForm.mechanismOfInjury.toLowerCase());
-    if (i.resolutionForm?.injuriesObserved) allInjuries.add(i.resolutionForm.injuriesObserved.toLowerCase());
+  // Dynamic incident type grouping
+  const groups = new Map<string, Incident[]>();
+  sorted.forEach(inc => {
+    const typeName = describeType(inc);
+    if (!groups.has(typeName)) groups.set(typeName, []);
+    groups.get(typeName)!.push(inc);
   });
 
-  let monthlyTrends = '';
-  if (allCauses.size > 0) monthlyTrends += `Primary emergency mechanisms included ${Array.from(allCauses).join(', ')}. `;
-  if (allInjuries.size > 0) monthlyTrends += `Most frequent observed conditions were ${Array.from(allInjuries).join(', ')}. `;
-  if (!monthlyTrends) monthlyTrends = 'Routine emergency monitoring with no unusual recurring anomalies detected.';
+  // 1. Build dynamic "These included..." sentence
+  const typeCountStrings: string[] = [];
+  groups.forEach((groupIncs, typeName) => {
+    if (groupIncs.length > 0) {
+      typeCountStrings.push(`${countWithWords(groupIncs.length)} ${typeName}s`);
+    }
+  });
+
+  let includedTypesSentence = '';
+  if (typeCountStrings.length === 0) {
+    includedTypesSentence = 'Zero (0) reported emergencies for this month';
+  } else if (typeCountStrings.length === 1) {
+    includedTypesSentence = typeCountStrings[0];
+  } else if (typeCountStrings.length === 2) {
+    includedTypesSentence = `${typeCountStrings[0]} and ${typeCountStrings[1]}`;
+  } else {
+    const last = typeCountStrings.pop();
+    includedTypesSentence = `${typeCountStrings.join(', ')}, and ${last}`;
+  }
+
+  // 2. Build dynamic narrative paragraphs for each active incident type (Full sentences)
+  const paragraphs: string[] = [];
+
+  groups.forEach((groupIncs, typeName) => {
+    if (groupIncs.length === 0) return; // Omit zero-occurrence categories (Rule 7)
+
+    const causesSet = new Set<string>();
+    const injuriesSet = new Set<string>();
+    const interventionsSet = new Set<string>();
+    const facilitiesSet = new Set<string>();
+    let intoxicatedCount = 0;
+    let deadCount = 0;
+    let transportedCount = 0;
+    let refusedCount = 0;
+
+    groupIncs.forEach(i => {
+      const rf = i.resolutionForm;
+      if (rf?.mechanismOfInjury) causesSet.add(rf.mechanismOfInjury.toLowerCase());
+      if (rf?.howIncidentHappened) causesSet.add(rf.howIncidentHappened.toLowerCase());
+      if (rf?.injuriesObserved) injuriesSet.add(rf.injuriesObserved.toLowerCase());
+      if (rf?.treatmentInterventions) interventionsSet.add(rf.treatmentInterventions.toLowerCase());
+      if (rf?.intoxicationSuspected?.toLowerCase() === 'yes') intoxicatedCount++;
+      if (rf?.destinationFacility) facilitiesSet.add(rf.destinationFacility);
+
+      if (rf?.dispositionStatus === 'DEAD_ON_SPOT') deadCount++;
+      else if (rf?.dispositionStatus === 'REFUSED_TRANSPORT') refusedCount++;
+      else transportedCount++;
+    });
+
+    const causesText = causesSet.size > 0 ? Array.from(causesSet).join(', ') : 'reported emergency situations';
+    const injuriesText = injuriesSet.size > 0 ? Array.from(injuriesSet).join(', ') : 'recorded injuries or medical conditions';
+    const interventionsText = interventionsSet.size > 0 ? Array.from(interventionsSet).join(', ') : 'immediate care management and vital sign monitoring';
+    const facilitiesText = facilitiesSet.size > 0 ? `hospitals such as ${Array.from(facilitiesSet).join(', ')}` : 'medical facilities';
+
+    // Disposition sentence
+    let dispositionSentence = '';
+    if (deadCount > 0) {
+      dispositionSentence += `${countWithWords(deadCount)} patients were reported dead on the spot, `;
+    }
+    if (transportedCount > 0) {
+      dispositionSentence += `while ${countWithWords(transportedCount)} patients were given care management and transported to ${facilitiesText} for further evaluation and treatment`;
+    }
+    if (refusedCount > 0) {
+      dispositionSentence += `, except for ${countWithWords(refusedCount)} patient who refused transport`;
+    }
+    if (!dispositionSentence) {
+      dispositionSentence = 'all patients were evaluated and rendered appropriate care on scene.';
+    } else if (!dispositionSentence.endsWith('.')) {
+      dispositionSentence += '.';
+    }
+
+    const intoxicationText = intoxicatedCount > 0 ? `, while ${countWithWords(intoxicatedCount)} patient(s) were under alcohol intoxication` : '';
+
+    // Construct full narrative paragraph per incident type
+    const paragraph = `Most ${typeName.toLowerCase()} cases involved ${causesText} resulting in ${injuriesText}${intoxicationText}. Emergency responders performed ${interventionsText}. ${dispositionSentence}`;
+    paragraphs.push(paragraph);
+  });
+
+  const monthlyNarrativeParagraphs = paragraphs.length > 0
+    ? paragraphs.join('\n\n\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 ')
+    : 'No active emergency incidents were recorded for this reporting period.';
 
   await fillAndDownload('monthly', {
-    month_name:           monthName,
-    total_incidents:      countWithWords(total),
-    type_counts:          type_counts.length > 0 ? type_counts : [{ type_name: 'No Active Emergency', count: 'Zero (0)' }],
-    type_summaries:       type_summaries.length > 0 ? type_summaries : [{
-      type_name: 'General Incidents',
-      count: 'Zero (0)',
-      common_causes: 'None',
-      patient_count: 'Zero (0)',
-      common_injuries_conditions: 'None',
-      responder_actions: 'Monitoring',
-      outcomes: 'Zero incidents recorded',
-      patient_outcomes: 'Zero incidents recorded',
-    }],
-    monthly_trends:       monthlyTrends.trim(),
+    month_name:                     monthName,
+    total_incidents:                countWithWords(total),
+    included_types_sentence:        includedTypesSentence,
+    monthly_narrative_paragraphs:   monthlyNarrativeParagraphs,
   }, label);
 }

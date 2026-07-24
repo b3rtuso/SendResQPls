@@ -365,6 +365,12 @@ export default function Analytics() {
       const res = await getIncidentsByRange(fromStr, toStr);
       const incs: Incident[] = res.data || [];
 
+      if (incs.length === 0) {
+        const periodName = key === 'daily' ? `date ${fromStr}` : key === 'weekly' ? `week of ${fromStr} to ${toStr}` : `month ${selectedMonth}`;
+        alert(`⚠️ No Incident Report Available\n\nThere are no recorded emergency incidents for the selected ${periodName}.\n\nReport generation has been cancelled.`);
+        return;
+      }
+
       if (key === 'daily')   await downloadDailyReport(incs, selectedDay);
       if (key === 'weekly')  await downloadWeeklyReport(incs, selectedWeek);
       if (key === 'monthly') await downloadMonthlyReport(incs, selectedMonth);
@@ -854,8 +860,8 @@ export default function Analytics() {
               <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
             </div>
 
-            {/* Direct Official MDRRMO Report Download Cards */}
-            <div className="grid-3" style={{ marginBottom: 28 }}>
+            {/* Direct Official MDRRMO Report Download Cards (Aligned to 3 KPI Stat Cards Above) */}
+            <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: 28 }}>
               {/* DAILY REPORT CARD */}
               <div className="card" style={{ borderTop: '4px solid #2563EB' }}>
                 <div className="card-header" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

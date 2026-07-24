@@ -199,7 +199,7 @@ export default function Dashboard() {
       <Header title="Dashboard" subtitle="Real-time overview of disaster incidents" />
       <div className="page-content" style={{ paddingTop: 8 }}>
 
-        {/* ── Monthly Incident Forecast Hero Banner (Centered) ─────────────────── */}
+        {/* ── Monthly Incident Forecast Hero Banner (Double-Bezel & High-End Agency Architecture) ── */}
         {(() => {
           const currentMonthShort = new Date().toLocaleDateString('en-PH', { month: 'short' });
           const currentMonthFull  = new Date().toLocaleDateString('en-PH', { month: 'long', year: 'numeric' });
@@ -207,51 +207,78 @@ export default function Dashboard() {
           
           return (
             <div className="fade-in" style={{
-              marginBottom: 24,
-              background: 'linear-gradient(135deg, #0F172A 0%, #1E3A5F 100%)',
-              borderRadius: 16,
-              padding: '24px 28px',
-              color: 'white',
-              boxShadow: '0 8px 24px rgba(15, 23, 42, 0.15)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              textAlign: 'center',
+              marginBottom: 28,
+              /* Outer Doppelrand / Double-Bezel Glass Shell */
+              background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%)',
+              backdropFilter: 'blur(24px) saturate(1.8)',
+              WebkitBackdropFilter: 'blur(24px) saturate(1.8)',
+              borderRadius: 24,
+              padding: 8,
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.15)',
             }}>
+              {/* Inner Core Enclosure */}
               <div style={{
-                width: 44, height: 44, borderRadius: 12,
-                background: 'rgba(59, 130, 246, 0.25)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: '#60A5FA', border: '1px solid rgba(96, 165, 250, 0.3)',
-                marginBottom: 10,
+                background: 'linear-gradient(135deg, rgba(30, 58, 95, 0.4) 0%, rgba(15, 23, 42, 0.7) 100%)',
+                borderRadius: 'calc(24px - 8px)',
+                padding: '24px 30px',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                textAlign: 'center',
               }}>
-                <Calendar size={24} />
+                {/* Centered Glowing Icon Badge */}
+                <div style={{
+                  width: 48, height: 48, borderRadius: 14,
+                  background: 'rgba(59, 130, 246, 0.2)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#60A5FA', border: '1px solid rgba(96, 165, 250, 0.35)',
+                  boxShadow: '0 0 20px rgba(59, 130, 246, 0.25)',
+                  marginBottom: 12,
+                }}>
+                  <Calendar size={24} />
+                </div>
+
+                {/* Micro Eyebrow Tag */}
+                <span style={{
+                  fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.18em',
+                  color: '#93C5FD', background: 'rgba(59, 130, 246, 0.15)',
+                  padding: '4px 12px', borderRadius: 20, border: '1px solid rgba(147, 197, 253, 0.25)',
+                  marginBottom: 8,
+                }}>
+                  CURRENT MONTH FORECAST
+                </span>
+
+                {/* Main Headline */}
+                <h2 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 12px', color: 'white', letterSpacing: '-0.3px' }}>
+                  {currentMonthFull} Incident Risk Forecast
+                </h2>
+
+                {/* Island Pill Badge with Trailing Icon */}
+                <div style={{
+                  padding: '6px 18px 6px 14px', borderRadius: 30,
+                  background: forecast?.typeClass === 'trauma' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(34, 197, 94, 0.15)',
+                  color: forecast?.typeClass === 'trauma' ? '#FBBF24' : '#4ADE80',
+                  border: `1px solid ${forecast?.typeClass === 'trauma' ? 'rgba(245, 158, 11, 0.35)' : 'rgba(34, 197, 94, 0.35)'}`,
+                  fontSize: 12.5, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 8,
+                  marginBottom: 14, boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+                }}>
+                  <div style={{
+                    width: 22, height: 22, borderRadius: '50%',
+                    background: forecast?.typeClass === 'trauma' ? 'rgba(245, 158, 11, 0.3)' : 'rgba(34, 197, 94, 0.3)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    {forecast?.typeClass === 'trauma' ? <AlertTriangle size={13} /> : <Stethoscope size={13} />}
+                  </div>
+                  ⚡ Dominant Trend: {forecast?.type} Emergency Risk
+                </div>
+
+                {/* Summary Description */}
+                <p style={{ fontSize: 13.5, lineHeight: 1.65, color: '#CBD5E1', margin: 0, maxWidth: 840 }}>
+                  {forecast?.desc}
+                </p>
               </div>
-
-              <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#93C5FD', marginBottom: 4 }}>
-                CURRENT MONTH FORECAST & ALERT PROFILE
-              </span>
-
-              <h2 style={{ fontSize: 20, fontWeight: 800, margin: '0 0 10px', color: 'white', letterSpacing: '-0.2px' }}>
-                {currentMonthFull} Incident Risk Forecast
-              </h2>
-
-              <span style={{
-                padding: '6px 16px', borderRadius: 20,
-                background: forecast?.typeClass === 'trauma' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(34, 197, 94, 0.2)',
-                color: forecast?.typeClass === 'trauma' ? '#FBBF24' : '#4ADE80',
-                border: `1px solid ${forecast?.typeClass === 'trauma' ? 'rgba(245, 158, 11, 0.4)' : 'rgba(34, 197, 94, 0.4)'}`,
-                fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 6,
-                marginBottom: 12,
-              }}>
-                {forecast?.typeClass === 'trauma' ? <AlertTriangle size={14} /> : <Stethoscope size={14} />}
-                ⚡ Dominant Trend: {forecast?.type} Emergency Risk
-              </span>
-
-              <p style={{ fontSize: 13, lineHeight: 1.6, color: '#CBD5E1', margin: 0, maxWidth: 820 }}>
-                {forecast?.desc}
-              </p>
             </div>
           );
         })()}

@@ -608,33 +608,36 @@ export default function Analytics() {
 
             {/* Dynamic & Meaningful Incident Type & Risk Tier Info Card */}
             <div className="card" style={{ marginTop: 16 }}>
-              <div className="card-header" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div className="card-header" style={{ display: 'flex', alignItems: 'center', gap: 14, textAlign: 'left' }}>
                 <div style={{
-                  width: 40, height: 40, borderRadius: 10,
+                  width: 44, height: 44, borderRadius: 12,
                   background: `${currentIncident?.color}18`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   color: currentIncident?.color,
+                  flexShrink: 0,
                 }}>
-                  <IconComp size={22} />
+                  <IconComp size={24} />
                 </div>
-                <div>
-                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>{riskExplanation.title}</h3>
-                  <p style={{ margin: '3px 0 0', fontSize: 12, color: 'var(--text-secondary)' }}>
+                <div style={{ textAlign: 'left', flex: 1 }}>
+                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', textAlign: 'left' }}>
+                    {riskExplanation.title}
+                  </h3>
+                  <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--text-secondary)', textAlign: 'left' }}>
                     Showing {riskFilter === 'ALL' ? 'all risk levels' : `${riskFilter} RISK barangays`} for {currentIncident?.label} incidents in Balayan, Batangas
                   </p>
                 </div>
               </div>
-              <div className="card-body">
-                <p style={{ fontSize: 13, lineHeight: 1.7, color: 'var(--text-secondary)', marginBottom: 14 }}>
+              <div className="card-body" style={{ textAlign: 'left' }}>
+                <p style={{ fontSize: 13, lineHeight: 1.7, color: 'var(--text-secondary)', marginBottom: 14, textAlign: 'left' }}>
                   {riskExplanation.explanation}
                 </p>
-                <div style={{ background: 'var(--bg-card-hover)', borderRadius: 10, padding: '12px 16px', border: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <Info size={14} color="#3B82F6" /> Primary Contributing Factors:
+                <div style={{ background: 'var(--bg-card-hover)', borderRadius: 10, padding: '14px 18px', border: '1px solid var(--border)', textAlign: 'left' }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6, textAlign: 'left' }}>
+                    <Info size={15} color="#3B82F6" /> Primary Contributing Factors:
                   </div>
-                  <ul style={{ margin: 0, paddingLeft: 20, fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                  <ul style={{ margin: 0, paddingLeft: 20, fontSize: 12.5, color: 'var(--text-secondary)', lineHeight: 1.7, textAlign: 'left' }}>
                     {riskExplanation.factors.map((f, i) => (
-                      <li key={i}>{f}</li>
+                      <li key={i} style={{ textAlign: 'left' }}>{f}</li>
                     ))}
                   </ul>
                 </div>

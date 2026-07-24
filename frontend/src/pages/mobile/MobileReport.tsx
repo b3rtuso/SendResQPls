@@ -1,4 +1,4 @@
-﻿import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, AlertTriangle, Camera, Loader, WifiOff } from 'lucide-react';
 import { reportIncident } from '../../api/client';
@@ -155,25 +155,25 @@ export default function MobileReport() {
           </div>
         </div>
 
-        {/* Offline Warning Banner */}
+        {/* Offline Warning Banner (Red Error Styling) */}
         {!isOnline && (
           <div style={{
-            background: '#FEF3C7',
-            border: '1px solid #F59E0B',
+            background: 'rgba(239, 68, 68, 0.1)',
+            border: '1px solid rgba(239, 68, 68, 0.4)',
             borderRadius: 12,
             padding: '12px 16px',
             marginBottom: 16,
             display: 'flex',
             alignItems: 'center',
             gap: 10,
-            color: '#92400E',
+            color: '#EF4444',
             fontSize: 13,
             fontWeight: 600,
           }}>
-            <WifiOff size={20} color="#D97706" style={{ flexShrink: 0 }} />
+            <WifiOff size={20} color="#EF4444" style={{ flexShrink: 0 }} />
             <div>
-              <div style={{ fontWeight: 700 }}>No Internet Connection</div>
-              <div style={{ fontSize: 11, fontWeight: 400, marginTop: 2 }}>
+              <div style={{ fontWeight: 700, color: '#EF4444' }}>No Internet Connection</div>
+              <div style={{ fontSize: 11, fontWeight: 400, marginTop: 2, color: 'var(--text-secondary, #94A3B8)' }}>
                 Emergency alerts require an active internet connection. The SOS button is disabled until connection is restored.
               </div>
             </div>

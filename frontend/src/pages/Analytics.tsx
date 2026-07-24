@@ -865,146 +865,114 @@ export default function Analytics() {
               <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
             </div>
 
-            {/* Direct Official MDRRMO Report Download Cards */}
-            <div className="grid-3" style={{ marginBottom: 28 }}>
-              {/* DAILY REPORT CARD */}
-              <div className="card" style={{ borderTop: '4px solid #2563EB' }}>
-                <div className="card-header" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <FileText size={20} color="#2563EB" />
-                  <div>
-                    <h3 style={{ margin: 0, fontSize: 15 }}>Daily Incident Report</h3>
-                    <p style={{ margin: 0, fontSize: 12, color: 'var(--text-secondary)' }}>MDRRMO Official Document</p>
+            {/* ── Live Downloadable Report Cards (July 19 Exact Design & Position) ── */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, marginBottom: 28 }}>
+
+              {/* ── DAILY REPORT CARD ── */}
+              <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                <div className="card-header" style={{ borderBottom: '1px solid var(--border-light)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--primary-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Calendar size={18} color="var(--primary)" />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font)', letterSpacing: '-0.2px' }}>Daily Report</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font)', marginTop: 1 }}>Single-day incident summary</div>
+                    </div>
                   </div>
                 </div>
-                <div className="card-body">
-                  <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }}>
-                    Generate the official MDRRMO Daily Report for all incidents logged on the selected date.
-                  </p>
-
-                  <div style={{ marginBottom: 12 }}>
-                    <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>
-                      Select Date:
-                    </label>
+                <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', fontFamily: 'var(--font)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>Select Date</label>
                     <input
                       type="date"
+                      className="filter-select"
+                      style={{ width: '100%', boxSizing: 'border-box' }}
                       value={selectedDay}
                       onChange={e => setSelectedDay(e.target.value)}
-                      style={{
-                        padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)',
-                        background: 'var(--bg-card-hover)', color: 'var(--text-primary)',
-                        fontSize: 13, width: '100%', boxSizing: 'border-box',
-                      }}
                     />
                   </div>
-
                   <button
                     className="btn btn-primary"
-                    style={{ width: '100%', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: 8 }}
+                    style={{ width: '100%', justifyContent: 'center', gap: 8, background: downloadDone === 'daily' ? 'var(--success)' : undefined, transition: 'background 0.3s' }}
                     onClick={() => handleDownload('daily')}
                     disabled={downloading === 'daily'}
                   >
-                    {downloading === 'daily' ? (
-                      <><Loader2 size={16} className="spin" /> Generating .docx...</>
-                    ) : downloadDone === 'daily' ? (
-                      <><CheckCircle2 size={16} /> Downloaded!</>
-                    ) : (
-                      <><Download size={16} /> Download Daily Report (.docx)</>
-                    )}
+                    {downloading === 'daily' ? <><Loader2 size={15} className="spin" /> Generating…</> : downloadDone === 'daily' ? <><CheckCircle2 size={15} /> Downloaded!</> : <><Download size={15} /> Download .docx</>}
                   </button>
+                  <div style={{ fontSize: 10.5, color: 'var(--text-muted)', fontFamily: 'var(--font)', textAlign: 'center' }}>Microsoft Word · MDRRMO soft copy format</div>
                 </div>
               </div>
 
-              {/* WEEKLY REPORT CARD */}
-              <div className="card" style={{ borderTop: '4px solid #F59E0B' }}>
-                <div className="card-header" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <FileText size={20} color="#F59E0B" />
-                  <div>
-                    <h3 style={{ margin: 0, fontSize: 15 }}>Weekly Incident Report</h3>
-                    <p style={{ margin: 0, fontSize: 12, color: 'var(--text-secondary)' }}>MDRRMO Official Document</p>
+              {/* ── WEEKLY REPORT CARD ── */}
+              <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                <div className="card-header" style={{ borderBottom: '1px solid var(--border-light)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(245, 158, 11, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Calendar size={18} color="#F59E0B" />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font)', letterSpacing: '-0.2px' }}>Weekly Report</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font)', marginTop: 1 }}>7-day operational breakdown</div>
+                    </div>
                   </div>
                 </div>
-                <div className="card-body">
-                  <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }}>
-                    Generate the official MDRRMO Weekly Report with classified incident breakdown.
-                  </p>
-
-                  <div style={{ marginBottom: 12 }}>
-                    <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>
-                      Select Week (Pick Any Day):
-                    </label>
+                <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', fontFamily: 'var(--font)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>Select Week (Pick Any Day)</label>
                     <input
                       type="date"
+                      className="filter-select"
+                      style={{ width: '100%', boxSizing: 'border-box' }}
                       value={selectedWeek}
                       onChange={e => setSelectedWeek(e.target.value)}
-                      style={{
-                        padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)',
-                        background: 'var(--bg-card-hover)', color: 'var(--text-primary)',
-                        fontSize: 13, width: '100%', boxSizing: 'border-box',
-                      }}
                     />
                   </div>
-
                   <button
                     className="btn btn-primary"
-                    style={{ width: '100%', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: 8, background: '#F59E0B', borderColor: '#D97706' }}
+                    style={{ width: '100%', justifyContent: 'center', gap: 8, background: downloadDone === 'weekly' ? 'var(--success)' : '#F59E0B', borderColor: '#D97706', transition: 'background 0.3s' }}
                     onClick={() => handleDownload('weekly')}
                     disabled={downloading === 'weekly'}
                   >
-                    {downloading === 'weekly' ? (
-                      <><Loader2 size={16} className="spin" /> Generating .docx...</>
-                    ) : downloadDone === 'weekly' ? (
-                      <><CheckCircle2 size={16} /> Downloaded!</>
-                    ) : (
-                      <><Download size={16} /> Download Weekly Report (.docx)</>
-                    )}
+                    {downloading === 'weekly' ? <><Loader2 size={15} className="spin" /> Generating…</> : downloadDone === 'weekly' ? <><CheckCircle2 size={15} /> Downloaded!</> : <><Download size={15} /> Download .docx</>}
                   </button>
+                  <div style={{ fontSize: 10.5, color: 'var(--text-muted)', fontFamily: 'var(--font)', textAlign: 'center' }}>Microsoft Word · MDRRMO soft copy format</div>
                 </div>
               </div>
 
-              {/* MONTHLY REPORT CARD */}
-              <div className="card" style={{ borderTop: '4px solid #22C55E' }}>
-                <div className="card-header" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <FileText size={20} color="#22C55E" />
-                  <div>
-                    <h3 style={{ margin: 0, fontSize: 15 }}>Monthly Incident Report</h3>
-                    <p style={{ margin: 0, fontSize: 12, color: 'var(--text-secondary)' }}>MDRRMO Official Document</p>
+              {/* ── MONTHLY REPORT CARD ── */}
+              <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                <div className="card-header" style={{ borderBottom: '1px solid var(--border-light)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(34, 197, 94, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Calendar size={18} color="#22C55E" />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font)', letterSpacing: '-0.2px' }}>Monthly Report</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font)', marginTop: 1 }}>Full-month statistical report</div>
+                    </div>
                   </div>
                 </div>
-                <div className="card-body">
-                  <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }}>
-                    Generate the official MDRRMO Monthly Report in complete narrative sentence format.
-                  </p>
-
-                  <div style={{ marginBottom: 12 }}>
-                    <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>
-                      Select Month:
-                    </label>
+                <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', fontFamily: 'var(--font)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>Select Month</label>
                     <input
                       type="month"
+                      className="filter-select"
+                      style={{ width: '100%', boxSizing: 'border-box' }}
                       value={selectedMonth}
                       onChange={e => setSelectedMonth(e.target.value)}
-                      style={{
-                        padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)',
-                        background: 'var(--bg-card-hover)', color: 'var(--text-primary)',
-                        fontSize: 13, width: '100%', boxSizing: 'border-box',
-                      }}
                     />
                   </div>
-
                   <button
                     className="btn btn-primary"
-                    style={{ width: '100%', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: 8, background: '#22C55E', borderColor: '#16A34A' }}
+                    style={{ width: '100%', justifyContent: 'center', gap: 8, background: downloadDone === 'monthly' ? 'var(--success)' : '#22C55E', borderColor: '#16A34A', transition: 'background 0.3s' }}
                     onClick={() => handleDownload('monthly')}
                     disabled={downloading === 'monthly'}
                   >
-                    {downloading === 'monthly' ? (
-                      <><Loader2 size={16} className="spin" /> Generating .docx...</>
-                    ) : downloadDone === 'monthly' ? (
-                      <><CheckCircle2 size={16} /> Downloaded!</>
-                    ) : (
-                      <><Download size={16} /> Download Monthly Report (.docx)</>
-                    )}
+                    {downloading === 'monthly' ? <><Loader2 size={15} className="spin" /> Generating…</> : downloadDone === 'monthly' ? <><CheckCircle2 size={15} /> Downloaded!</> : <><Download size={15} /> Download .docx</>}
                   </button>
+                  <div style={{ fontSize: 10.5, color: 'var(--text-muted)', fontFamily: 'var(--font)', textAlign: 'center' }}>Microsoft Word · MDRRMO soft copy format</div>
                 </div>
               </div>
             </div>
@@ -1126,34 +1094,34 @@ export default function Analytics() {
               flexDirection: 'column',
               alignItems: 'center',
             }}>
-              {/* Warning Icon Badge */}
+              {/* Red Warning Icon Badge */}
               <div style={{
                 width: 52,
                 height: 52,
                 borderRadius: 16,
-                background: 'rgba(245, 158, 11, 0.18)',
-                border: '1px solid rgba(245, 158, 11, 0.35)',
-                color: '#FBBF24',
+                background: 'rgba(239, 68, 68, 0.18)',
+                border: '1px solid rgba(239, 68, 68, 0.4)',
+                color: '#EF4444',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 0 24px rgba(245, 158, 11, 0.25)',
+                boxShadow: '0 0 24px rgba(239, 68, 68, 0.3)',
                 marginBottom: 16,
               }}>
-                <AlertTriangle size={26} />
+                <AlertTriangle size={26} color="#EF4444" />
               </div>
 
-              {/* Micro Eyebrow */}
+              {/* Red Micro Eyebrow */}
               <span style={{
                 fontSize: 10,
                 fontWeight: 700,
                 textTransform: 'uppercase',
                 letterSpacing: '0.18em',
-                color: '#FBBF24',
-                background: 'rgba(245, 158, 11, 0.12)',
+                color: '#EF4444',
+                background: 'rgba(239, 68, 68, 0.12)',
                 padding: '4px 12px',
                 borderRadius: 20,
-                border: '1px solid rgba(245, 158, 11, 0.25)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
                 marginBottom: 10,
               }}>
                 REPORT DATA WARNING
@@ -1180,19 +1148,19 @@ export default function Analytics() {
                 There are no logged emergency incidents for the selected <strong style={{ color: '#E2E8F0' }}>{emptyModal.periodName}</strong>. Official report generation has been safely cancelled.
               </p>
 
-              {/* Island Button */}
+              {/* Red Action Button */}
               <button
                 onClick={() => setEmptyModal(null)}
                 style={{
                   width: '100%',
                   padding: '12px 20px',
                   borderRadius: 14,
-                  background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
+                  background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
                   color: 'white',
                   fontWeight: 700,
                   fontSize: 13,
                   border: '1px solid rgba(255, 255, 255, 0.15)',
-                  boxShadow: '0 4px 16px rgba(37, 99, 235, 0.35)',
+                  boxShadow: '0 4px 16px rgba(239, 68, 68, 0.35)',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
                 }}

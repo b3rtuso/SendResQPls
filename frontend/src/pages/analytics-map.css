@@ -56,35 +56,36 @@
   white-space: nowrap;
 }
 
-/* ---- Incident Type Pills ---- */
+/* ---- Incident Type Pills (Samsung One UI Squircle Tiles) ---- */
 .incident-pill {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 14px;
-  border-radius: 10px;
-  border: 1.5px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.7);
+  padding: 7px 15px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.75);
   font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
   font-family: 'Inter', sans-serif;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
 }
 
 .incident-pill:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
   transform: translateY(-1px);
 }
 
 .incident-pill.active {
   color: white;
   border-color: var(--pill-color, #3B82F6);
-  background: color-mix(in srgb, var(--pill-color, #3B82F6) 20%, transparent);
-  box-shadow: 0 0 20px color-mix(in srgb, var(--pill-color, #3B82F6) 30%, transparent);
+  background: color-mix(in srgb, var(--pill-color, #3B82F6) 24%, rgba(15, 23, 42, 0.8));
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--pill-color, #3B82F6) 30%, transparent), inset 0 1px 1px rgba(255, 255, 255, 0.25);
 }
 
 .incident-pill .pill-emoji {

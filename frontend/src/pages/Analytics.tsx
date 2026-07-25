@@ -478,7 +478,7 @@ export default function Analytics() {
               </div>
             </div>
 
-            {/* Clickable Map Risk Stats Bar (Icon on left, text to the right after icon) */}
+            {/* Clickable Map Risk Stats Bar (Samsung One UI Squircle Icon Tiles) */}
             <div className="map-stats-bar" style={{ marginTop: 16 }}>
               <div
                 className="map-stat-card"
@@ -486,8 +486,8 @@ export default function Analytics() {
                 style={{
                   '--stat-color': '#EF4444',
                   cursor: 'pointer',
-                  border: riskFilter === 'HIGH' ? '2.5px solid #EF4444' : '1px solid var(--border)',
-                  boxShadow: riskFilter === 'HIGH' ? '0 0 12px rgba(239, 68, 68, 0.3)' : 'none',
+                  border: riskFilter === 'HIGH' ? '2px solid #EF4444' : '1px solid var(--border)',
+                  boxShadow: riskFilter === 'HIGH' ? '0 0 16px rgba(239, 68, 68, 0.3)' : 'none',
                   transition: 'all 0.2s ease',
                   display: 'flex',
                   alignItems: 'center',
@@ -497,10 +497,12 @@ export default function Analytics() {
                 } as React.CSSProperties}
               >
                 <div style={{
-                  width: 42, height: 42, borderRadius: 10,
-                  background: 'rgba(239, 68, 68, 0.12)',
+                  width: 44, height: 44, borderRadius: '22%',
+                  background: 'rgba(239, 68, 68, 0.16)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.25)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#EF4444', flexShrink: 0,
+                  color: '#EF5350', flexShrink: 0,
                 }}>
                   <AlertTriangle size={22} />
                 </div>
@@ -509,7 +511,7 @@ export default function Analytics() {
                     {riskStats.high}
                   </div>
                   <div className="stat-label" style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    High Risk Areas {riskFilter === 'HIGH' && '✓'}
+                    High Risk Areas
                   </div>
                 </div>
               </div>
@@ -520,8 +522,8 @@ export default function Analytics() {
                 style={{
                   '--stat-color': '#F59E0B',
                   cursor: 'pointer',
-                  border: riskFilter === 'MEDIUM' ? '2.5px solid #F59E0B' : '1px solid var(--border)',
-                  boxShadow: riskFilter === 'MEDIUM' ? '0 0 12px rgba(245, 158, 11, 0.3)' : 'none',
+                  border: riskFilter === 'MEDIUM' ? '2px solid #F59E0B' : '1px solid var(--border)',
+                  boxShadow: riskFilter === 'MEDIUM' ? '0 0 16px rgba(245, 158, 11, 0.3)' : 'none',
                   transition: 'all 0.2s ease',
                   display: 'flex',
                   alignItems: 'center',
@@ -531,10 +533,12 @@ export default function Analytics() {
                 } as React.CSSProperties}
               >
                 <div style={{
-                  width: 42, height: 42, borderRadius: 10,
-                  background: 'rgba(245, 158, 11, 0.12)',
+                  width: 44, height: 44, borderRadius: '22%',
+                  background: 'rgba(245, 124, 0, 0.16)',
+                  border: '1px solid rgba(255, 167, 38, 0.3)',
+                  boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.25)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#F59E0B', flexShrink: 0,
+                  color: '#FFA726', flexShrink: 0,
                 }}>
                   <Info size={22} />
                 </div>
@@ -543,7 +547,7 @@ export default function Analytics() {
                     {riskStats.medium}
                   </div>
                   <div className="stat-label" style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    Medium Risk Areas {riskFilter === 'MEDIUM' && '✓'}
+                    Medium Risk Areas
                   </div>
                 </div>
               </div>
@@ -554,8 +558,8 @@ export default function Analytics() {
                 style={{
                   '--stat-color': '#22C55E',
                   cursor: 'pointer',
-                  border: riskFilter === 'LOW' ? '2.5px solid #22C55E' : '1px solid var(--border)',
-                  boxShadow: riskFilter === 'LOW' ? '0 0 12px rgba(34, 197, 94, 0.3)' : 'none',
+                  border: riskFilter === 'LOW' ? '2px solid #22C55E' : '1px solid var(--border)',
+                  boxShadow: riskFilter === 'LOW' ? '0 0 16px rgba(34, 197, 94, 0.3)' : 'none',
                   transition: 'all 0.2s ease',
                   display: 'flex',
                   alignItems: 'center',
@@ -565,10 +569,12 @@ export default function Analytics() {
                 } as React.CSSProperties}
               >
                 <div style={{
-                  width: 42, height: 42, borderRadius: 10,
-                  background: 'rgba(34, 197, 94, 0.12)',
+                  width: 44, height: 44, borderRadius: '22%',
+                  background: 'rgba(46, 125, 50, 0.16)',
+                  border: '1px solid rgba(102, 187, 106, 0.3)',
+                  boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.25)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#22C55E', flexShrink: 0,
+                  color: '#66BB6A', flexShrink: 0,
                 }}>
                   <CheckCircle2 size={22} />
                 </div>
@@ -577,7 +583,7 @@ export default function Analytics() {
                     {riskStats.low}
                   </div>
                   <div className="stat-label" style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    Low Risk Areas {riskFilter === 'LOW' && '✓'}
+                    Low Risk Areas
                   </div>
                 </div>
               </div>
@@ -588,8 +594,8 @@ export default function Analytics() {
                 style={{
                   '--stat-color': currentIncident?.color || '#3B82F6',
                   cursor: 'pointer',
-                  border: riskFilter === 'ALL' ? `2.5px solid ${currentIncident?.color || '#3B82F6'}` : '1px solid var(--border)',
-                  boxShadow: riskFilter === 'ALL' ? `0 0 12px ${currentIncident?.color || '#3B82F6'}33` : 'none',
+                  border: riskFilter === 'ALL' ? `2px solid ${currentIncident?.color || '#3B82F6'}` : '1px solid var(--border)',
+                  boxShadow: riskFilter === 'ALL' ? `0 0 16px ${currentIncident?.color || '#3B82F6'}33` : 'none',
                   transition: 'all 0.2s ease',
                   display: 'flex',
                   alignItems: 'center',
@@ -599,10 +605,12 @@ export default function Analytics() {
                 } as React.CSSProperties}
               >
                 <div style={{
-                  width: 42, height: 42, borderRadius: 10,
-                  background: `${currentIncident?.color || '#3B82F6'}18`,
+                  width: 44, height: 44, borderRadius: '22%',
+                  background: 'rgba(11, 101, 198, 0.16)',
+                  border: '1px solid rgba(33, 150, 243, 0.3)',
+                  boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.25)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: currentIncident?.color || '#3B82F6', flexShrink: 0,
+                  color: '#2196F3', flexShrink: 0,
                 }}>
                   <MapPin size={22} />
                 </div>
@@ -611,7 +619,7 @@ export default function Analytics() {
                     {riskStats.total}
                   </div>
                   <div className="stat-label" style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    Total Barangays {riskFilter === 'ALL' && '(All Shown)'}
+                    Total Barangays
                   </div>
                 </div>
               </div>
@@ -621,8 +629,10 @@ export default function Analytics() {
             <div className="card" style={{ marginTop: 16 }}>
               <div className="card-header" style={{ display: 'flex', alignItems: 'center', gap: 14, textAlign: 'left' }}>
                 <div style={{
-                  width: 44, height: 44, borderRadius: 12,
+                  width: 44, height: 44, borderRadius: '22%',
                   background: `${currentIncident?.color}18`,
+                  border: `1px solid ${currentIncident?.color}35`,
+                  boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.25)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   color: currentIncident?.color,
                   flexShrink: 0,

@@ -1394,3 +1394,42 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
   font-weight: 700;
   color: var(--text-primary);
 }
+
+/* ============================================================
+   SAMSUNG ONE UI SQUIRCLE ICON DESIGN SYSTEM
+   ============================================================ */
+.samsung-squircle {
+  border-radius: 22% !important; /* Smooth One UI continuous squircle curvature */
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.25), 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+.samsung-squircle-blue {
+  background: rgba(11, 101, 198, 0.16) !important;
+  color: #2196F3 !important;
+  border: 1px solid rgba(33, 150, 243, 0.3) !important;
+}
+
+.samsung-squircle-red {
+  background: rgba(229, 57, 53, 0.16) !important;
+  color: #EF5350 !important;
+  border: 1px solid rgba(239, 83, 80, 0.3) !important;
+}
+
+.samsung-squircle-amber {
+  background: rgba(245, 124, 0, 0.16) !important;
+  color: #FFA726 !important;
+  border: 1px solid rgba(255, 167, 38, 0.3) !important;
+}
+
+.samsung-squircle-green {
+  background: rgba(46, 125, 50, 0.16) !important;
+  color: #66BB6A !important;
+  border: 1px solid rgba(102, 187, 106, 0.3) !important;
+}
+
+.samsung-squircle-purple {
+  background: rgba(123, 31, 162, 0.16) !important;
+  color: #AB47BC !important;
+  border: 1px solid rgba(171, 71, 188, 0.3) !important;
+}

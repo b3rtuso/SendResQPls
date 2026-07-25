@@ -228,13 +228,13 @@ export default function Dashboard() {
                 alignItems: 'center',
                 textAlign: 'center',
               }}>
-                {/* Centered Glowing Icon Badge */}
+                {/* Centered Samsung One UI Squircle Icon Badge */}
                 <div style={{
-                  width: 48, height: 48, borderRadius: 14,
-                  background: 'rgba(59, 130, 246, 0.2)',
+                  width: 48, height: 48, borderRadius: '22%',
+                  background: 'rgba(11, 101, 198, 0.2)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#60A5FA', border: '1px solid rgba(96, 165, 250, 0.35)',
-                  boxShadow: '0 0 20px rgba(59, 130, 246, 0.25)',
+                  color: '#2196F3', border: '1px solid rgba(33, 150, 243, 0.35)',
+                  boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.25), 0 4px 16px rgba(11, 101, 198, 0.2)',
                   marginBottom: 12,
                 }}>
                   <Calendar size={24} />
@@ -265,13 +265,13 @@ export default function Dashboard() {
                   marginBottom: 14, boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
                 }}>
                   <div style={{
-                    width: 22, height: 22, borderRadius: '50%',
+                    width: 22, height: 22, borderRadius: '22%',
                     background: forecast?.typeClass === 'trauma' ? 'rgba(245, 158, 11, 0.3)' : 'rgba(34, 197, 94, 0.3)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
                     {forecast?.typeClass === 'trauma' ? <AlertTriangle size={13} /> : <Stethoscope size={13} />}
                   </div>
-                  ⚡ Dominant Trend: {forecast?.type} Emergency Risk
+                  Dominant Trend: {forecast?.type} Emergency Risk
                 </div>
 
                 {/* Summary Description */}

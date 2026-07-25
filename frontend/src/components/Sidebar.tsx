@@ -26,11 +26,6 @@ const S: Record<string, React.CSSProperties> = {
     display: 'flex', alignItems: 'center', gap: 12,
     borderBottom: '1px solid rgba(255,255,255,0.06)',
   },
-  logoWrap: {
-    width: 40, height: 40, borderRadius: 11, flexShrink: 0,
-    overflow: 'hidden', border: '1px solid rgba(255,255,255,0.12)',
-  },
-  logo: { width: '100%', height: '100%', objectFit: 'cover' },
   brandName: {
     color: '#fff', fontSize: 14, fontWeight: 800,
     letterSpacing: '-0.3px', lineHeight: 1.2,
@@ -49,7 +44,7 @@ const S: Record<string, React.CSSProperties> = {
   liveWrap: {
     margin: '0 12px 12px',
     padding: '9px 12px',
-    borderRadius: 10,
+    borderRadius: 12,
     background: 'rgba(16, 185, 129, 0.08)',
     border: '1px solid rgba(16,185,129,0.18)',
     display: 'flex', alignItems: 'center', gap: 8,
@@ -75,16 +70,17 @@ const S: Record<string, React.CSSProperties> = {
   },
   adminCard: {
     display: 'flex', alignItems: 'center', gap: 10,
-    padding: '10px 12px', borderRadius: 10,
+    padding: '10px 12px', borderRadius: 12,
     background: 'rgba(255,255,255,0.04)',
     border: '1px solid rgba(255,255,255,0.07)',
   },
   avatar: {
-    width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
+    width: 34, height: 34, borderRadius: '22%', flexShrink: 0,
     background: 'linear-gradient(135deg, #1D4ED8, #2563EB)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     fontSize: 12, fontWeight: 800, color: 'white',
-    border: '1.5px solid rgba(255,255,255,0.15)',
+    border: '1px solid rgba(255,255,255,0.2)',
+    boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.3)',
   },
 };
 
@@ -105,12 +101,12 @@ export default function Sidebar() {
         @keyframes sidebarPulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.6;transform:scale(1.15)} }
         .sb-nav-link {
           display:flex; align-items:center; gap:11px;
-          padding:10px 14px; border-radius:9px; margin-bottom:2px;
+          padding:9px 12px; border-radius:12px; margin-bottom:3px;
           text-decoration:none; font-size:13.5px; font-weight:500;
-          transition:all 0.15s ease; color:rgba(255,255,255,0.48);
+          transition:all 0.15s ease; color:rgba(255,255,255,0.52);
           position:relative; overflow:hidden;
         }
-        .sb-nav-link:hover { background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.85); }
+        .sb-nav-link:hover { background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.9); }
         .sb-nav-link.active {
           background:rgba(37,99,235,0.22);
           color:#fff; font-weight:700;
@@ -121,8 +117,18 @@ export default function Sidebar() {
           width:3px; border-radius:0 3px 3px 0;
           background:linear-gradient(180deg, #60A5FA, #2563EB);
         }
-        .sb-nav-link .sb-icon { flex-shrink:0; opacity:0.75; }
-        .sb-nav-link.active .sb-icon { opacity:1; }
+        .sb-nav-link .sb-icon-box {
+          width: 28px; height: 28px; border-radius: 22%;
+          background: rgba(255, 255, 255, 0.06);
+          display: flex; align-items: center; justify-content: center;
+          flex-shrink: 0; transition: all 0.15s ease;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .sb-nav-link.active .sb-icon-box {
+          background: rgba(37, 99, 235, 0.35);
+          border-color: rgba(96, 165, 250, 0.4);
+          box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.25);
+        }
         .sb-logout:hover { background:rgba(239,68,68,0.12)!important; color:#FCA5A5!important; }
       `}</style>
 
@@ -142,7 +148,9 @@ export default function Sidebar() {
         <div style={S.sectionLabel}>Navigation</div>
         {navItems.map(({ to, icon: Icon, label }) => (
           <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) => `sb-nav-link${isActive ? ' active' : ''}`}>
-            <Icon size={17} className="sb-icon" />
+            <div className="sb-icon-box">
+              <Icon size={15} />
+            </div>
             <span style={{ flex: 1 }}>{label}</span>
           </NavLink>
         ))}

@@ -26,6 +26,12 @@ const S: Record<string, React.CSSProperties> = {
     display: 'flex', alignItems: 'center', gap: 12,
     borderBottom: '1px solid rgba(255,255,255,0.06)',
   },
+  logoWrap: {
+    width: 38, height: 38, borderRadius: '22%', flexShrink: 0,
+    overflow: 'hidden', border: '1px solid rgba(255,255,255,0.18)',
+    boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.3), 0 4px 12px rgba(0,0,0,0.25)',
+  },
+  logo: { width: '100%', height: '100%', objectFit: 'cover' },
   brandName: {
     color: '#fff', fontSize: 14, fontWeight: 800,
     letterSpacing: '-0.3px', lineHeight: 1.2,

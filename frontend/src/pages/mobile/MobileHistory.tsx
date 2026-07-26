@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, MapPin, RefreshCw, ChevronLeft } from 'lucide-react';
+import { AlertCircle, MapPin, RefreshCw, ChevronLeft, Loader2, CheckCircle2 } from 'lucide-react';
 import { getMyIncidents, getIncidents } from '../../api/client';
 import type { Incident, Status } from '../../types';
 import BottomNav from '../../components/BottomNav';
@@ -31,10 +31,16 @@ const dotColors: Record<string, string> = {
   default: '#D97706',
 };
 
+const PAGE_SIZE = 5;
+
 export default function MobileHistory() {
   const navigate = useNavigate();
-  const [incidents, setIncidents] = useState<Incident[]>([]);
+  const [allIncidents, setAllIncidents] = useState<Incident[]>([]);
+  const [displayedIncidents, setDisplayedIncidents] = useState<Incident[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const pageRef = useRef(1);
 
   // Pull-to-refresh states & refs
   const [pullDistance, setPullDistance] = useState(0);
@@ -46,6 +52,7 @@ export default function MobileHistory() {
   const refreshingRef = useRef(false);
   const pullDistanceRef = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   const updatePullDistance = (val: number) => {
     pullDistanceRef.current = val;
@@ -66,15 +73,56 @@ export default function MobileHistory() {
       } else {
         res = await getIncidents();
       }
-      setIncidents(res.data);
+      const data: Incident[] = res.data || [];
+      setAllIncidents(data);
+      const initialBatch = data.slice(0, PAGE_SIZE);
+      setDisplayedIncidents(initialBatch);
+      pageRef.current = 1;
+      setHasMore(initialBatch.length < data.length);
     } catch {
-      setIncidents([]);
+      setAllIncidents([]);
+      setDisplayedIncidents([]);
+      setHasMore(false);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => { fetchHistory(); }, []);
+
+  // Infinite Scroll Observer
+  const loadNextPage = useCallback(() => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    setTimeout(() => {
+      const nextPage = pageRef.current + 1;
+      pageRef.current = nextPage;
+      const nextBatch = allIncidents.slice(0, nextPage * PAGE_SIZE);
+      setDisplayedIncidents(nextBatch);
+      setHasMore(nextBatch.length < allIncidents.length);
+      setLoadingMore(false);
+    }, 450);
+  }, [loadingMore, hasMore, allIncidents]);
+
+  useEffect(() => {
+    if (loading || !hasMore || loadingMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore) {
+          loadNextPage();
+        }
+      },
+      { rootMargin: '120px' }
+    );
+
+    const el = sentinelRef.current;
+    if (el) observer.observe(el);
+
+    return () => {
+      if (el) observer.unobserve(el);
+    };
+  }, [loading, hasMore, loadingMore, loadNextPage]);
 
   // Set up touchmove listener with passive: false so we can preventDefault
   useEffect(() => {
@@ -200,7 +248,7 @@ export default function MobileHistory() {
           <MobileHistorySkeleton count={5} />
         ) : (
           <div className="history-list">
-            {incidents.map((inc) => {
+            {displayedIncidents.map((inc) => {
               const typeColor = dotColors[inc.aiDetectedType?.split(' ')[0] || ''] || dotColors.default;
               return (
                 <div className="history-card" key={inc.id}>
@@ -242,7 +290,47 @@ export default function MobileHistory() {
                 </div>
               );
             })}
-            {incidents.length === 0 && (
+
+            {/* Infinite Scroll Sentinel Element */}
+            <div ref={sentinelRef} style={{ height: 1 }} />
+
+            {/* Bottom Loading Indicator */}
+            {loadingMore && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                padding: '16px 0',
+                color: 'var(--text-secondary)',
+                fontSize: 12.5,
+                fontWeight: 600,
+              }}>
+                <Loader2 size={16} className="spin" style={{ color: '#2563EB' }} />
+                <span>Loading more history...</span>
+              </div>
+            )}
+
+            {/* All Items Loaded End Pill */}
+            {!hasMore && displayedIncidents.length > 0 && (
+              <div style={{
+                textAlign: 'center',
+                padding: '16px 0 20px',
+                fontSize: 11.5,
+                fontWeight: 600,
+                color: 'var(--text-muted)',
+                letterSpacing: '0.04em',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+              }}>
+                <CheckCircle2 size={13} color="#10B981" />
+                <span>All {allIncidents.length} incident reports loaded</span>
+              </div>
+            )}
+
+            {displayedIncidents.length === 0 && (
               <div style={{ textAlign: 'center', padding: 60, color: 'var(--text-muted)' }}>
                 <h3 style={{ fontWeight: 700, marginBottom: 4, color: 'var(--text-primary)' }}>No reports yet</h3>
                 <p>Your submitted emergency alerts will appear here</p>

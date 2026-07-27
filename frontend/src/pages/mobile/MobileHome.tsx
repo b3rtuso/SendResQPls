@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Phone, AlertTriangle, Wind, Waves, Siren, Stethoscope, ChevronDown, MapPinOff, X } from 'lucide-react';
+import { Phone, AlertTriangle, Wind, Waves, Siren, Stethoscope, ChevronDown, MapPinOff, X, WifiOff, Navigation } from 'lucide-react';
 import BottomNav from '../../components/BottomNav';
 import FcmBannerOverlay from '../../components/FcmBannerOverlay';
 import { getMyIncidents, cachedGet } from '../../api/client';
@@ -36,6 +36,10 @@ export default function MobileHome() {
   type LocStatus = 'idle' | 'granted' | 'denied' | 'unavailable';
   const [locStatus, setLocStatus] = useState<LocStatus>('idle');
   const [showLocBanner, setShowLocBanner] = useState(true);
+  const [showLocModal, setShowLocModal] = useState(false);
+
+  // Online/offline state
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   // Unified polling — writes new notifications to localStorage for the notifications page
   const checkForUpdates = async (isFirstLoad = false) => {
@@ -77,6 +81,18 @@ export default function MobileHome() {
     pollRef.current = setInterval(() => checkForUpdates(false), 30000); // Poll every 30s
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, [userId]);
+
+  // Online / offline detection
+  useEffect(() => {
+    const goOnline  = () => setIsOnline(true);
+    const goOffline = () => setIsOnline(false);
+    window.addEventListener('online',  goOnline);
+    window.addEventListener('offline', goOffline);
+    return () => {
+      window.removeEventListener('online',  goOnline);
+      window.removeEventListener('offline', goOffline);
+    };
+  }, []);
 
 
   // Request push notifications setup on mount
@@ -132,6 +148,10 @@ export default function MobileHome() {
           from { opacity: 0; transform: translateY(14px); }
           to   { opacity: 1; transform: translateY(0); }
         }
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(100%); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
         .srq-hotline-card {
           display: flex;
           flex-direction: column;
@@ -175,28 +195,42 @@ export default function MobileHome() {
       <FcmBannerOverlay />
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }}>
 
-        {/* ── Location Alert Banner (Facebook-style full-width) ── */}
+        {/* ── Location Alert Banner (clickable → opens modal) ── */}
         {showLocBanner && (locStatus === 'denied' || locStatus === 'unavailable') && (
-          <div style={{
-            background: '#FEF2F2',
-            borderBottom: '1px solid #FCA5A5',
-            padding: '10px 16px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            animation: 'slideDown 0.22s ease',
-          }}>
+          <button
+            onClick={() => setShowLocModal(true)}
+            style={{
+              background: '#FEF2F2',
+              padding: '10px 16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              animation: 'slideDown 0.22s ease',
+              width: '100%',
+              borderTop: 'none',
+              borderLeft: 'none',
+              borderRight: 'none',
+              borderBottom: '1px solid #FCA5A5',
+              cursor: 'pointer',
+              textAlign: 'left' as const,
+              fontFamily: 'inherit',
+            }}
+          >
             <MapPinOff size={16} color="#DC2626" style={{ flexShrink: 0 }} />
             <div style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#991B1B' }}>
               {locStatus === 'denied' ? 'Enable location for emergency reports' : 'GPS not supported on this device'}
             </div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#DC2626', background: '#FEE2E2', borderRadius: 6, padding: '2px 7px', flexShrink: 0, letterSpacing: '0.04em' }}>
+              FIX
+            </div>
             <button
-              onClick={() => setShowLocBanner(false)}
+              onClick={e => { e.stopPropagation(); setShowLocBanner(false); }}
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#991B1B', padding: 2, flexShrink: 0, display: 'flex' }}
+              aria-label="Dismiss"
             >
               <X size={14} />
             </button>
-          </div>
+          </button>
         )}
 
         {/* ── Header ─────────────────────────────────── */}
@@ -235,7 +269,16 @@ export default function MobileHome() {
 
         {/* ── SOS Card ─────────────────────────────────── */}
         <div style={{ padding: '20px 20px 0' }}>
-          <div className="sos-card" onClick={() => navigate('/mobile/report')}>
+          <div
+            className="sos-card"
+            onClick={isOnline ? () => navigate('/mobile/report') : undefined}
+            style={!isOnline ? {
+              opacity: 0.45,
+              pointerEvents: 'none',
+              filter: 'grayscale(0.5)',
+              cursor: 'not-allowed',
+            } : {}}
+          >
             <div style={{
               width: 60, height: 60, margin: '0 auto 14px', borderRadius: '50%',
               background: 'rgba(255,255,255,0.15)', border: '1.5px solid rgba(255,255,255,0.28)',
@@ -254,6 +297,29 @@ export default function MobileHome() {
               <span className="tap-arrow"><ChevronDown size={12} /></span>
             </div>
           </div>
+
+          {/* Offline badge */}
+          {!isOnline && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 7,
+              marginTop: 12,
+              padding: '8px 16px',
+              background: '#F1F5F9',
+              border: '1.5px solid #CBD5E1',
+              borderRadius: 40,
+              fontSize: 12,
+              fontWeight: 700,
+              color: '#475569',
+              letterSpacing: '0.01em',
+              animation: 'fadeUp 0.3s ease both',
+            }}>
+              <WifiOff size={14} color="#94A3B8" />
+              You're offline — emergency alerts unavailable
+            </div>
+          )}
         </div>
 
         {/* ── Emergency Hotlines ─────────────────────────── */}
@@ -363,6 +429,99 @@ export default function MobileHome() {
 
       {/* ── FCM Foreground Banner (Instagram-style heads-up) ── */}
       <FcmBannerOverlay />
+
+      {/* ── Location Permission Modal ── */}
+      {showLocModal && (
+        <>
+          {/* Backdrop */}
+          <div
+            onClick={() => setShowLocModal(false)}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 10000,
+              background: 'rgba(0,0,0,0.5)',
+              backdropFilter: 'blur(4px)',
+              WebkitBackdropFilter: 'blur(4px)',
+            }}
+          />
+          {/* Bottom-sheet card */}
+          <div style={{
+            position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 10001,
+            background: 'white',
+            borderRadius: '24px 24px 0 0',
+            padding: '28px 24px 40px',
+            boxShadow: '0 -8px 40px rgba(0,0,0,0.18)',
+            animation: 'slideUp 0.32s cubic-bezier(0.16,1,0.3,1) both',
+          }}>
+            {/* Handle bar */}
+            <div style={{
+              width: 40, height: 4, borderRadius: 4,
+              background: '#E2E8F0',
+              margin: '0 auto 24px',
+            }} />
+
+            {/* Icon */}
+            <div style={{
+              width: 56, height: 56, borderRadius: 18,
+              background: 'linear-gradient(135deg, #FEE2E2, #FEF2F2)',
+              border: '1.5px solid #FECACA',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              margin: '0 auto 18px',
+            }}>
+              <Navigation size={26} color="#DC2626" strokeWidth={2} />
+            </div>
+
+            {/* Title */}
+            <div style={{
+              fontSize: 18, fontWeight: 800, color: '#0F172A',
+              textAlign: 'center', marginBottom: 10, letterSpacing: '-0.3px',
+            }}>
+              Location Access Needed
+            </div>
+
+            {/* Body */}
+            <div style={{
+              fontSize: 13.5, color: '#64748B', lineHeight: 1.7,
+              textAlign: 'center', marginBottom: 28, maxWidth: 300, margin: '0 auto 28px',
+            }}>
+              SendResQPls needs your location to accurately route emergency responders to you during a crisis.
+            </div>
+
+            {/* Open Settings CTA */}
+            <button
+              onClick={() => {
+                setShowLocModal(false);
+                // Deep-link to device app settings (Capacitor / mobile browser)
+                window.open('app-settings:', '_system');
+              }}
+              style={{
+                width: '100%', padding: '15px 20px',
+                background: 'linear-gradient(135deg, #DC2626, #B91C1C)',
+                color: 'white', border: 'none', borderRadius: 16,
+                fontSize: 15, fontWeight: 800, cursor: 'pointer',
+                marginBottom: 12, letterSpacing: '0.02em',
+                boxShadow: '0 4px 16px rgba(220,38,38,0.35)',
+                fontFamily: 'inherit',
+              }}
+            >
+              Open Settings
+            </button>
+
+            {/* Dismiss */}
+            <button
+              onClick={() => setShowLocModal(false)}
+              style={{
+                width: '100%', padding: '13px 20px',
+                background: '#F1F5F9', color: '#475569',
+                border: '1.5px solid #E2E8F0', borderRadius: 16,
+                fontSize: 14, fontWeight: 700, cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              Not now
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }

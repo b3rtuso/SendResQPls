@@ -1,9 +1,9 @@
-﻿import axios from 'axios';
+import axios from 'axios';
 import { CacheManager } from './cacheManager';
 import type { ResolutionForm } from '../types';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-console.log('[API] Using base URL:', API_BASE);
+
 
 const api = axios.create({
   baseURL: API_BASE,
@@ -63,8 +63,9 @@ export function invalidateCache(pattern?: string) {
 export const login = (email: string, password: string) =>
   api.post('/auth/login', { email, password });
 
-export const register = (data: { name: string; email: string; password: string; phoneNumber?: string; role?: string }) =>
+export const register = (data: { name: string; email: string; password: string; phoneNumber?: string }) =>
   api.post('/auth/register', data);
+
 
 export const sendVerificationCode = (email: string) =>
   api.post('/auth/send-code', { email });
@@ -103,11 +104,6 @@ export const getMyIncidents = (userId: string) => cachedGet(`/incidents/my/${use
 export const reverseGeocode = (lat: number, lng: number) =>
   cachedGet(`/incidents/geocode/reverse?lat=${lat}&lng=${lng}`, 300000);
 
-// === CALL LOGS & ANALYTICS ===
-export const getCallLogs = () => cachedGet('/call-logs', 30000);
-export const getAnalytics = () => cachedGet('/analytics/forecast', 60000);
-export const generateReport = (params: { startDate: string; endDate: string; department?: string }) =>
-  api.get('/reports/generate', { params });
 
 // === DEPARTMENTS ===
 export const getDepartments = () => cachedGet('/departments', 300000);

@@ -12,7 +12,6 @@
     "db:studio": "npx prisma studio"
   },
   "dependencies": {
-    "@google-cloud/vision": "^5.3.5",
     "@google/generative-ai": "^0.24.1",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
@@ -27,10 +26,8 @@
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.1.1",
     "multer-storage-cloudinary": "^4.0.0",
-    "nodemailer": "^8.0.7",
     "pg": "^8.20.0",
     "prisma": "^7.8.0",
-    "resend": "^4.5.1",
     "tsx": "^4.21.0",
     "validator": "^13.15.35"
   },

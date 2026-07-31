@@ -5,6 +5,8 @@ import { sendStatusNotification } from '../services/emailService';
 import { performReverseGeocode } from '../services/geocodingService';
 import { syncDepartmentStatuses } from './departmentController';
 import { messaging } from '../config/firebase';
+import { AuthRequest } from '../middleware/auth';
+import { withRLS } from '../utils/rlsQuery';
 
 // ─── SSE: Admin real-time new-incident notifications ──────────────────────────
 // Stores all connected admin browser clients
@@ -108,14 +110,23 @@ export const getIncidents = async (req: Request, res: Response) => {
 };
 
 // GET /api/incidents/my/:userId — Get incidents for a specific user (mobile history)
-export const getMyIncidents = async (req: Request, res: Response) => {
+// Protected: citizen can only access their own incidents; admin can access any
+export const getMyIncidents = async (req: AuthRequest, res: Response) => {
   try {
     const { userId } = req.params;
 
-    const incidents = await prisma.incident.findMany({
-      where: { reporterId: userId },
-      orderBy: { createdAt: 'desc' },
-    });
+    // Express layer: citizens cannot request another user's incident history
+    if (req.user!.role === 'CITIZEN' && req.user!.userId !== userId) {
+      return res.status(403).json({ error: 'You can only view your own incidents' });
+    }
+
+    // DB layer: RLS policy enforces the same rule at the Postgres level
+    const incidents = await withRLS(req.user!.userId, req.user!.role, (tx) =>
+      tx.incident.findMany({
+        where: { reporterId: userId },
+        orderBy: { createdAt: 'desc' },
+      })
+    );
 
     res.json(incidents);
   } catch (error: any) {
@@ -144,7 +155,8 @@ export const getIncidentStats = async (_req: Request, res: Response) => {
 };
 
 // GET /api/incidents/:id — Single incident detail
-export const getIncident = async (req: Request, res: Response) => {
+// Protected: citizen can only view incidents they reported
+export const getIncident = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -160,6 +172,11 @@ export const getIncident = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Incident not found" });
     }
 
+    // Citizens can only view their own incidents
+    if (req.user!.role === 'CITIZEN' && incident.reporterId !== req.user!.userId) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
     res.json(incident);
   } catch (error: any) {
     console.error("❌ GET incident error:", error.message);
@@ -169,9 +186,12 @@ export const getIncident = async (req: Request, res: Response) => {
 
 // POST /api/incidents/report — Report a new incident with photo + GPS
 // Pipeline: Mobile photo → upload → AI classifies → save to DB → respond to mobile user
-export const reportIncident = async (req: Request, res: Response) => {
+// Protected: userId is taken from the verified JWT token, not from the request body
+export const reportIncident = async (req: AuthRequest, res: Response) => {
   try {
-    const { userId, latitude, longitude } = req.body;
+    // Take userId from verified JWT — never trust the body for identity
+    const userId = req.user!.userId;
+    const { latitude, longitude } = req.body;
     
     if (!req.file) return res.status(400).json({ error: "No image provided" });
 
@@ -289,7 +309,8 @@ export const reportIncident = async (req: Request, res: Response) => {
 };
 
 // PATCH /api/incidents/:id/status — Update incident status (admin action)
-export const updateIncidentStatus = async (req: Request, res: Response) => {
+// Protected: requireAdmin middleware ensures only admins reach this handler
+export const updateIncidentStatus = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { status, adminNotes, assignedDepartment, resolutionForm } = req.body;

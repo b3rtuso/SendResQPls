@@ -66,10 +66,12 @@ export const verifyCode = async (req: Request, res: Response) => {
 // POST /api/auth/register
 export const register = async (req: Request, res: Response) => {
   try {
-    const { name, email, password, phoneNumber, role } = req.body;
+    // Note: 'role' is intentionally excluded — users always register as CITIZEN.
+    // Admin accounts must be created manually or via the seed function.
+    const { name, email, password, phoneNumber } = req.body;
     const hashedPassword = await bcrypt.hash(password, 8); // 8 rounds = ~80ms, still secure
     const newUser = await prisma.user.create({
-      data: { name, email, passwordHash: hashedPassword, phoneNumber: phoneNumber || null, role: role || 'CITIZEN' }
+      data: { name, email, passwordHash: hashedPassword, phoneNumber: phoneNumber || null, role: 'CITIZEN' }
     });
     res.status(201).json(newUser);
   } catch (error: any) {

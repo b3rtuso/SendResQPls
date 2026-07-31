@@ -1,0 +1,16 @@
+# Ignore AI agent skills directory
+.agents/
+
+# Ignore temporary developer scratch directory
+scratch/
+
+# Ignore OS & IDE files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Ignore environment & secret files
+.env
+.env.*
+!.env.example

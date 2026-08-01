@@ -71,17 +71,23 @@ export default function SettingsPage() {
         });
       } catch (err: any) {
         console.error('Failed to load profile:', err);
-        // Fallback to localStorage
+        // Fallback to localStorage cached values
         setProfile({
           name: localStorage.getItem('userName') || 'Admin User',
           email: localStorage.getItem('userEmail') || 'admin@mdrrmo.gov.ph',
           phone: localStorage.getItem('userPhone') || '+63 912 345 6789',
           department: 'MDRRMO Main Office'
         });
-        showToast('warning', 'Offline Mode', 'Loaded profile from cached system session.');
+        // Only show "Offline" toast if the device is actually offline
+        // Otherwise it's an auth/server error — don't mislead the user
+        if (!navigator.onLine) {
+          showToast('warning', 'Offline Mode', 'Loaded profile from cached session.');
+        }
+        // Silently fall back to cache for auth/server errors — profile still loads
       } finally {
         setLoading(false);
       }
+
     };
     
     // Load notifications from localStorage

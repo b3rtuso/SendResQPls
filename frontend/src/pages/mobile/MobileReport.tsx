@@ -1,9 +1,17 @@
-import { useState, useRef, useCallback } from 'react';
+﻿import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, AlertTriangle, Camera, Loader, WifiOff } from 'lucide-react';
+import { ChevronLeft, AlertTriangle, Camera, Loader, WifiOff, Clock } from 'lucide-react';
 import { reportIncident } from '../../api/client';
 import { isWithinBalayan } from '../../data/balayan-data';
 import { useNetworkStatus } from '../../utils/useNetworkStatus';
+import {
+  enqueueReport,
+  dequeueReport,
+  getPendingIds,
+  getReport,
+  getPendingCount,
+  pruneStaleReports,
+} from '../../utils/offlineQueue';
 import BottomNav from '../../components/BottomNav';
 import FcmBannerOverlay from '../../components/FcmBannerOverlay';
 import Toast, { type ToastType } from '../../components/Toast';
@@ -23,11 +31,70 @@ export default function MobileReport() {
   const [photo, setPhoto] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const [flushing, setFlushing] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
   const [toast, setToast] = useState<ToastState>({ show: false, message: '', type: 'info' });
 
   const showToast = useCallback((type: ToastType, message: string, detail?: string) => {
     setToast({ show: true, message, detail, type });
   }, []);
+
+  // Prune stale reports on mount and refresh pending count
+  useEffect(() => {
+    pruneStaleReports().then(() => setPendingCount(getPendingCount()));
+  }, []);
+
+  // -- Flush offline queue when connection is restored ---------------------------
+  useEffect(() => {
+    if (!isOnline) return;
+
+    const ids = getPendingIds();
+    if (ids.length === 0) return;
+
+    const flush = async () => {
+      setFlushing(true);
+      showToast('info', `Sending ${ids.length} queued report${ids.length > 1 ? 's' : ''}…`, 'Connection restored — submitting offline reports now.');
+
+      let successCount = 0;
+      let failCount = 0;
+
+      for (const id of ids) {
+        try {
+          const report = await getReport(id);
+          if (!report) { await dequeueReport(id); continue; }
+
+          // Reconstruct File from stored Blob
+          const file = new File([report.photoBlob], report.photoName, { type: report.photoBlob.type });
+
+          const formData = new FormData();
+          formData.append('photo', file);
+          formData.append('latitude', report.latitude);
+          formData.append('longitude', report.longitude);
+          // userId comes from JWT in the Authorization header (set by api interceptor)
+
+          await reportIncident(formData);
+          await dequeueReport(id);
+          successCount++;
+        } catch {
+          failCount++;
+        }
+      }
+
+      setPendingCount(getPendingCount());
+      setFlushing(false);
+
+      if (successCount > 0 && failCount === 0) {
+        showToast('success', `${successCount} report${successCount > 1 ? 's' : ''} sent!`, 'All queued emergency reports have been submitted to MDRRMO.');
+      } else if (successCount > 0 && failCount > 0) {
+        showToast('warning', `${successCount} sent, ${failCount} failed`, 'Some reports could not be sent. They will retry next time you are online.');
+      } else {
+        showToast('error', 'Failed to send queued reports', 'Reports are still saved. They will retry when you reconnect.');
+      }
+    };
+
+    flush();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOnline]);
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -38,11 +105,6 @@ export default function MobileReport() {
   };
 
   const handleSend = async () => {
-    if (!isOnline) {
-      showToast('error', 'No Internet Connection', 'Emergency alerts require an active internet connection. Please check your network and try again.');
-      return;
-    }
-
     if (!photo) {
       showToast('warning', 'No photo', 'Please capture or upload an image of the emergency.');
       return;
@@ -51,11 +113,7 @@ export default function MobileReport() {
     setSending(true);
 
     try {
-      const userId = localStorage.getItem('userId') || 'anonymous';
-      const formData = new FormData();
-      formData.append('photo', photo);
-      formData.append('userId', userId);
-
+      // Always get GPS location first (needed for both online & offline paths)
       let lat: string;
       let lng: string;
 
@@ -80,10 +138,38 @@ export default function MobileReport() {
         return;
       }
 
+      // -- OFFLINE PATH: Save to IndexedDB queue ------------------------------
+      if (!isOnline) {
+        const userId = localStorage.getItem('userId') || 'anonymous';
+        await enqueueReport({
+          userId,
+          latitude: lat,
+          longitude: lng,
+          photoBlob: photo,          // Stored in IndexedDB — handles large images
+          photoName: photo.name,
+        });
+
+        const newCount = getPendingCount();
+        setPendingCount(newCount);
+        setPhoto(null);
+        setPreview(null);
+
+        showToast(
+          'warning',
+          'Report Saved — Will Send When Online',
+          `Your report has been saved on your device (${newCount} queued). It will be automatically sent to MDRRMO when your internet connection is restored.`
+        );
+        setSending(false);
+        return;
+      }
+
+      // -- ONLINE PATH: Submit directly --------------------------------------
+      const formData = new FormData();
+      formData.append('photo', photo);
       formData.append('latitude', lat);
       formData.append('longitude', lng);
+      // userId comes from JWT token via api interceptor — not passed in body
 
-      // Optimistic state submission feedback
       showToast('info', 'Submitting Emergency Alert...', 'Sending photo and location to MDRRMO emergency dispatch.');
 
       const response = await reportIncident(formData);
@@ -97,7 +183,6 @@ export default function MobileReport() {
 
       setPhoto(null);
       setPreview(null);
-
       setTimeout(() => navigate('/mobile/history'), 2500);
 
     } catch (error: any) {
@@ -131,7 +216,7 @@ export default function MobileReport() {
           color: 'white',
           boxShadow: '0 4px 12px rgba(14, 165, 233, 0.15)',
         }}>
-          <button 
+          <button
             onClick={() => navigate('/mobile')}
             style={{
               width: 36,
@@ -155,7 +240,7 @@ export default function MobileReport() {
           </div>
         </div>
 
-        {/* Offline Warning Banner (Red Error Styling) */}
+        {/* Offline Warning Banner */}
         {!isOnline && (
           <div style={{
             background: 'rgba(239, 68, 68, 0.1)',
@@ -174,9 +259,35 @@ export default function MobileReport() {
             <div>
               <div style={{ fontWeight: 700, color: '#EF4444' }}>No Internet Connection</div>
               <div style={{ fontSize: 11, fontWeight: 400, marginTop: 2, color: 'var(--text-secondary, #94A3B8)' }}>
-                Emergency alerts require an active internet connection. The SOS button is disabled until connection is restored.
+                Your report will be saved on your device and sent automatically when you reconnect.
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Queued reports badge */}
+        {pendingCount > 0 && (
+          <div style={{
+            background: 'rgba(245, 158, 11, 0.1)',
+            border: '1px solid rgba(245, 158, 11, 0.4)',
+            borderRadius: 12,
+            padding: '10px 16px',
+            marginBottom: 16,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            fontSize: 13,
+          }}>
+            <Clock size={18} color="#F59E0B" style={{ flexShrink: 0 }} />
+            <div>
+              <span style={{ fontWeight: 700, color: '#F59E0B' }}>
+                {flushing ? `Sending ${pendingCount} queued report${pendingCount > 1 ? 's' : ''}…` : `${pendingCount} report${pendingCount > 1 ? 's' : ''} queued`}
+              </span>
+              <div style={{ fontSize: 11, color: 'var(--text-secondary, #94A3B8)', marginTop: 2 }}>
+                {flushing ? 'Submitting to MDRRMO now…' : 'Will send automatically when online'}
+              </div>
+            </div>
+            {flushing && <Loader size={16} color="#F59E0B" className="spin" style={{ marginLeft: 'auto' }} />}
           </div>
         )}
 
@@ -214,18 +325,18 @@ export default function MobileReport() {
         <button
           className="sos-btn"
           onClick={handleSend}
-          disabled={!photo || sending || !isOnline}
-          style={!isOnline ? { opacity: 0.5, cursor: 'not-allowed', background: '#9CA3AF' } : undefined}
+          disabled={!photo || sending || flushing}
+          style={flushing ? { opacity: 0.6, cursor: 'not-allowed' } : undefined}
         >
           {sending ? (
             <>
               <Loader size={20} className="spin" />
-              SENDING TO MDRRMO...
+              {isOnline ? 'SENDING TO MDRRMO...' : 'SAVING REPORT...'}
             </>
           ) : !isOnline ? (
             <>
               <WifiOff size={20} />
-              NO INTERNET — ALERT DISABLED
+              SAVE REPORT FOR LATER
             </>
           ) : (
             <>
@@ -234,9 +345,10 @@ export default function MobileReport() {
             </>
           )}
         </button>
+
         <p className="report-note">
           {!isOnline
-            ? '* Internet connection, location, and photo are required to send the alert'
+            ? '* Report will be saved and sent automatically when internet is restored'
             : '* Location and photo are required to send the alert'}
         </p>
       </div>
@@ -245,3 +357,4 @@ export default function MobileReport() {
     </div>
   );
 }
+

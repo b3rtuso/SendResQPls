@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, FileText, Phone,
@@ -92,9 +93,19 @@ const S: Record<string, React.CSSProperties> = {
 
 export default function Sidebar() {
   const navigate = useNavigate();
-  const userName  = localStorage.getItem('userName')  || 'MDRRMO Admin';
-  const userEmail = localStorage.getItem('userEmail') || 'admin@mdrrmo.gov.ph';
-  const initials  = userName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  const [userName, setUserName] = useState(() => localStorage.getItem('userName') || 'MDRRMO Admin');
+  const [userEmail, setUserEmail] = useState(() => localStorage.getItem('userEmail') || '');
+
+  useEffect(() => {
+    const syncUser = () => {
+      setUserName(localStorage.getItem('userName') || 'MDRRMO Admin');
+      setUserEmail(localStorage.getItem('userEmail') || '');
+    };
+    window.addEventListener('storage', syncUser);
+    return () => window.removeEventListener('storage', syncUser);
+  }, []);
+
+  const initials = userName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'AD';
 
   const handleLogout = () => {
     ['token','userId','userName','userEmail','userRole'].forEach(k => localStorage.removeItem(k));

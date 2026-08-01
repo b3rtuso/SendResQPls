@@ -68,32 +68,33 @@ app.use('/api/incidents', incidentRoutes);
 app.use('/api/incidents/create', reportLimiter); // tighter limit for new report submissions
 app.use('/api/departments', departmentRoutes);
 
-// Auto-seed default MDRRMO admin on startup
+// Auto-seed default MDRRMO admin on startup if no admin exists in the database
 async function seedDefaultAdmin() {
   try {
-    const adminEmail = 'admin@mdrrmo.gov.ph';
-    const existingAdmin = await prisma.user.findUnique({
-      where: { email: adminEmail }
+    // Check if ANY admin user already exists in Postgres
+    const existingAdmin = await prisma.user.findFirst({
+      where: { role: 'ADMIN' }
     });
 
     if (!existingAdmin) {
+      const defaultEmail = 'admin@mdrrmo.gov.ph';
       const defaultPassword = 'MdrrmoAdmin2026!';
       const hashedPassword = await bcrypt.hash(defaultPassword, 8); // 8 rounds for faster boot
       
       await prisma.user.create({
         data: {
-          email: adminEmail,
+          email: defaultEmail,
           name: 'MDRRMO Balayan Admin',
           passwordHash: hashedPassword,
           role: 'ADMIN',
           phoneNumber: '09171234567'
         }
       });
-      console.log('✅ Default MDRRMO admin seeded successfully:');
-      console.log(`📧 Email: ${adminEmail}`);
+      console.log('✅ Default MDRRMO admin seeded successfully in database:');
+      console.log(`📧 Email: ${defaultEmail}`);
       console.log(`🔑 Password: ${defaultPassword}`);
     } else {
-      console.log(`ℹ️ Default MDRRMO admin already exists: ${adminEmail}`);
+      console.log(`ℹ️ Admin account already exists in database: ${existingAdmin.email}`);
     }
   } catch (error: any) {
     console.error('❌ Failed to seed default MDRRMO admin:', error.message);

@@ -69,13 +69,17 @@ export default function SettingsPage() {
           phone: u.phoneNumber || '',
           department: 'MDRRMO Main Office'
         });
+        // Sync fetched database values to localStorage
+        if (u.name) localStorage.setItem('userName', u.name);
+        if (u.email) localStorage.setItem('userEmail', u.email);
+        if (u.phoneNumber) localStorage.setItem('userPhone', u.phoneNumber);
       } catch (err: any) {
         console.error('Failed to load profile:', err);
         // Fallback to localStorage cached values
         setProfile({
           name: localStorage.getItem('userName') || 'Admin User',
-          email: localStorage.getItem('userEmail') || 'admin@mdrrmo.gov.ph',
-          phone: localStorage.getItem('userPhone') || '+63 912 345 6789',
+          email: localStorage.getItem('userEmail') || '',
+          phone: localStorage.getItem('userPhone') || '',
           department: 'MDRRMO Main Office'
         });
         // Only show "Offline" toast if the device is actually offline

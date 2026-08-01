@@ -3,6 +3,7 @@ import { prisma } from '../config/db';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { sendVerificationEmail, sendPasswordResetEmail } from '../services/emailService';
+import { AuthRequest } from '../middleware/auth';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key';
 
@@ -128,9 +129,16 @@ export const testEmail = async (req: Request, res: Response) => {
 };
 
 // GET /api/auth/profile/:userId
-export const getProfile = async (req: Request, res: Response) => {
+// Protected: Citizen can only view their own profile; Admin can view any profile
+export const getProfile = async (req: AuthRequest, res: Response) => {
   try {
     const { userId } = req.params;
+
+    // Citizens can only view their own profile
+    if (req.user!.role === 'CITIZEN' && req.user!.userId !== userId) {
+      return res.status(403).json({ error: 'Access denied. You can only view your own profile.' });
+    }
+
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -154,39 +162,69 @@ export const getProfile = async (req: Request, res: Response) => {
 };
 
 // PATCH /api/auth/profile
-export const updateProfile = async (req: Request, res: Response) => {
+// Protected: Uses verified userId from JWT token
+export const updateProfile = async (req: AuthRequest, res: Response) => {
   try {
-    const { userId } = req.body;
+    // Always use the user ID from the verified JWT token
+    const userId = req.user!.userId;
     const { name, email, phoneNumber, pushToken } = req.body;
+
+    // If email is changing, check that it isn't already taken by another user
+    if (email) {
+      const existingUser = await prisma.user.findFirst({
+        where: {
+          email,
+          NOT: { id: userId },
+        },
+      });
+      if (existingUser) {
+        return res.status(400).json({ error: 'Email address is already in use by another account.' });
+      }
+    }
 
     const data: any = {};
     if (name) data.name = name;
     if (email) data.email = email;
-    if (phoneNumber) data.phoneNumber = phoneNumber;
+    if (phoneNumber !== undefined) data.phoneNumber = phoneNumber;
     if (pushToken !== undefined) data.pushToken = pushToken;
 
     const updated = await prisma.user.update({
       where: { id: userId },
       data,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phoneNumber: true,
+        role: true,
+      },
     });
 
-    res.json({ message: "Profile updated", user: updated });
+    console.log(`✅ Profile updated in database for user ${userId} (${updated.email})`);
+    res.json({ message: 'Profile updated in database', user: updated });
   } catch (error: any) {
-    console.error("❌ Profile update error:", error.message);
-    res.status(500).json({ error: "Failed to update profile", details: error.message });
+    console.error('❌ Profile update error:', error.message);
+    res.status(500).json({ error: 'Failed to update profile in database', details: error.message });
   }
 };
 
 // PATCH /api/auth/password
-export const changePassword = async (req: Request, res: Response) => {
+// Protected: Uses verified userId from JWT token
+export const changePassword = async (req: AuthRequest, res: Response) => {
   try {
-    const { userId, currentPassword, newPassword } = req.body;
+    // Always use the user ID from the verified JWT token
+    const userId = req.user!.userId;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Current password and new password are required.' });
+    }
 
     const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user) return res.status(404).json({ error: "User not found" });
+    if (!user) return res.status(404).json({ error: 'User not found' });
 
     const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
-    if (!isValid) return res.status(400).json({ error: "Current password is incorrect" });
+    if (!isValid) return res.status(400).json({ error: 'Current password is incorrect' });
 
     const newHash = await bcrypt.hash(newPassword, 10);
     await prisma.user.update({
@@ -194,10 +232,11 @@ export const changePassword = async (req: Request, res: Response) => {
       data: { passwordHash: newHash },
     });
 
-    res.json({ message: "Password updated successfully" });
+    console.log(`🔒 Password updated in database for user ${userId}`);
+    res.json({ message: 'Password updated successfully in database' });
   } catch (error: any) {
-    console.error("❌ Password change error:", error.message);
-    res.status(500).json({ error: "Failed to change password", details: error.message });
+    console.error('❌ Password change error:', error.message);
+    res.status(500).json({ error: 'Failed to change password', details: error.message });
   }
 };
 

@@ -7,6 +7,7 @@ import { syncDepartmentStatuses } from './departmentController';
 import { messaging } from '../config/firebase';
 import { AuthRequest } from '../middleware/auth';
 import { withRLS } from '../utils/rlsQuery';
+import { incidentQueue } from '../queues/incidentQueue';
 
 // ─── SSE: Admin real-time new-incident notifications ──────────────────────────
 // Stores all connected admin browser clients
@@ -185,15 +186,15 @@ export const getIncident = async (req: AuthRequest, res: Response) => {
 };
 
 // POST /api/incidents/report — Report a new incident with photo + GPS
-// Pipeline: Mobile photo → upload → AI classifies → save to DB → respond to mobile user
+// Phase 2: Returns immediately (< 300ms). AI classification runs as a background job.
 // Protected: userId is taken from the verified JWT token, not from the request body
 export const reportIncident = async (req: AuthRequest, res: Response) => {
   try {
     // Take userId from verified JWT — never trust the body for identity
     const userId = req.user!.userId;
     const { latitude, longitude } = req.body;
-    
-    if (!req.file) return res.status(400).json({ error: "No image provided" });
+
+    if (!req.file) return res.status(400).json({ error: 'No image provided' });
 
     // Validate location is within Balayan, Batangas
     const lat = parseFloat(latitude);
@@ -202,108 +203,46 @@ export const reportIncident = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: 'Reports can only be submitted from within Balayan, Batangas municipality. Please enable GPS and ensure you are in the area.' });
     }
 
+    // Cloudinary URL is already available — multer-storage-cloudinary uploaded it before this handler ran
     const imageUrl = req.file.path;
 
-    // Run AI classification on the uploaded image
-    const assessment = await runAIAnalysis(imageUrl);
-    const aiRecognized: boolean = assessment.recognized ?? isRecognizedIncident(assessment.incidentType);
-    const aiConfidence: string  = assessment.confidence || (aiRecognized ? 'medium' : 'low');
-
-    // Map AI suggestion to a valid Department enum value
-    let recommended: any = "RESCUE"; // Default fallback
-    const aiSuggestion = assessment.recommendedDept.toUpperCase();
-
-    if (aiSuggestion.includes("FIRE") || aiSuggestion.includes("BFP")) recommended = "BFP";
-    else if (aiSuggestion.includes("POLICE") || aiSuggestion.includes("PNP")) recommended = "PNP";
-    else if (aiSuggestion.includes("MEDICAL") || aiSuggestion.includes("AMBULANCE")) recommended = "MEDICAL";
-    else if (aiSuggestion.includes("ENGINEERING") || aiSuggestion.includes("ROAD")) recommended = "ENGINEERING";
-
-    // If AI couldn't recognize: start at REVIEWING so admin MUST decide
-    // If AI recognized: start at PENDING (normal flow)
-    const initialStatus = aiRecognized ? 'PENDING' : 'REVIEWING';
-
-    // Save to database
+    // ① Save incident to DB immediately with 'PENDING' status and placeholder AI fields.
+    //    The worker will update these once AI classification finishes.
     const incident = await prisma.incident.create({
       data: {
         reporterId: userId,
-        latitude: parseFloat(latitude),
-        longitude: parseFloat(longitude),
+        latitude: lat,
+        longitude: lng,
         photoUrl: imageUrl,
-        aiDetectedType: assessment.incidentType,
-        aiRecommendedDept: aiRecognized ? recommended : undefined,
-        status: initialStatus,
-        adminNotes: aiRecognized ? undefined : `⚠️ AI could not recognize this incident (confidence: ${aiConfidence}). Admin review required.`,
-      }
-    });
-
-    console.log(`✅ New incident: ${incident.id} | Type: ${assessment.incidentType} | Recognized: ${aiRecognized} | Status: ${initialStatus}`);
-
-    // ── Notify all admin devices via FCM push notification ──────────────────
-    if (messaging) {
-      try {
-        const admins = await prisma.user.findMany({
-          where: { role: 'ADMIN', pushToken: { not: null } },
-          select: { pushToken: true },
-        });
-        const adminTokens = admins.map((a: any) => a.pushToken!).filter(Boolean);
-        if (adminTokens.length > 0) {
-          await messaging.sendEachForMulticast({
-            tokens: adminTokens,
-            notification: {
-              title: aiRecognized ? '🚨 Bagong Emergency Report!' : '⚠️ Hindi Nakilala ang Incident!',
-              body: aiRecognized
-                ? `${assessment.incidentType} na na-detect sa Balayan. I-review na agad!`
-                : `May bagong report na hindi nakilala ng AI. Kailangan ng admin decision — Reject o I-review?`,
-            },
-            data: {
-              incidentId: incident.id,
-              type: aiRecognized ? 'NEW_INCIDENT' : 'UNRECOGNIZED_INCIDENT',
-              dept: recommended,
-            },
-            android: { notification: { sound: 'default', priority: 'high' } },
-          });
-          console.log(`📱 Admin push sent to ${adminTokens.length} device(s)`);
-        }
-      } catch (adminPushErr: any) {
-        console.error(`⚠️ Admin push notification failed: ${adminPushErr.message}`);
-      }
-    }
-
-    // ── Broadcast SSE event to admin web dashboard clients ──────────────────
-    if (aiRecognized) {
-      broadcastSseEvent('new_incident', {
-        id: incident.id,
-        aiDetectedType: assessment.incidentType,
-        aiRecommendedDept: recommended,
+        aiDetectedType: 'Processing...', // Worker will update this
         status: 'PENDING',
-        createdAt: incident.createdAt,
-      });
-    } else {
-      // Special event: prompts admin to decide Reject or Review
-      broadcastSseEvent('unrecognized_incident', {
-        id: incident.id,
-        aiDetectedType: assessment.incidentType,
-        aiConfidence,
-        status: 'REVIEWING',
-        createdAt: incident.createdAt,
-      });
-    }
-
-    res.status(201).json({
-      success: true,
-      message: aiRecognized
-        ? "Emergency report submitted successfully"
-        : "Report submitted. Admin has been notified to review this incident.",
-      incident,
-      aiRecognized,
+      },
     });
-  
+
+    // ② Enqueue the AI classification job — non-blocking, fires in the background
+    await incidentQueue.add('classify', {
+      incidentId: incident.id,
+      imageUrl,
+      latitude: lat,
+      longitude: lng,
+    });
+
+    console.log(`📥 Incident ${incident.id} saved. AI job enqueued.`);
+
+    // ③ Respond immediately — user gets confirmation in < 300ms
+    return res.status(201).json({
+      success: true,
+      message: 'Emergency report submitted! Our team has been notified.',
+      incidentId: incident.id,
+      incident,
+    });
+
   } catch (error: any) {
-    console.error("🔥 CONTROLLER ERROR:", error); 
-    res.status(500).json({ 
+    console.error('🔥 CONTROLLER ERROR:', error);
+    res.status(500).json({
       success: false,
-      error: "Failed to report incident", 
-      details: error.message 
+      error: 'Failed to report incident',
+      details: error.message,
     });
   }
 };

@@ -5,6 +5,7 @@ import rateLimit from 'express-rate-limit';
 import incidentRoutes from './routes/incidentRoutes';
 import authRoutes from './routes/authRoutes';
 import departmentRoutes from './routes/departmentRoutes';
+import { incidentWorker } from './queues/incidentQueue'; // Start background AI worker
 
 import { prisma } from './config/db';
 import bcrypt from 'bcrypt';
@@ -102,8 +103,10 @@ async function seedDefaultAdmin() {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, async () => {
   console.log(`🚀 System running on port ${PORT}`);
+  console.log(`⚙️  Background worker: ${incidentWorker.name} (concurrency: 5)`);
   await seedDefaultAdmin();
 });
+
 // Add this at the end of src/server.ts
 app.use((err: any, req: any, res: any, next: any) => {
   console.error("DEBUGGER CAUGHT ERROR:", err);

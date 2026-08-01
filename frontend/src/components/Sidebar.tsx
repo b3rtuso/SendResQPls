@@ -29,8 +29,8 @@ const S: Record<string, React.CSSProperties> = {
   },
   logoWrap: {
     width: 38, height: 38, borderRadius: '22%', flexShrink: 0,
-    overflow: 'hidden', border: '1.5px solid #F59E0B',
-    boxShadow: '0 0 10px rgba(245, 158, 11, 0.3), inset 0 1px 1px rgba(255,255,255,0.3)',
+    overflow: 'hidden', border: '1px solid rgba(255,255,255,0.18)',
+    boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.3), 0 4px 12px rgba(0,0,0,0.25)',
   },
   logo: { width: '100%', height: '100%', objectFit: 'cover' },
   brandName: {
@@ -38,8 +38,8 @@ const S: Record<string, React.CSSProperties> = {
     letterSpacing: '-0.3px', lineHeight: 1.2,
   },
   brandSub: {
-    color: '#F59E0B', fontSize: 10.5,
-    fontWeight: 600, marginTop: 2, letterSpacing: '0.02em',
+    color: 'rgba(255,255,255,0.4)', fontSize: 10.5,
+    fontWeight: 500, marginTop: 2, letterSpacing: '0.02em',
   },
   sectionLabel: {
     fontSize: 10, fontWeight: 700,
@@ -67,11 +67,11 @@ const S: Record<string, React.CSSProperties> = {
   },
   avatar: {
     width: 34, height: 34, borderRadius: '22%', flexShrink: 0,
-    background: 'linear-gradient(135deg, #1E3A5F, #2563EB)',
+    background: 'linear-gradient(135deg, #1D4ED8, #2563EB)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     fontSize: 12, fontWeight: 800, color: 'white',
-    border: '1.5px solid #F59E0B',
-    boxShadow: '0 0 8px rgba(245, 158, 11, 0.25)',
+    border: '1px solid rgba(255,255,255,0.2)',
+    boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.3)',
   },
   adminName: {
     color: '#fff', fontSize: 12.5, fontWeight: 700,

@@ -396,10 +396,6 @@ export default function Header({ title, subtitle }: HeaderProps) {
             <Search size={16} color="var(--text-muted)" />
             <input type="text" placeholder="Search incidents, reports..." />
           </div>
-          <div className="system-status active">
-            <span className="dot" />
-            System Active
-          </div>
 
           {/* Notification Bell */}
           <div ref={panelRef} style={{ position: 'relative' }}>

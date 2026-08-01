@@ -4,7 +4,7 @@ import Header from '../components/Header';
 import { RequestsTableSkeleton } from '../components/PageLoader';
 import { Search, RefreshCw, Download, ChevronLeft, ChevronRight, Image, X, CheckCircle2, XCircle } from 'lucide-react';
 import type { Incident, Status } from '../types';
-import { getIncidents, updateIncidentStatus } from '../api/client';
+import { getIncidents, updateIncidentStatus, invalidateCache } from '../api/client';
 import { getNearestBarangay } from '../data/balayan-data';
 import { normalizeIncidentType } from '../utils/normalizeIncidentType';
 
@@ -39,12 +39,20 @@ export default function Requests() {
   const navigate = useNavigate();
   const [incidents,     setIncidents]     = useState<Incident[]>([]);
   const [loading,       setLoading]       = useState(true);
+  const [refreshing,    setRefreshing]    = useState(false);
   const [filterStatus,  setFilterStatus]  = useState<string>('ALL');
   const [filterType,    setFilterType]    = useState<string>('ALL');
   const [search,        setSearch]        = useState('');
   const [page,          setPage]          = useState(1);
   const [previewUrl,    setPreviewUrl]    = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null); // incidentId being acted on
+
+  const handleManualRefresh = async () => {
+    setRefreshing(true);
+    invalidateCache('incidents');
+    await fetchIncidents();
+    setRefreshing(false);
+  };
 
   const fetchIncidents = async () => {
     setLoading(true);
@@ -140,11 +148,28 @@ export default function Requests() {
 
           <div style={{ flex: 1 }} />
 
-          <button onClick={fetchIncidents} style={{ padding: '10px 16px', borderRadius: 10, border: '1.5px solid #E2E8F0', background: 'white', color: '#475569', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, fontFamily: 'inherit', transition: 'all 0.15s' }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = '#2563EB'; e.currentTarget.style.color = '#2563EB'; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.color = '#475569'; }}
+          <button
+            onClick={handleManualRefresh}
+            disabled={refreshing || loading}
+            style={{
+              padding: '10px 16px',
+              borderRadius: 10,
+              border: '1.5px solid #E2E8F0',
+              background: 'white',
+              color: refreshing ? '#2563EB' : '#475569',
+              cursor: refreshing || loading ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              fontSize: 13,
+              fontWeight: 600,
+              fontFamily: 'inherit',
+              transition: 'all 0.15s'
+            }}
+            onMouseEnter={e => { if (!refreshing) { e.currentTarget.style.borderColor = '#2563EB'; e.currentTarget.style.color = '#2563EB'; } }}
+            onMouseLeave={e => { if (!refreshing) { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.color = '#475569'; } }}
           >
-            <RefreshCw size={14} /> Refresh
+            <RefreshCw size={14} className={refreshing ? 'spin' : ''} /> {refreshing ? 'Refreshing…' : 'Refresh'}
           </button>
           <button style={{ padding: '10px 16px', borderRadius: 10, border: '1.5px solid #E2E8F0', background: 'white', color: '#475569', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, fontFamily: 'inherit' }}>
             <Download size={14} /> Export

@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
 import type { Incident, Status } from '../types';
-import { getIncidents, getIncidentStats } from '../api/client';
+import { getIncidents, getIncidentStats, invalidateCache } from '../api/client';
 import { getNearestBarangay } from '../data/balayan-data';
 import { normalizeIncidentType } from '../utils/normalizeIncidentType';
 import { dashboardChartData, monthlyByType2024, monthlyByType2025, yearlyTotals, monthlyDetails } from '../data/mdrrmo-data';
@@ -96,8 +96,16 @@ export default function Dashboard() {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [stats, setStats] = useState({ total: 0, pending: 0, dispatched: 0, resolved: 0 });
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [statusFilter, setStatusFilter] = useState<Status | 'ALL'>('ALL');
   const [dashboardYear, setDashboardYear] = useState<string>(String(new Date().getFullYear()));
+
+  const handleManualRefresh = async () => {
+    setRefreshing(true);
+    invalidateCache('incidents');
+    await fetchData();
+    setRefreshing(false);
+  };
 
   // Map each year to its monthly breakdown dataset
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -523,9 +531,25 @@ export default function Dashboard() {
                   </span>
                 )}
               </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={fetchData} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8', padding: 4, display: 'flex' }}>
-                  <RefreshCw size={16} />
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <button
+                  onClick={handleManualRefresh}
+                  disabled={refreshing || loading}
+                  title="Refresh incidents"
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: refreshing || loading ? 'not-allowed' : 'pointer',
+                    color: refreshing ? '#2563EB' : '#94A3B8',
+                    padding: 6,
+                    borderRadius: 6,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  <RefreshCw size={16} className={refreshing ? 'spin' : ''} />
                 </button>
                 <button onClick={() => navigate('/requests')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#2563EB', fontSize: 13, fontWeight: 600, padding: '4px 8px', borderRadius: 6, fontFamily: 'inherit' }}>
                   View All →

@@ -2,12 +2,16 @@
 
 /* ===== DESIGN SYSTEM TOKENS ===== */
 :root {
-  /* ─ Accent: MDRRMO Blue — trust, authority, government ─ */
-  --primary:        #2563EB;
+  /* ─ MDRRMO Logo Palette: Royal Blue, Deep Navy & Seal Gold ─ */
+  --primary:        #2563EB;          /* Royal Blue (Logo Shield) */
   --primary-dark:   #1D4ED8;
   --primary-light:  #60A5FA;
   --primary-bg:     rgba(37, 99, 235, 0.08);
   --primary-glow:   rgba(37, 99, 235, 0.22);
+
+  --accent-gold:    #F59E0B;          /* MDRRMO Seal Gold */
+  --accent-gold-dark: #D97706;
+  --accent-gold-bg: rgba(245, 158, 11, 0.12);
 
   /* ─ Semantic colors ─ */
   --success:        #10B981;
@@ -24,14 +28,14 @@
   --info:           #0EA5E9;
   --info-bg:        rgba(14, 165, 233, 0.10);
 
-  /* ─ Backgrounds ─ */
+  /* ─ Backgrounds — MDRRMO Navy ─ */
   --bg-body:        #F1F5F9;
   --bg-card:        #FFFFFF;
   --bg-card-hover:  #FAFBFF;
-  --bg-sidebar:     #1E3A5F;          /* original navy */
-  --bg-sidebar-end: #122440;          /* gradient end */
-  --bg-sidebar-hover:  rgba(255, 255, 255, 0.07);
-  --bg-sidebar-active: rgba(255, 255, 255, 0.14);
+  --bg-sidebar:     #0F2942;          /* Logo Deep Navy */
+  --bg-sidebar-end: #1E3A5F;          /* Logo Body Blue */
+  --bg-sidebar-hover:  rgba(255, 255, 255, 0.08);
+  --bg-sidebar-active: rgba(245, 158, 11, 0.14); /* Gold tint for active item */
   --bg-subtle:      #F8FAFC;
 
   /* ─ Typography ─ */

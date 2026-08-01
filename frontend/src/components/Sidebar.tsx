@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, FileText, Phone,
-  BarChart3, Building2, Settings, LogOut, Radio,
+  BarChart3, Building2, Settings, LogOut,
 } from 'lucide-react';
 
 const navItems = [
@@ -17,20 +17,20 @@ const navItems = [
 const S: Record<string, React.CSSProperties> = {
   aside: {
     position: 'fixed', left: 0, top: 0, bottom: 0, width: 256,
-    background: 'linear-gradient(180deg, #0F1F38 0%, #0A1628 100%)',
+    background: 'linear-gradient(180deg, #0F2942 0%, #1E3A5F 100%)',
     display: 'flex', flexDirection: 'column',
     zIndex: 50,
-    borderRight: '1px solid rgba(255,255,255,0.05)',
+    borderRight: '1px solid rgba(255,255,255,0.08)',
   },
   brand: {
     padding: '22px 20px 18px',
     display: 'flex', alignItems: 'center', gap: 12,
-    borderBottom: '1px solid rgba(255,255,255,0.06)',
+    borderBottom: '1px solid rgba(255,255,255,0.08)',
   },
   logoWrap: {
     width: 38, height: 38, borderRadius: '22%', flexShrink: 0,
-    overflow: 'hidden', border: '1px solid rgba(255,255,255,0.18)',
-    boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.3), 0 4px 12px rgba(0,0,0,0.25)',
+    overflow: 'hidden', border: '1.5px solid #F59E0B',
+    boxShadow: '0 0 10px rgba(245, 158, 11, 0.3), inset 0 1px 1px rgba(255,255,255,0.3)',
   },
   logo: { width: '100%', height: '100%', objectFit: 'cover' },
   brandName: {
@@ -38,56 +38,50 @@ const S: Record<string, React.CSSProperties> = {
     letterSpacing: '-0.3px', lineHeight: 1.2,
   },
   brandSub: {
-    color: 'rgba(255,255,255,0.35)', fontSize: 10.5,
-    fontWeight: 500, marginTop: 2, letterSpacing: '0.02em',
+    color: '#F59E0B', fontSize: 10.5,
+    fontWeight: 600, marginTop: 2, letterSpacing: '0.02em',
   },
   sectionLabel: {
     fontSize: 10, fontWeight: 700,
-    color: 'rgba(255,255,255,0.25)',
+    color: 'rgba(255,255,255,0.35)',
     letterSpacing: '0.1em', textTransform: 'uppercase' as const,
     padding: '20px 18px 8px',
   },
   nav: { flex: 1, padding: '4px 12px', overflowY: 'auto' as const },
-  liveWrap: {
-    margin: '0 12px 12px',
-    padding: '9px 12px',
-    borderRadius: 12,
-    background: 'rgba(16, 185, 129, 0.08)',
-    border: '1px solid rgba(16,185,129,0.18)',
-    display: 'flex', alignItems: 'center', gap: 8,
-  },
-  liveDot: {
-    width: 7, height: 7, borderRadius: '50%',
-    background: '#10B981',
-    boxShadow: '0 0 6px #10B981',
-    flexShrink: 0,
-    animation: 'sidebarPulse 2s ease-in-out infinite',
-  },
-  liveText: { color: 'rgba(255,255,255,0.55)', fontSize: 11, fontWeight: 600 },
   footer: {
     padding: '10px 12px 16px',
-    borderTop: '1px solid rgba(255,255,255,0.06)',
+    borderTop: '1px solid rgba(255,255,255,0.08)',
   },
   logoutBtn: {
     width: '100%', display: 'flex', alignItems: 'center', gap: 10,
     padding: '9px 14px', borderRadius: 9, marginBottom: 8,
     background: 'transparent', border: 'none', cursor: 'pointer',
-    color: 'rgba(255,255,255,0.38)', fontSize: 13.5, fontWeight: 500,
+    color: 'rgba(255,255,255,0.45)', fontSize: 13.5, fontWeight: 500,
     transition: 'all 0.15s', fontFamily: 'inherit',
   },
   adminCard: {
     display: 'flex', alignItems: 'center', gap: 10,
     padding: '10px 12px', borderRadius: 12,
-    background: 'rgba(255,255,255,0.04)',
-    border: '1px solid rgba(255,255,255,0.07)',
+    background: 'rgba(255,255,255,0.05)',
+    border: '1px solid rgba(255,255,255,0.09)',
   },
   avatar: {
     width: 34, height: 34, borderRadius: '22%', flexShrink: 0,
-    background: 'linear-gradient(135deg, #1D4ED8, #2563EB)',
+    background: 'linear-gradient(135deg, #1E3A5F, #2563EB)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     fontSize: 12, fontWeight: 800, color: 'white',
-    border: '1px solid rgba(255,255,255,0.2)',
-    boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.3)',
+    border: '1.5px solid #F59E0B',
+    boxShadow: '0 0 8px rgba(245, 158, 11, 0.25)',
+  },
+  adminName: {
+    color: '#fff', fontSize: 12.5, fontWeight: 700,
+    lineHeight: 1.2, width: 138,
+    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const,
+  },
+  adminEmail: {
+    color: 'rgba(255,255,255,0.4)', fontSize: 10.5,
+    width: 138, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const,
+    marginTop: 1,
   },
 };
 
@@ -172,13 +166,6 @@ export default function Sidebar() {
           </NavLink>
         ))}
       </nav>
-
-      {/* Live status */}
-      <div style={S.liveWrap}>
-        <Radio size={13} color="#10B981" style={{ flexShrink: 0 }} />
-        <span style={S.liveText}>System Online</span>
-        <div style={{ ...S.liveDot, marginLeft: 'auto' }} />
-      </div>
 
       {/* Footer */}
       <div style={S.footer}>

@@ -106,7 +106,7 @@ export const getIncidents = async (req: Request, res: Response) => {
 
   } catch (error: any) {
     console.error("❌ GET incidents error:", error.message);
-    res.status(500).json({ error: "Failed to fetch incidents", details: error.message });
+    res.status(500).json({ error: "Failed to fetch incidents" });
   }
 };
 
@@ -132,7 +132,7 @@ export const getMyIncidents = async (req: AuthRequest, res: Response) => {
     res.json(incidents);
   } catch (error: any) {
     console.error("❌ GET my incidents error:", error.message);
-    res.status(500).json({ error: "Failed to fetch your incidents", details: error.message });
+    res.status(500).json({ error: "Failed to fetch your incidents" });
   }
 };
 
@@ -151,7 +151,7 @@ export const getIncidentStats = async (_req: Request, res: Response) => {
     res.json({ total, pending, reviewing, dispatched, resolved, rejected });
   } catch (error: any) {
     console.error("❌ GET stats error:", error.message);
-    res.status(500).json({ error: "Failed to fetch stats", details: error.message });
+    res.status(500).json({ error: "Failed to fetch stats" });
   }
 };
 
@@ -181,7 +181,7 @@ export const getIncident = async (req: AuthRequest, res: Response) => {
     res.json(incident);
   } catch (error: any) {
     console.error("❌ GET incident error:", error.message);
-    res.status(500).json({ error: "Failed to fetch incident", details: error.message });
+    res.status(500).json({ error: "Failed to fetch incident" });
   }
 };
 
@@ -396,7 +396,7 @@ export const reverseGeocode = async (req: Request, res: Response) => {
     res.json(result);
   } catch (error: any) {
     console.error("❌ reverseGeocode error:", error.message);
-    res.status(500).json({ error: "Failed to reverse geocode location", details: error.message });
+    res.status(500).json({ error: "Failed to reverse geocode location" });
   }
 };
 

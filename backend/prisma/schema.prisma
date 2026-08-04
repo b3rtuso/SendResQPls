@@ -7,16 +7,17 @@ datasource db {
 }
 
 model User {
-  id        String     @id @default(uuid())
-  phoneNumber String?  @unique // Mobile users might prefer phone login
-  email     String?    @unique
-  name      String
+  id           String     @id @default(uuid())
+  phoneNumber  String?    @unique // Mobile users might prefer phone login
+  email        String?    @unique
+  name         String
   passwordHash String
-  role      Role       @default(CITIZEN)
-  incidents Incident[]
-  createdAt DateTime   @default(now())
-  otpCode String?
-  pushToken String?
+  role         Role       @default(CITIZEN)
+  isActive     Boolean    @default(true) // Admins can be soft-deactivated without data loss
+  incidents    Incident[]
+  createdAt    DateTime   @default(now())
+  otpCode      String?
+  pushToken    String?
 }
 
 model Incident {

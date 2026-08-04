@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import 'dotenv/config';
 import rateLimit from 'express-rate-limit';
 import incidentRoutes from './routes/incidentRoutes';
@@ -12,7 +13,34 @@ import bcrypt from 'bcrypt';
 
 const app = express();
 
-app.use(cors());
+// ── Trust Render's reverse proxy (required for express-rate-limit to work) ──────
+// '1' = trust exactly one proxy hop (Render's load balancer). This allows
+// express-rate-limit to read the real client IP from X-Forwarded-For.
+app.set('trust proxy', 1);
+
+// ── Security Headers (helmet) ──────────────────────────────────────────────────
+// Sets X-Content-Type-Options, X-Frame-Options, HSTS, and 11 other headers.
+app.use(helmet());
+
+// ── CORS — only allow our own frontend origins ────────────────────────────────
+const allowedOrigins = [
+  process.env.FRONTEND_URL,           // production frontend (set in Render env vars)
+  'http://localhost:5173',            // Vite dev server
+  'http://localhost:4173',            // Vite preview
+].filter(Boolean) as string[];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow server-to-server requests (no origin) and whitelisted origins
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS blocked: origin '${origin}' is not allowed`));
+    }
+  },
+  credentials: true,
+}));
+
 app.use(express.json());
 
 // ── Cache-Control Headers Middleware ──────────────────────────────────────────
@@ -108,14 +136,13 @@ app.listen(PORT, async () => {
   await seedDefaultAdmin();
 });
 
-// Add this at the end of src/server.ts
-app.use((err: any, req: any, res: any, next: any) => {
-  console.error("DEBUGGER CAUGHT ERROR:", err);
-  res.status(500).json({
-    message: "Global Error Caught",
-    errorName: err.name,
-    errorMessage: err.message,
-    expectedField: err.field || "Unknown", // Multer specifically adds this
-    stack: err.stack
+// ── Global Error Handler ──────────────────────────────────────────────────────
+// NOTE: Never expose stack traces or raw error messages to clients in production.
+app.use((err: any, req: any, res: any, _next: any) => {
+  console.error('[ERROR]', err.message, err.stack);
+  res.status(err.status || 500).json({
+    error: err.status ? err.message : 'An internal server error occurred.',
+    // Only expose stack in local development
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   });
 });

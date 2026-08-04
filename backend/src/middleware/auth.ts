@@ -1,14 +1,20 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key';
+// ── Crash on startup if JWT_SECRET is missing ─────────────────────────────────
+// Never fall back to a predictable string — a missing secret means tokens
+// could be forged with a known value.
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('FATAL: JWT_SECRET environment variable is not set. Server cannot start.');
+}
 
 export interface AuthRequest extends Request {
   user?: { userId: string; role: 'CITIZEN' | 'ADMIN' };
 }
 
 /**
- * requireAuth � validates the Bearer JWT.
+ * requireAuth - validates the Bearer JWT.
  * Attaches req.user = { userId, role } on success.
  * Returns 401 if token is missing or invalid.
  */
@@ -28,7 +34,7 @@ export const requireAuth = (req: AuthRequest, res: Response, next: NextFunction)
 };
 
 /**
- * requireAdmin � extends requireAuth, also checks role === 'ADMIN'.
+ * requireAdmin - extends requireAuth, also checks role === 'ADMIN'.
  * Returns 403 if user is authenticated but not an admin.
  */
 export const requireAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {

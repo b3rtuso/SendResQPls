@@ -125,4 +125,11 @@ export const updateProfile = (data: Record<string, any>) =>
 export const changePassword = (data: { currentPassword: string; newPassword: string }) =>
   api.patch('/auth/password', { ...data, userId: localStorage.getItem('userId') });
 
+// === ADMIN MANAGEMENT ===
+export const listAdmins = () => api.get('/auth/admins');
+export const createAdmin = (data: { name: string; email: string; password: string; phoneNumber?: string }) =>
+  api.post('/auth/admin/create', data);
+export const toggleAdminStatus = (id: string) =>
+  api.patch(`/auth/admin/${id}/deactivate`);
+
 export default api;

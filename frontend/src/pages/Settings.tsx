@@ -4,11 +4,13 @@ import { SettingsSkeleton } from '../components/PageLoader';
 import Toast, { type ToastType } from '../components/Toast';
 import { 
   Save, Download, RefreshCw, Shield, Eye, EyeOff, 
-  CheckCircle2, Activity, Info, Loader2, User, KeyRound, Bell
+  CheckCircle2, Activity, Info, Loader2, User, KeyRound, Bell,
+  Users, UserPlus, UserCheck, UserX, Plus, X
 } from 'lucide-react';
 import { 
   getProfile, updateProfile, changePassword, 
-  getIncidents, getDepartments 
+  getIncidents, getDepartments,
+  listAdmins, createAdmin, toggleAdminStatus
 } from '../api/client';
 
 export default function SettingsPage() {
@@ -41,6 +43,14 @@ export default function SettingsPage() {
   const [updatingPassword, setUpdatingPassword] = useState(false);
   const [backingUp, setBackingUp] = useState(false);
   const [showAuditLog, setShowAuditLog] = useState(false);
+
+  // Team Management state
+  const [admins, setAdmins] = useState<any[]>([]);
+  const [loadingAdmins, setLoadingAdmins] = useState(false);
+  const [showCreateAdmin, setShowCreateAdmin] = useState(false);
+  const [creatingAdmin, setCreatingAdmin] = useState(false);
+  const [togglingAdmin, setTogglingAdmin] = useState<string | null>(null);
+  const [newAdmin, setNewAdmin] = useState({ name: '', email: '', password: '', phoneNumber: '' });
   
   const [toast, setToast] = useState<{ show: boolean; message: string; detail?: string; type: ToastType }>({
     show: false,
@@ -105,7 +115,64 @@ export default function SettingsPage() {
     }
     
     fetchUserData();
+
+    // Load admin team list
+    const fetchAdmins = async () => {
+      setLoadingAdmins(true);
+      try {
+        const res = await listAdmins();
+        setAdmins(res.data);
+      } catch (err) {
+        console.error('Failed to load admins:', err);
+      } finally {
+        setLoadingAdmins(false);
+      }
+    };
+    fetchAdmins();
   }, []);
+
+  const handleCreateAdmin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newAdmin.name || !newAdmin.email || !newAdmin.password) {
+      showToast('error', 'Validation Error', 'Name, email, and password are required.');
+      return;
+    }
+    if (newAdmin.password.length < 8) {
+      showToast('error', 'Validation Error', 'Password must be at least 8 characters.');
+      return;
+    }
+    setCreatingAdmin(true);
+    try {
+      const res = await createAdmin(newAdmin);
+      setAdmins(prev => [...prev, res.data.admin]);
+      setNewAdmin({ name: '', email: '', password: '', phoneNumber: '' });
+      setShowCreateAdmin(false);
+      showToast('success', 'Admin Created', `${res.data.admin.name} can now log in to the admin panel.`);
+    } catch (err: any) {
+      showToast('error', 'Failed to Create Admin', err.response?.data?.error || 'Server error occurred.');
+    } finally {
+      setCreatingAdmin(false);
+    }
+  };
+
+  const handleToggleAdmin = async (id: string, name: string, isActive: boolean) => {
+    const currentUserId = localStorage.getItem('userId');
+    if (id === currentUserId) {
+      showToast('error', 'Not Allowed', 'You cannot deactivate your own account.');
+      return;
+    }
+    setTogglingAdmin(id);
+    try {
+      const res = await toggleAdminStatus(id);
+      setAdmins(prev => prev.map(a => a.id === id ? { ...a, isActive: res.data.admin.isActive } : a));
+      const action = res.data.admin.isActive ? 'reactivated' : 'deactivated';
+      showToast('success', `Admin ${action.charAt(0).toUpperCase() + action.slice(1)}`, `${name}'s access has been ${action}.`);
+    } catch (err: any) {
+      showToast('error', 'Failed to Update Admin', err.response?.data?.error || 'Server error occurred.');
+    } finally {
+      setTogglingAdmin(null);
+    }
+  };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -523,6 +590,154 @@ export default function SettingsPage() {
                   />
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Team Management Card — full width below left column */}
+          <div className="card" style={{ gridColumn: '1 / -1', marginTop: 4 }}>
+            <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Users size={18} style={{ color: 'var(--primary)' }} />
+                <h3 style={{ margin: 0 }}>Team Management</h3>
+                <span style={{ fontSize: 11, background: 'var(--primary)', color: '#fff', borderRadius: 20, padding: '2px 8px', fontWeight: 700 }}>
+                  {admins.length} admin{admins.length !== 1 ? 's' : ''}
+                </span>
+              </div>
+              <button
+                className="btn btn-primary"
+                style={{ gap: 6, padding: '6px 14px', fontSize: 13 }}
+                onClick={() => setShowCreateAdmin(v => !v)}
+              >
+                {showCreateAdmin ? <><X size={14} /> Cancel</> : <><UserPlus size={14} /> Add Admin</>}
+              </button>
+            </div>
+            <div className="card-body">
+
+              {/* Create Admin Form */}
+              {showCreateAdmin && (
+                <form onSubmit={handleCreateAdmin} style={{
+                  background: 'var(--bg-body)',
+                  border: '1px solid var(--border-light)',
+                  borderRadius: 10,
+                  padding: 16,
+                  marginBottom: 16,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 12,
+                }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>
+                    New Administrator Account
+                  </div>
+                  <div className="form-row">
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label style={{ fontSize: 12 }}>Full Name *</label>
+                      <input className="form-control" placeholder="e.g. Juan dela Cruz" value={newAdmin.name}
+                        onChange={e => setNewAdmin({ ...newAdmin, name: e.target.value })} />
+                    </div>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label style={{ fontSize: 12 }}>Email Address *</label>
+                      <input className="form-control" type="email" placeholder="e.g. juan@mdrrmo.gov.ph" value={newAdmin.email}
+                        onChange={e => setNewAdmin({ ...newAdmin, email: e.target.value })} />
+                    </div>
+                  </div>
+                  <div className="form-row">
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label style={{ fontSize: 12 }}>Password * (min. 8 characters)</label>
+                      <input className="form-control" type="password" placeholder="Set a strong password" value={newAdmin.password}
+                        onChange={e => setNewAdmin({ ...newAdmin, password: e.target.value })} />
+                    </div>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label style={{ fontSize: 12 }}>Phone Number (optional)</label>
+                      <input className="form-control" placeholder="e.g. 09171234567" value={newAdmin.phoneNumber}
+                        onChange={e => setNewAdmin({ ...newAdmin, phoneNumber: e.target.value })} />
+                    </div>
+                  </div>
+                  <button className="btn btn-primary" type="submit" disabled={creatingAdmin} style={{ alignSelf: 'flex-start' }}>
+                    {creatingAdmin
+                      ? <><Loader2 size={14} className="spin" style={{ marginRight: 6 }} /> Creating...
+                      </>
+                      : <><UserPlus size={14} /> Create Admin Account</>}
+                  </button>
+                </form>
+              )}
+
+              {/* Admin List */}
+              {loadingAdmins ? (
+                <div style={{ textAlign: 'center', padding: 24, color: 'var(--text-secondary)', fontSize: 13 }}>
+                  <Loader2 size={18} className="spin" style={{ marginRight: 8 }} /> Loading team...
+                </div>
+              ) : admins.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: 24, color: 'var(--text-secondary)', fontSize: 13 }}>
+                  No admin accounts found.
+                </div>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr>
+                        <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>Name</th>
+                        <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>Email</th>
+                        <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>Phone</th>
+                        <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>Created</th>
+                        <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>Status</th>
+                        <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {admins.map((admin) => {
+                        const isSelf = admin.id === localStorage.getItem('userId');
+                        return (
+                          <tr key={admin.id} style={{ borderBottom: '1px solid var(--border-light)', opacity: admin.isActive ? 1 : 0.55 }}>
+                            <td style={{ padding: '12px', fontWeight: 600, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <div style={{
+                                width: 32, height: 32, borderRadius: '50%',
+                                background: 'linear-gradient(135deg, var(--primary), #1e40af)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                color: '#fff', fontSize: 12, fontWeight: 800, flexShrink: 0
+                              }}>
+                                {admin.name.charAt(0).toUpperCase()}
+                              </div>
+                              {admin.name}
+                              {isSelf && <span style={{ fontSize: 10, background: 'rgba(59,130,246,0.1)', color: 'var(--primary)', borderRadius: 10, padding: '1px 6px', fontWeight: 700 }}>You</span>}
+                            </td>
+                            <td style={{ padding: '12px', fontSize: 12, color: 'var(--text-secondary)' }}>{admin.email}</td>
+                            <td style={{ padding: '12px', fontSize: 12, color: 'var(--text-secondary)' }}>{admin.phoneNumber || '—'}</td>
+                            <td style={{ padding: '12px', fontSize: 12, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+                              {new Date(admin.createdAt).toLocaleDateString()}
+                            </td>
+                            <td style={{ padding: '12px' }}>
+                              {admin.isActive
+                                ? <span className="badge resolved" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11 }}><UserCheck size={10} /> Active</span>
+                                : <span className="badge rejected" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11 }}><UserX size={10} /> Inactive</span>}
+                            </td>
+                            <td style={{ padding: '12px' }}>
+                              {!isSelf && (
+                                <button
+                                  onClick={() => handleToggleAdmin(admin.id, admin.name, admin.isActive)}
+                                  disabled={togglingAdmin === admin.id}
+                                  style={{
+                                    fontSize: 12, fontWeight: 600, padding: '5px 12px',
+                                    border: `1px solid ${admin.isActive ? '#ef4444' : 'var(--primary)'}`,
+                                    borderRadius: 6, cursor: 'pointer',
+                                    background: 'transparent',
+                                    color: admin.isActive ? '#ef4444' : 'var(--primary)',
+                                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                                    transition: 'all 0.2s'
+                                  }}
+                                >
+                                  {togglingAdmin === admin.id
+                                    ? <Loader2 size={12} className="spin" />
+                                    : admin.isActive ? <><UserX size={12} /> Deactivate</> : <><UserCheck size={12} /> Reactivate</>}
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
 

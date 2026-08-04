@@ -4,10 +4,16 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { sendVerificationEmail, sendPasswordResetEmail } from '../services/emailService';
 import { AuthRequest } from '../middleware/auth';
+import { redis } from '../config/redis';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key';
+// ── JWT Secret — crash immediately on startup if not configured ───────────────
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('FATAL: JWT_SECRET environment variable is not set. Server cannot start.');
+}
 
-// In-memory store for verification codes (simple approach for thesis)
+// ── In-memory store for email verification codes ──────────────────────────────
+// (verification codes are short-lived and low-risk — in-memory is fine here)
 const verificationCodes = new Map<string, { code: string; expiresAt: number }>();
 
 // POST /api/auth/send-code — Send verification code to email
@@ -33,7 +39,7 @@ export const sendCode = async (req: Request, res: Response) => {
     res.json({ message: 'Verification code sent to your email' });
   } catch (error: any) {
     console.error('❌ Send code error:', error.message);
-    res.status(500).json({ error: 'Failed to send verification code', details: error.message });
+    res.status(500).json({ error: 'Failed to send verification code' });
   }
 };
 
@@ -60,7 +66,7 @@ export const verifyCode = async (req: Request, res: Response) => {
     console.log(`✅ Email verified: ${email}`);
     res.json({ message: 'Email verified successfully', verified: true });
   } catch (error: any) {
-    res.status(500).json({ error: 'Verification failed', details: error.message });
+    res.status(500).json({ error: 'Verification failed' });
   }
 };
 
@@ -68,7 +74,7 @@ export const verifyCode = async (req: Request, res: Response) => {
 export const register = async (req: Request, res: Response) => {
   try {
     // Note: 'role' is intentionally excluded — users always register as CITIZEN.
-    // Admin accounts must be created manually or via the seed function.
+    // Admin accounts must be created by an existing admin via POST /api/auth/admin/create.
     const { name, email, password, phoneNumber } = req.body;
     const hashedPassword = await bcrypt.hash(password, 8); // 8 rounds = ~80ms, still secure
     const newUser = await prisma.user.create({
@@ -76,7 +82,7 @@ export const register = async (req: Request, res: Response) => {
     });
     res.status(201).json(newUser);
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Registration failed. Please try again.' });
   }
 };
 
@@ -90,6 +96,11 @@ export const login = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Invalid email or password' });
     }
 
+    // Block deactivated admin accounts
+    if (!user.isActive) {
+      return res.status(403).json({ error: 'This account has been deactivated. Please contact your administrator.' });
+    }
+
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
     if (!isPasswordValid) {
       return res.status(400).json({ error: 'Invalid email or password' });
@@ -101,30 +112,6 @@ export const login = async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Something went wrong during login.' });
-  }
-};
-
-// POST /api/auth/test-email
-export const testEmail = async (req: Request, res: Response) => {
-  const { email } = req.body;
-  if (!email) return res.status(400).json({ error: 'Please provide a destination email' });
-
-  const apiKey = process.env.BREVO_API_KEY;
-  const systemEmail = process.env.SYSTEM_EMAIL;
-  const envStatus = {
-    BREVO_API_KEY_set: !!apiKey,
-    BREVO_API_KEY_preview: apiKey ? `${apiKey.slice(0, 10)}****` : 'NOT SET',
-    SYSTEM_EMAIL_set: !!systemEmail,
-    SYSTEM_EMAIL: systemEmail || 'NOT SET',
-  };
-
-  try {
-    await sendVerificationEmail(email, '123456');
-    console.log(`📧 Test email sent successfully to ${email}`);
-    res.status(200).json({ message: '✅ Email sent! Check your inbox (and Spam folder).', env: envStatus });
-  } catch (error: any) {
-    console.error('❌ Brevo Error:', error);
-    res.status(500).json({ error: 'Failed to send email', details: error.message, env: envStatus });
   }
 };
 
@@ -157,7 +144,7 @@ export const getProfile = async (req: AuthRequest, res: Response) => {
     res.json(user);
   } catch (error: any) {
     console.error('❌ Get profile error:', error.message);
-    res.status(500).json({ error: 'Failed to fetch profile', details: error.message });
+    res.status(500).json({ error: 'Failed to fetch profile' });
   }
 };
 
@@ -204,7 +191,7 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
     res.json({ message: 'Profile updated in database', user: updated });
   } catch (error: any) {
     console.error('❌ Profile update error:', error.message);
-    res.status(500).json({ error: 'Failed to update profile in database', details: error.message });
+    res.status(500).json({ error: 'Failed to update profile' });
   }
 };
 
@@ -236,12 +223,11 @@ export const changePassword = async (req: AuthRequest, res: Response) => {
     res.json({ message: 'Password updated successfully in database' });
   } catch (error: any) {
     console.error('❌ Password change error:', error.message);
-    res.status(500).json({ error: 'Failed to change password', details: error.message });
+    res.status(500).json({ error: 'Failed to change password' });
   }
 };
 
-// In-memory store for password reset tokens
-const resetTokens = new Map<string, { email: string; expiresAt: number }>();
+// ── Password Reset — tokens stored in Redis (survives server restarts) ────────
 
 // POST /api/auth/forgot-password — Send password reset link to email
 export const forgotPassword = async (req: Request, res: Response) => {
@@ -255,8 +241,9 @@ export const forgotPassword = async (req: Request, res: Response) => {
 
     // Generate a secure random token
     const token = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
-    const expiresAt = Date.now() + 30 * 60 * 1000; // 30 minutes
-    resetTokens.set(token, { email, expiresAt });
+
+    // Store in Redis with 30-minute TTL — survives server restarts unlike in-memory Map
+    await redis.set(`pwd_reset:${token}`, email, 'EX', 30 * 60);
 
     // Build reset URL — uses the app's frontend URL
     const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/mobile/reset-password?token=${token}`;
@@ -266,7 +253,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
     res.json({ message: 'If this email is registered, a reset link has been sent.' });
   } catch (error: any) {
     console.error('❌ Forgot password error:', error.message);
-    res.status(500).json({ error: 'Failed to send reset email', details: error.message });
+    res.status(500).json({ error: 'Failed to send reset email' });
   }
 };
 
@@ -276,23 +263,106 @@ export const resetPassword = async (req: Request, res: Response) => {
     const { token, newPassword } = req.body;
     if (!token || !newPassword) return res.status(400).json({ error: 'Token and new password are required' });
 
-    const stored = resetTokens.get(token);
-    if (!stored) return res.status(400).json({ error: 'Invalid or expired reset link. Please request a new one.' });
-    if (Date.now() > stored.expiresAt) {
-      resetTokens.delete(token);
-      return res.status(400).json({ error: 'Reset link has expired. Please request a new one.' });
-    }
+    // Fetch email from Redis (auto-expires after 30 min)
+    const email = await redis.get(`pwd_reset:${token}`);
+    if (!email) return res.status(400).json({ error: 'Invalid or expired reset link. Please request a new one.' });
 
     const newHash = await bcrypt.hash(newPassword, 10);
     await prisma.user.update({
-      where: { email: stored.email },
+      where: { email },
       data: { passwordHash: newHash },
     });
 
-    resetTokens.delete(token); // One-time use
+    // Delete the token immediately — one-time use
+    await redis.del(`pwd_reset:${token}`);
     res.json({ message: 'Password reset successfully. You can now log in.' });
   } catch (error: any) {
     console.error('❌ Reset password error:', error.message);
-    res.status(500).json({ error: 'Failed to reset password', details: error.message });
+    res.status(500).json({ error: 'Failed to reset password' });
+  }
+};
+
+// ── Admin Management ──────────────────────────────────────────────────────────
+
+// POST /api/auth/admin/create — Create a new admin account (admin only)
+export const createAdmin = async (req: AuthRequest, res: Response) => {
+  try {
+    const { name, email, password, phoneNumber } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ error: 'Name, email, and password are required.' });
+    }
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'Admin password must be at least 8 characters.' });
+    }
+
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) {
+      return res.status(400).json({ error: 'An account with this email already exists.' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newAdmin = await prisma.user.create({
+      data: {
+        name,
+        email,
+        passwordHash: hashedPassword,
+        phoneNumber: phoneNumber || null,
+        role: 'ADMIN',
+        isActive: true,
+      },
+      select: { id: true, name: true, email: true, phoneNumber: true, role: true, isActive: true, createdAt: true },
+    });
+
+    console.log(`✅ New admin account created: ${newAdmin.email} by admin ${req.user!.userId}`);
+    res.status(201).json({ message: 'Admin account created successfully', admin: newAdmin });
+  } catch (error: any) {
+    console.error('❌ Create admin error:', error.message);
+    res.status(500).json({ error: 'Failed to create admin account' });
+  }
+};
+
+// GET /api/auth/admins — List all admin accounts (admin only)
+export const listAdmins = async (req: AuthRequest, res: Response) => {
+  try {
+    const admins = await prisma.user.findMany({
+      where: { role: 'ADMIN' },
+      select: { id: true, name: true, email: true, phoneNumber: true, role: true, isActive: true, createdAt: true },
+      orderBy: { createdAt: 'asc' },
+    });
+    res.json(admins);
+  } catch (error: any) {
+    console.error('❌ List admins error:', error.message);
+    res.status(500).json({ error: 'Failed to fetch admin accounts' });
+  }
+};
+
+// PATCH /api/auth/admin/:id/deactivate — Soft-deactivate an admin account (admin only)
+export const deactivateAdmin = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // Prevent self-deactivation
+    if (id === req.user!.userId) {
+      return res.status(400).json({ error: 'You cannot deactivate your own account.' });
+    }
+
+    const target = await prisma.user.findUnique({ where: { id } });
+    if (!target) return res.status(404).json({ error: 'Admin account not found.' });
+    if (target.role !== 'ADMIN') return res.status(400).json({ error: 'Only admin accounts can be deactivated here.' });
+
+    // Toggle isActive
+    const updated = await prisma.user.update({
+      where: { id },
+      data: { isActive: !target.isActive },
+      select: { id: true, name: true, email: true, isActive: true },
+    });
+
+    const action = updated.isActive ? 'reactivated' : 'deactivated';
+    console.log(`🔒 Admin ${updated.email} ${action} by ${req.user!.userId}`);
+    res.json({ message: `Admin account ${action} successfully.`, admin: updated });
+  } catch (error: any) {
+    console.error('❌ Deactivate admin error:', error.message);
+    res.status(500).json({ error: 'Failed to update admin account status' });
   }
 };

@@ -117,7 +117,7 @@ export const getDepartments = async (req: Request, res: Response) => {
     res.json(departments);
   } catch (error: any) {
     console.error('❌ GET departments error:', error.message);
-    res.status(500).json({ error: 'Failed to fetch departments', details: error.message });
+    res.status(500).json({ error: 'Failed to fetch departments' });
   }
 };
 
@@ -155,7 +155,7 @@ export const createDepartment = async (req: Request, res: Response) => {
     res.status(201).json(newDept);
   } catch (error: any) {
     console.error('❌ CREATE department error:', error.message);
-    res.status(500).json({ error: 'Failed to create department', details: error.message });
+    res.status(500).json({ error: 'Failed to create department' });
   }
 };
 
@@ -184,7 +184,7 @@ export const updateDepartment = async (req: Request, res: Response) => {
     res.json(updatedDept);
   } catch (error: any) {
     console.error('❌ UPDATE department error:', error.message);
-    res.status(500).json({ error: 'Failed to update department', details: error.message });
+    res.status(500).json({ error: 'Failed to update department' });
   }
 };
 
@@ -201,6 +201,6 @@ export const deleteDepartment = async (req: Request, res: Response) => {
     res.json({ message: 'Department successfully deleted', id });
   } catch (error: any) {
     console.error('❌ DELETE department error:', error.message);
-    res.status(500).json({ error: 'Failed to delete department', details: error.message });
+    res.status(500).json({ error: 'Failed to delete department' });
   }
 };

@@ -369,7 +369,12 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* ── Stat Cards ─────────────────────────────────── */}
+        {/* ── Stat Cards Filter Section ─────────────────────── */}
+        <div className="fade-in" style={{ marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: '#475569', letterSpacing: '0.01em' }}>
+            Filter by:
+          </span>
+        </div>
         <div className="stats-grid fade-in">
           {STAT_CARDS.map(({ label, value, accent, bg, activeGlow, filter }) => {
             const isActive = statusFilter === filter;
@@ -381,13 +386,13 @@ export default function Dashboard() {
                   background: isActive ? bg : 'white',
                   borderRadius: 14,
                   padding: '22px',
-                  borderLeft: `4px solid ${accent}`,
                   boxShadow: isActive
                     ? `0 0 0 2px ${accent}30, 0 4px 20px ${activeGlow}`
                     : '0 1px 4px rgba(0,0,0,0.05)',
-                  border: `1px solid ${isActive ? accent + '40' : '#F1F5F9'}`,
-                  borderLeftWidth: 4,
-                  borderLeftColor: accent,
+                  borderTop: `1px solid ${isActive ? accent + '40' : '#E2E8F0'}`,
+                  borderRight: `1px solid ${isActive ? accent + '40' : '#E2E8F0'}`,
+                  borderBottom: `1px solid ${isActive ? accent + '40' : '#E2E8F0'}`,
+                  borderLeft: `4px solid ${accent}`,
                   cursor: 'pointer',
                   transition: 'all 0.2s cubic-bezier(0.16,1,0.3,1)',
                   transform: isActive ? 'translateY(-2px)' : 'none',

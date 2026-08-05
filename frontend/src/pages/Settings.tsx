@@ -5,7 +5,7 @@ import Toast, { type ToastType } from '../components/Toast';
 import { 
   Save, Download, RefreshCw, Shield, Eye, EyeOff, 
   CheckCircle2, Activity, Info, Loader2, User, KeyRound, Bell,
-  Users, UserPlus, UserCheck, UserX, Plus, X
+  Users, UserPlus, UserCheck, UserX, X
 } from 'lucide-react';
 import { 
   getProfile, updateProfile, changePassword, 
@@ -155,7 +155,7 @@ export default function SettingsPage() {
     }
   };
 
-  const handleToggleAdmin = async (id: string, name: string, isActive: boolean) => {
+  const handleToggleAdmin = async (id: string, name: string) => {
     const currentUserId = localStorage.getItem('userId');
     if (id === currentUserId) {
       showToast('error', 'Not Allowed', 'You cannot deactivate your own account.');
@@ -713,7 +713,7 @@ export default function SettingsPage() {
                             <td style={{ padding: '12px' }}>
                               {!isSelf && (
                                 <button
-                                  onClick={() => handleToggleAdmin(admin.id, admin.name, admin.isActive)}
+                                  onClick={() => handleToggleAdmin(admin.id, admin.name)}
                                   disabled={togglingAdmin === admin.id}
                                   style={{
                                     fontSize: 12, fontWeight: 600, padding: '5px 12px',

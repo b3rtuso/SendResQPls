@@ -5,7 +5,7 @@ import { DashboardSkeleton } from '../components/PageLoader';
 import {
   AlertTriangle, Clock, Truck, CheckCircle,
   RefreshCw, ArrowRight, Phone, Flame,
-  Stethoscope, HardHat, Anchor, ShieldCheck, Calendar,
+  Stethoscope, HardHat, Anchor, ShieldCheck,
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
 import type { Incident, Status } from '../types';
@@ -227,7 +227,7 @@ export default function Dashboard() {
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                justify: 'space-between',
+                justifyContent: 'space-between',
                 padding: '0 8px 14px',
               }}>
                 <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255, 255, 255, 0.75)', letterSpacing: '0.02em' }}>
@@ -260,7 +260,7 @@ export default function Dashboard() {
                 padding: '22px 28px',
                 display: 'flex',
                 alignItems: 'center',
-                justify: 'space-between',
+                justifyContent: 'space-between',
                 gap: 24,
                 boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.2), 0 8px 24px rgba(37, 99, 235, 0.25)',
               }}>
@@ -298,7 +298,7 @@ export default function Dashboard() {
                   height: 92,
                   display: 'flex',
                   alignItems: 'center',
-                  justify: 'center',
+                  justifyContent: 'center',
                   flexShrink: 0,
                 }}>
                   <svg width="92" height="92" viewBox="0 0 92 92" style={{ transform: 'rotate(-90deg)' }}>

@@ -1,6 +1,7 @@
 import { Search, Bell, X, AlertCircle, AlertTriangle, HelpCircle, CheckCircle, XCircle } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { getIncidents, updateIncidentStatus } from '../api/client';
+import { fetchEventSource } from '@microsoft/fetch-event-source';
 
 interface HeaderProps {
   title: string;
@@ -39,7 +40,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
   const [decidingIncident, setDecidingIncident] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const bannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const sseRef = useRef<EventSource | null>(null);
+  const sseRef = useRef<AbortController | null>(null);
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -74,64 +75,81 @@ export default function Header({ title, subtitle }: HeaderProps) {
 
   // ── SSE: Subscribe to real-time new-incident events ───────────────────────
   useEffect(() => {
+    let aborted = false;
+
     const connect = () => {
-      const sse = new EventSource(`${API_BASE}/incidents/sse`);
-      sseRef.current = sse;
+      const token = localStorage.getItem('token');
+      if (!token) return;
 
-      sse.addEventListener('new_incident', (e: MessageEvent) => {
-        try {
-          const data = JSON.parse(e.data);
-          showBanner({
-            id: data.id,
-            type: data.aiDetectedType || 'Emergency',
-            dept: data.aiRecommendedDept || 'MDRRMO',
-          });
-          const newItem: NotifItem = {
-            id: data.id,
-            type: data.aiDetectedType || 'Emergency',
-            status: 'PENDING',
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            isNew: true,
-          };
-          setNotifications(prev => [newItem, ...prev].slice(0, 20));
-          setUnseenCount(prev => prev + 1);
-        } catch { /* ignore malformed events */ }
-      });
+      // Abort any existing SSE connection before reconnecting
+      sseRef.current?.abort();
+      const ctrl = new AbortController();
+      sseRef.current = ctrl;
 
-      // Listen for unrecognized incident — show admin decision modal
-      sse.addEventListener('unrecognized_incident', (e: MessageEvent) => {
-        try {
-          const data = JSON.parse(e.data);
-          setUnrecognizedModal({
-            id: data.id,
-            type: data.aiDetectedType || 'Unknown',
-            confidence: data.aiConfidence || 'low',
-          });
-          // Also add to notification list
-          const newItem: NotifItem = {
-            id: data.id,
-            type: `⚠️ ${data.aiDetectedType || 'Unrecognized'}`,
-            status: 'REVIEWING',
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            isNew: true,
-          };
-          setNotifications(prev => [newItem, ...prev].slice(0, 20));
-          setUnseenCount(prev => prev + 1);
-        } catch { /* ignore */ }
-      });
+      fetchEventSource(`${API_BASE}/incidents/sse`, {
+        headers: { Authorization: `Bearer ${token}` },
+        signal: ctrl.signal,
 
-      sse.onerror = () => {
-        // Reconnect after 5s if SSE drops
-        sse.close();
-        setTimeout(connect, 5000);
-      };
+        onmessage(event) {
+          if (event.event === 'new_incident') {
+            try {
+              const data = JSON.parse(event.data);
+              showBanner({
+                id: data.id,
+                type: data.aiDetectedType || 'Emergency',
+                dept: data.aiRecommendedDept || 'MDRRMO',
+              });
+              const newItem: NotifItem = {
+                id: data.id,
+                type: data.aiDetectedType || 'Emergency',
+                status: 'PENDING',
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                isNew: true,
+              };
+              setNotifications(prev => [newItem, ...prev].slice(0, 20));
+              setUnseenCount(prev => prev + 1);
+            } catch { /* ignore malformed events */ }
+          }
+
+          if (event.event === 'unrecognized_incident') {
+            try {
+              const data = JSON.parse(event.data);
+              setUnrecognizedModal({
+                id: data.id,
+                type: data.aiDetectedType || 'Unknown',
+                confidence: data.aiConfidence || 'low',
+              });
+              const newItem: NotifItem = {
+                id: data.id,
+                type: `⚠️ ${data.aiDetectedType || 'Unrecognized'}`,
+                status: 'REVIEWING',
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                isNew: true,
+              };
+              setNotifications(prev => [newItem, ...prev].slice(0, 20));
+              setUnseenCount(prev => prev + 1);
+            } catch { /* ignore */ }
+          }
+        },
+
+        onerror(err) {
+          // Reconnect after 5s if SSE drops (unless component unmounted)
+          if (!aborted) {
+            setTimeout(connect, 5000);
+          }
+          throw err; // tells fetchEventSource to stop its internal retry
+        },
+
+        openWhenHidden: true, // keep SSE alive even if tab is in background
+      }).catch(() => {}); // silence abort errors on cleanup
     };
 
     connect();
     fetchNotifications(); // Initial load
 
     return () => {
-      sseRef.current?.close();
+      aborted = true;
+      sseRef.current?.abort();
       if (bannerTimerRef.current) clearTimeout(bannerTimerRef.current);
     };
   }, [fetchNotifications, showBanner]);

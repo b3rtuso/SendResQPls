@@ -3,8 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { DashboardSkeleton } from '../components/PageLoader';
 import {
-  AlertTriangle, Clock, Truck, CheckCircle,
-  RefreshCw, ArrowRight, Phone, Flame,
+  AlertTriangle, RefreshCw, ArrowRight, Phone, Flame,
   Stethoscope, HardHat, Anchor, ShieldCheck,
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
@@ -187,10 +186,10 @@ export default function Dashboard() {
   }, [incidents]);
 
   const STAT_CARDS = [
-    { label: 'Total Reports',   value: stats.total,      accent: '#2563EB', bg: 'rgba(37, 99, 235, 0.05)', glow: 'rgba(37, 99, 235, 0.15)', activeGlow: 'rgba(37, 99, 235, 0.3)', filter: 'ALL', icon: AlertTriangle },
-    { label: 'Pending',         value: stats.pending,    accent: '#F59E0B', bg: 'rgba(245, 158, 11, 0.05)', glow: 'rgba(245, 158, 11, 0.15)', activeGlow: 'rgba(245, 158, 11, 0.3)', filter: 'PENDING', icon: Clock         },
-    { label: 'Dispatched',      value: stats.dispatched, accent: '#8B5CF6', bg: 'rgba(139, 92, 246, 0.05)', glow: 'rgba(139, 92, 246, 0.15)', activeGlow: 'rgba(139, 92, 246, 0.3)', filter: 'DISPATCHED', icon: Truck         },
-    { label: 'Resolved Today',  value: stats.resolved,   accent: '#22C55E', bg: 'rgba(34, 197, 94, 0.05)', glow: 'rgba(34, 197, 94, 0.15)', activeGlow: 'rgba(34, 197, 94, 0.3)', filter: 'RESOLVED', icon: CheckCircle   },
+    { label: 'Total Reports',   value: stats.total,      accent: '#2563EB', bg: 'rgba(37, 99, 235, 0.05)', glow: 'rgba(37, 99, 235, 0.15)', activeGlow: 'rgba(37, 99, 235, 0.3)', filter: 'ALL' },
+    { label: 'Pending',         value: stats.pending,    accent: '#F59E0B', bg: 'rgba(245, 158, 11, 0.05)', glow: 'rgba(245, 158, 11, 0.15)', activeGlow: 'rgba(245, 158, 11, 0.3)', filter: 'PENDING' },
+    { label: 'Dispatched',      value: stats.dispatched, accent: '#8B5CF6', bg: 'rgba(139, 92, 246, 0.05)', glow: 'rgba(139, 92, 246, 0.15)', activeGlow: 'rgba(139, 92, 246, 0.3)', filter: 'DISPATCHED' },
+    { label: 'Resolved Today',  value: stats.resolved,   accent: '#22C55E', bg: 'rgba(34, 197, 94, 0.05)', glow: 'rgba(34, 197, 94, 0.15)', activeGlow: 'rgba(34, 197, 94, 0.3)', filter: 'RESOLVED' },
   ];
 
   if (loading && incidents.length === 0) {
@@ -372,7 +371,7 @@ export default function Dashboard() {
 
         {/* ── Stat Cards ─────────────────────────────────── */}
         <div className="stats-grid fade-in">
-          {STAT_CARDS.map(({ label, value, accent, bg, activeGlow, filter, icon: Icon }) => {
+          {STAT_CARDS.map(({ label, value, accent, bg, activeGlow, filter }) => {
             const isActive = statusFilter === filter;
             return (
               <div
@@ -394,30 +393,20 @@ export default function Dashboard() {
                   transform: isActive ? 'translateY(-2px)' : 'none',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-                  <div>
-                    <div style={{
-                      fontSize: 10.5, fontWeight: 700, color: '#94A3B8',
-                      textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8,
-                    }}>
-                      {label}
-                    </div>
-                    <div style={{
-                      fontSize: 36, fontWeight: 900, color: '#0F172A',
-                      lineHeight: 1, letterSpacing: '-1px',
-                    }}>
-                      {value}
-                    </div>
+                <div>
+                  <div style={{
+                    fontSize: 10.5, fontWeight: 700, color: '#94A3B8',
+                    textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8,
+                  }}>
+                    {label}
                   </div>
                   <div style={{
-                    width: 42, height: 42, borderRadius: 10,
-                    background: isActive ? `${accent}20` : bg,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0,
-                    transition: 'background 0.2s',
+                    fontSize: 36, fontWeight: 900, color: '#0F172A',
+                    lineHeight: 1, letterSpacing: '-1px',
                   }}>
-                    <Icon size={20} style={{ color: accent }} />
+                    {value}
                   </div>
+                </div>
                 </div>
                 {isActive && (
                   <div style={{

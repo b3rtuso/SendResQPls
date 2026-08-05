@@ -407,7 +407,6 @@ export default function Dashboard() {
                     {value}
                   </div>
                 </div>
-                </div>
                 {isActive && (
                   <div style={{
                     marginTop: 10, fontSize: 11, fontWeight: 700,

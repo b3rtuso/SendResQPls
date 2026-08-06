@@ -113,6 +113,7 @@ export default function Dashboard() {
     return 'Good evening';
   };
 
+  const adminName = localStorage.getItem('userName') || 'MDRRMO Balayan Admin';
   const greetingText = getGreeting();
 
   const handleManualRefresh = async () => {
@@ -234,7 +235,7 @@ export default function Dashboard() {
         }}>
           {/* Left Greeting */}
           <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.4px' }}>
-            {greetingText}
+            {greetingText}, <span style={{ color: '#2563EB' }}>{adminName}</span>
           </h2>
 
           {/* Right Live Operational PST Clock */}
@@ -251,7 +252,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* ── Monthly Incident Forecast Hero Card (White Container & Vibrant Blue Inner Panel) ── */}
+        {/* ── Monthly Incident Forecast Hero Card (White Container & Sidebar Blue Inner Panel) ── */}
         {(() => {
           const currentMonthName = new Date().toLocaleDateString('en-PH', { month: 'long' });
           const currentMonthShort = new Date().toLocaleDateString('en-PH', { month: 'short' });
@@ -298,28 +299,28 @@ export default function Dashboard() {
                 </button>
               </div>
 
-              {/* Inner Vibrant Blue Card Panel */}
+              {/* Inner Sidebar Blue Card Panel */}
               <div style={{
-                background: 'linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%)',
+                background: 'linear-gradient(135deg, #0F2942 0%, #1E3A5F 100%)',
                 borderRadius: 18,
                 padding: '22px 28px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 gap: 24,
-                boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.2), 0 8px 24px rgba(37, 99, 235, 0.25)',
+                boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 8px 24px rgba(15, 41, 66, 0.25)',
               }}>
                 {/* Left Content Column */}
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 14, flex: 1 }}>
-                  {/* Floating White Month Pill Badge */}
+                  {/* Floating White Month Pill Badge with Sidebar Dark Blue Text */}
                   <span style={{
                     background: '#FFFFFF',
-                    color: '#1E3A8A',
+                    color: '#0F2942',
                     fontSize: 12,
-                    fontWeight: 700,
+                    fontWeight: 800,
                     padding: '4px 16px',
                     borderRadius: 9999,
-                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
                   }}>
                     {currentMonthName}
                   </span>

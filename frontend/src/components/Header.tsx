@@ -221,10 +221,6 @@ export default function Header({ title, subtitle }: HeaderProps) {
     }
   };
 
-  const userName  = localStorage.getItem('userName')  || 'MDRRMO Admin';
-
-  const initials   = userName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-
   return (
     <>
       {/* ── Unrecognized Incident Decision Modal ─────────────────────────── */}
@@ -525,23 +521,6 @@ export default function Header({ title, subtitle }: HeaderProps) {
             )}
           </div>
 
-          {/* Divider */}
-          <div style={{ width: 1, height: 32, background: '#E2E8F0', flexShrink: 0 }} />
-
-          {/* Admin Avatar */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'default' }}>
-            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: 13, fontWeight: 600, color: '#1E293B', lineHeight: 1.3 }}>{userName}</span>
-              <span style={{ fontSize: 11, color: '#94A3B8' }}>Administrator</span>
-            </div>
-            <div style={{
-              width: 38, height: 38, borderRadius: '50%',
-              background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 14, fontWeight: 700, color: 'white', flexShrink: 0,
-              border: '2px solid #BFDBFE',
-            }}>{initials}</div>
-          </div>
         </div>
       </header>
     </>

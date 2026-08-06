@@ -4,7 +4,7 @@ import Header from '../components/Header';
 import { DashboardSkeleton } from '../components/PageLoader';
 import {
   AlertTriangle, RefreshCw, ArrowRight, Phone, Flame,
-  Stethoscope, HardHat, Anchor, ShieldCheck, Clock, Sun, Moon, Sunset,
+  Stethoscope, HardHat, Anchor, ShieldCheck, Clock,
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
 import type { Incident, Status } from '../types';
@@ -108,13 +108,12 @@ export default function Dashboard() {
 
   const getGreeting = () => {
     const hour = time.getHours();
-    if (hour >= 5 && hour < 12) return { text: 'Good morning', icon: Sun, color: '#F59E0B' };
-    if (hour >= 12 && hour < 18) return { text: 'Good afternoon', icon: Sunset, color: '#F97316' };
-    return { text: 'Good evening', icon: Moon, color: '#60A5FA' };
+    if (hour >= 5 && hour < 12) return 'Good morning';
+    if (hour >= 12 && hour < 18) return 'Good afternoon';
+    return 'Good evening';
   };
 
-  const greetingInfo = getGreeting();
-  const GreetingIcon = greetingInfo.icon;
+  const greetingText = getGreeting();
 
   const handleManualRefresh = async () => {
     setRefreshing(true);
@@ -223,7 +222,7 @@ export default function Dashboard() {
       <Header title="Dashboard" subtitle="Real-time overview of disaster incidents" />
       <div className="page-content" style={{ paddingTop: 8 }}>
 
-        {/* ── Operational Greeting & Live Operational Clock (Unboxed) ── */}
+        {/* ── Operational Greeting & Live Operational Clock (Minimal) ── */}
         <div className="fade-in" style={{
           marginBottom: 20,
           display: 'flex',
@@ -234,30 +233,9 @@ export default function Dashboard() {
           padding: '0 4px',
         }}>
           {/* Left Greeting */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div style={{
-              width: 40, height: 40, borderRadius: 10,
-              background: 'rgba(59, 130, 246, 0.12)',
-              border: '1px solid rgba(59, 130, 246, 0.25)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: greetingInfo.color, flexShrink: 0
-            }}>
-              <GreetingIcon size={20} />
-            </div>
-            <div>
-              <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.3px' }}>
-                {greetingInfo.text}
-              </h2>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2, fontSize: 12, color: '#64748B' }}>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22C55E', boxShadow: '0 0 6px #22C55E' }} />
-                  MDRRMO Command Center Active
-                </span>
-                <span>•</span>
-                <span>Balayan, Batangas</span>
-              </div>
-            </div>
-          </div>
+          <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.4px' }}>
+            {greetingText}
+          </h2>
 
           {/* Right Live Operational PST Clock */}
           <div style={{
@@ -273,7 +251,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* ── Monthly Incident Forecast Hero Card (Strict Reference Design) ── */}
+        {/* ── Monthly Incident Forecast Hero Card (White Container & Vibrant Blue Inner Panel) ── */}
         {(() => {
           const currentMonthName = new Date().toLocaleDateString('en-PH', { month: 'long' });
           const currentMonthShort = new Date().toLocaleDateString('en-PH', { month: 'short' });
@@ -283,11 +261,11 @@ export default function Dashboard() {
           return (
             <div className="fade-in" style={{
               marginBottom: 28,
-              background: '#0F172A',
+              background: '#FFFFFF',
               borderRadius: 24,
               padding: '16px 20px 20px',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.25)',
+              border: '1px solid #E2E8F0',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
             }}>
               {/* Top Header Row */}
               <div style={{
@@ -296,7 +274,7 @@ export default function Dashboard() {
                 justifyContent: 'space-between',
                 padding: '0 8px 14px',
               }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255, 255, 255, 0.75)', letterSpacing: '0.02em' }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#475569', letterSpacing: '0.02em' }}>
                   Incident Risk Forecast
                 </span>
                 <button
@@ -304,8 +282,9 @@ export default function Dashboard() {
                   style={{
                     background: 'none',
                     border: 'none',
-                    color: 'rgba(255, 255, 255, 0.85)',
+                    color: '#2563EB',
                     fontSize: 12.5,
+                    fontWeight: 600,
                     fontStyle: 'italic',
                     cursor: 'pointer',
                     padding: 0,

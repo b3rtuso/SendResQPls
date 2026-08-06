@@ -4,12 +4,15 @@ import Header from '../components/Header';
 import { DashboardSkeleton } from '../components/PageLoader';
 import {
   AlertTriangle, RefreshCw, ArrowRight, Phone, Flame,
-  Stethoscope, HardHat, Anchor, ShieldCheck,
+  Stethoscope, HardHat, Anchor, ShieldCheck, Clock, MapPin, Compass, Sun, Moon, Sunset,
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import type { Incident, Status } from '../types';
 import { getIncidents, getIncidentStats, invalidateCache } from '../api/client';
-import { getNearestBarangay } from '../data/balayan-data';
+import { getNearestBarangay, BALAYAN_CENTER } from '../data/balayan-data';
 import { normalizeIncidentType } from '../utils/normalizeIncidentType';
 import { dashboardChartData, monthlyByType2024, monthlyByType2025, yearlyTotals, monthlyDetails } from '../data/mdrrmo-data';
 
@@ -98,6 +101,24 @@ export default function Dashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [statusFilter, setStatusFilter] = useState<Status | 'ALL'>('ALL');
   const [dashboardYear, setDashboardYear] = useState<string>(String(new Date().getFullYear()));
+
+  // Live operational clock & dynamic dispatcher greeting
+  const [time, setTime] = useState(new Date());
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const getGreeting = () => {
+    const hour = time.getHours();
+    if (hour >= 5 && hour < 12) return { text: 'Good morning', icon: Sun, color: '#F59E0B' };
+    if (hour >= 12 && hour < 18) return { text: 'Good afternoon', icon: Sunset, color: '#F97316' };
+    return { text: 'Good evening', icon: Moon, color: '#60A5FA' };
+  };
+
+  const adminName = localStorage.getItem('userName') || 'Dispatcher';
+  const greetingInfo = getGreeting();
+  const GreetingIcon = greetingInfo.icon;
 
   const handleManualRefresh = async () => {
     setRefreshing(true);
@@ -205,6 +226,68 @@ export default function Dashboard() {
     <>
       <Header title="Dashboard" subtitle="Real-time overview of disaster incidents" />
       <div className="page-content" style={{ paddingTop: 8 }}>
+
+        {/* ── Operational Greeting & Live Operational Clock Banner ── */}
+        <div className="fade-in" style={{
+          marginBottom: 20,
+          background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
+          borderRadius: 16,
+          padding: '16px 22px',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 12,
+        }}>
+          {/* Left Greeting */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{
+              width: 44, height: 44, borderRadius: 12,
+              background: 'rgba(59, 130, 246, 0.12)',
+              border: '1px solid rgba(59, 130, 246, 0.25)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: greetingInfo.color, flexShrink: 0
+            }}>
+              <GreetingIcon size={22} />
+            </div>
+            <div>
+              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#FFFFFF', letterSpacing: '-0.3px' }}>
+                {greetingInfo.text}, <span style={{ color: '#60A5FA' }}>{adminName}</span>
+              </h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3, fontSize: 12, color: 'rgba(255, 255, 255, 0.55)' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22C55E', boxShadow: '0 0 8px #22C55E' }} />
+                  MDRRMO Command Center Active
+                </span>
+                <span>•</span>
+                <span>Balayan, Batangas</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Live Operational PST Clock */}
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.05)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: 12,
+            padding: '8px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+          }}>
+            <Clock size={16} style={{ color: '#93C5FD' }} />
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: '#FFFFFF', fontFamily: 'monospace', letterSpacing: '0.05em' }}>
+                {time.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
+              </div>
+              <div style={{ fontSize: 9.5, fontWeight: 700, color: 'rgba(255, 255, 255, 0.4)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                PST (UTC+8)
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* ── Monthly Incident Forecast Hero Card (Strict Reference Design) ── */}
         {(() => {
@@ -424,6 +507,125 @@ export default function Dashboard() {
               </div>
             );
           })}
+        </div>
+
+        {/* ── Live Balayan Incident Mini-Map Widget ── */}
+        <div className="fade-in" style={{
+          marginBottom: 28,
+          background: '#0F172A',
+          borderRadius: 20,
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          boxShadow: '0 12px 32px rgba(0, 0, 0, 0.2)',
+          overflow: 'hidden',
+        }}>
+          {/* Card Header */}
+          <div style={{
+            padding: '16px 20px',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: 'rgba(15, 23, 42, 0.8)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{
+                width: 32, height: 32, borderRadius: 8,
+                background: 'rgba(59, 130, 246, 0.15)',
+                border: '1px solid rgba(59, 130, 246, 0.3)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: '#60A5FA'
+              }}>
+                <MapPin size={16} />
+              </div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#FFFFFF' }}>
+                  Live Balayan Incident Mini-Map
+                </h3>
+                <span style={{ fontSize: 11, color: 'rgba(255, 255, 255, 0.5)' }}>
+                  Real-time GPS mapping of emergency reports across Balayan barangays
+                </span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => navigate('/analytics')}
+              style={{
+                background: 'rgba(255, 255, 255, 0.06)',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                color: '#93C5FD',
+                borderRadius: 8,
+                padding: '6px 14px',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                transition: 'all 0.15s',
+              }}
+            >
+              Full Analytics Map <Compass size={14} />
+            </button>
+          </div>
+
+          {/* Leaflet Map Widget Container */}
+          <div style={{ height: 320, width: '100%', position: 'relative' }}>
+            <MapContainer
+              center={[BALAYAN_CENTER.lat, BALAYAN_CENTER.lng]}
+              zoom={13}
+              scrollWheelZoom={false}
+              style={{ height: '100%', width: '100%', background: '#0B0F19' }}
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://carto.com/">CARTO</a>'
+                url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+              />
+
+              {incidents.slice(0, 30).map(inc => {
+                const lat = inc.latitude;
+                const lng = inc.longitude;
+                if (!lat || !lng) return null;
+
+                const bg = inc.status === 'PENDING' ? '#F59E0B'
+                         : inc.status === 'DISPATCHED' ? '#8B5CF6'
+                         : inc.status === 'RESOLVED' ? '#22C55E' : '#EF4444';
+
+                const icon = L.divIcon({
+                  className: 'custom-dashboard-marker',
+                  html: `<div style="
+                    width: 22px; height: 22px; border-radius: 50%;
+                    background: ${bg}; border: 2px solid white;
+                    box-shadow: 0 0 10px ${bg};
+                    display: flex; align-items: center; justify-content: center;
+                    color: white; font-size: 10px; font-weight: bold;
+                  ">●</div>`,
+                  iconSize: [22, 22],
+                  iconAnchor: [11, 11],
+                });
+
+                return (
+                  <Marker key={inc.id} position={[lat, lng]} icon={icon}>
+                    <Popup className="map-popup">
+                      <div style={{ padding: 10, background: '#0F172A', color: 'white', borderRadius: 8 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>
+                          {inc.aiDetectedType || 'Emergency Report'}
+                        </div>
+                        <div style={{ fontSize: 11, color: '#94A3B8', marginBottom: 6 }}>
+                          📍 {getNearestBarangay(lat, lng)}
+                        </div>
+                        <span style={{
+                          fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 4,
+                          background: bg + '30', color: bg, border: `1px solid ${bg}`
+                        }}>
+                          {inc.status}
+                        </span>
+                      </div>
+                    </Popup>
+                  </Marker>
+                );
+              })}
+            </MapContainer>
+          </div>
         </div>
 
         {/* ── Two-column Charts Grid ────────────────────────── */}

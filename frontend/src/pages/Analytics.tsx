@@ -8,7 +8,7 @@ import {
 import {
   TrendingUp, FileText, Download, MapPin, BarChart3, Calendar, Loader2, CheckCircle2,
   Flame, Waves, Stethoscope, Activity, ShieldAlert, Info, Car, Wind, Mountain, AlertTriangle,
-  Plus, Minus, Layers, Maximize2, Compass, Shield
+  Plus, Minus, Layers, Compass, Shield
 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';

@@ -7,7 +7,8 @@ import {
 } from 'recharts';
 import {
   TrendingUp, FileText, Download, MapPin, BarChart3, Calendar, Loader2, CheckCircle2,
-  Flame, Waves, Stethoscope, Activity, ShieldAlert, Info, Car, Wind, Mountain, AlertTriangle
+  Flame, Waves, Stethoscope, Activity, ShieldAlert, Info, Car, Wind, Mountain, AlertTriangle,
+  Plus, Minus, Layers, Maximize2, Compass, Shield
 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -55,19 +56,32 @@ const tooltipStyle = {
 };
 
 function createMarkerIcon(riskLevel: string): L.DivIcon {
-  const riskClass = `risk-${riskLevel.toLowerCase()}`;
-  const initial = riskLevel[0];
+  const level = riskLevel.toUpperCase();
+  const riskClass = level === 'HIGH' ? 'risk-high' : level === 'MEDIUM' ? 'risk-medium' : 'risk-low';
+  const initial = level[0];
   return L.divIcon({
     className: '',
-    html: `<div class="brgy-marker ${riskClass}" style="background: ${
-      riskLevel === 'HIGH' ? 'linear-gradient(135deg, #EF4444, #DC2626)' :
-      riskLevel === 'MEDIUM' ? 'linear-gradient(135deg, #F59E0B, #D97706)' :
-      'linear-gradient(135deg, #22C55E, #16A34A)'
-    }">${initial}</div>`,
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
-    popupAnchor: [0, -20],
+    html: `
+      <div class="beacon-marker-wrap ${riskClass}">
+        <div class="beacon-head">${initial}</div>
+        <div class="beacon-stem"></div>
+        <div class="beacon-halo"></div>
+      </div>
+    `,
+    iconSize: [32, 48],
+    iconAnchor: [16, 48],
+    popupAnchor: [0, -42],
   });
+}
+
+function MapFlyController({ targetPos }: { targetPos: [number, number] | null }) {
+  const map = useMap();
+  useEffect(() => {
+    if (targetPos) {
+      map.flyTo(targetPos, 16, { duration: 1.2 });
+    }
+  }, [targetPos, map]);
+  return null;
 }
 
 function MapBoundsController() {
@@ -308,6 +322,8 @@ export default function Analytics() {
   const [reportFilter, setReportFilter] = useState('All Types');
   const [trendYear, setTrendYear] = useState<string>('all');
   const [riskFilter, setRiskFilter] = useState<'ALL' | 'HIGH' | 'MEDIUM' | 'LOW'>('ALL');
+  const [mapLevel, setMapLevel] = useState<'town' | 'hotspots' | 'incidents' | 'units'>('town');
+  const [flyTarget, setFlyTarget] = useState<[number, number] | null>(null);
 
   type RangeKey = 'daily' | 'weekly' | 'monthly';
   const [downloading, setDownloading] = useState<RangeKey | null>(null);
@@ -412,6 +428,29 @@ export default function Analytics() {
         {tab === 'map' && (
           <div className="fade-in">
             <div className="analytics-map-wrapper">
+              
+              {/* Top Command Bar & Sub-Nav Level Selector */}
+              <div className="map-top-command-bar">
+                <div className="command-bar-title">
+                  <Shield size={18} style={{ color: '#3B82F6' }} />
+                  <span className="command-title-text">MDRRMO Smart Disaster Platform</span>
+                </div>
+                <div className="command-subnav-pills">
+                  {(['town', 'hotspots', 'incidents', 'units'] as const).map(level => (
+                    <button
+                      key={level}
+                      className={`subnav-pill-btn ${mapLevel === level ? 'active' : ''}`}
+                      onClick={() => setMapLevel(level)}
+                    >
+                      {level === 'town' ? 'Town Overview' :
+                       level === 'hotspots' ? 'Barangay Hotspots' :
+                       level === 'incidents' ? 'Live Incidents' : 'Responding Units'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Floating Incident Filter Bar */}
               <div className="map-filter-bar">
                 <span className="filter-label">Filter by</span>
                 {INCIDENT_TYPES_SVG.map(t => {
@@ -430,24 +469,30 @@ export default function Analytics() {
                 })}
               </div>
 
+              {/* Map Canvas */}
               <MapContainer
                 center={[BALAYAN_CENTER.lat, BALAYAN_CENTER.lng]}
                 zoom={13}
                 className="analytics-map-container"
                 scrollWheelZoom={true}
-                zoomControl={true}
+                zoomControl={false}
               >
                 <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  attribution='&copy; <a href="https://carto.com/">CARTO</a>'
+                  url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
                   maxZoom={19}
                 />
                 <MapBoundsController />
+                <MapFlyController targetPos={flyTarget} />
 
                 {BARANGAYS.map(brgy => {
                   const risk = brgy.riskProfile[selectedType];
                   if (!risk) return null;
                   if (riskFilter !== 'ALL' && risk.riskLevel !== riskFilter) return null;
+
+                  // Sub-nav filtering logic
+                  if (mapLevel === 'hotspots' && risk.riskLevel !== 'HIGH') return null;
+
                   return (
                     <Marker
                       key={brgy.name}
@@ -462,20 +507,64 @@ export default function Analytics() {
                 })}
               </MapContainer>
 
-              <div className="map-legend">
-                <div className="legend-item">
-                  <div className="legend-dot" style={{ background: '#EF4444' }}></div>
-                  High Risk
+              {/* Floating Overlay Controls (Right side) */}
+              <div className="map-floating-controls">
+                <button className="control-btn" title="Zoom In" onClick={() => {
+                  const el = document.querySelector('.analytics-map-container') as any;
+                  if (el?._leaflet_map) el._leaflet_map.zoomIn();
+                }}>
+                  <Plus size={16} />
+                </button>
+                <button className="control-btn" title="Zoom Out" onClick={() => {
+                  const el = document.querySelector('.analytics-map-container') as any;
+                  if (el?._leaflet_map) el._leaflet_map.zoomOut();
+                }}>
+                  <Minus size={16} />
+                </button>
+                <div className="control-divider" />
+                <button className="control-btn" title="Center View" onClick={() => setFlyTarget([BALAYAN_CENTER.lat, BALAYAN_CENTER.lng])}>
+                  <Compass size={16} />
+                </button>
+                <button className="control-btn" title="Layers" onClick={() => setRiskFilter(r => r === 'ALL' ? 'HIGH' : 'ALL')}>
+                  <Layers size={16} />
+                </button>
+              </div>
+
+              {/* Bottom Real-time Incident & Node Status Carousel */}
+              <div className="map-bottom-carousel-wrapper">
+                <div className="carousel-title-row">
+                  <span className="carousel-title-text">⚡ Real-time Barangay Monitoring Nodes</span>
+                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>Click node to locate on map</span>
                 </div>
-                <div className="legend-item">
-                  <div className="legend-dot" style={{ background: '#F59E0B' }}></div>
-                  Medium Risk
-                </div>
-                <div className="legend-item">
-                  <div className="legend-dot" style={{ background: '#22C55E' }}></div>
-                  Low Risk
+                <div className="carousel-scroll-track">
+                  {BARANGAYS.map(brgy => {
+                    const risk = brgy.riskProfile[selectedType];
+                    if (!risk) return null;
+                    const riskLevel = risk.riskLevel.toLowerCase();
+                    return (
+                      <div
+                        key={brgy.name}
+                        className="status-node-card"
+                        onClick={() => setFlyTarget([brgy.lat, brgy.lng])}
+                      >
+                        <div className="card-header-line">
+                          <span>{brgy.name}</span>
+                          <span className={`status-tag ${riskLevel}`}>
+                            {riskLevel === 'high' ? '🔴 HIGH' : riskLevel === 'medium' ? '🟡 MED' : '🟢 LOW'}
+                          </span>
+                        </div>
+                        <div className="card-subtext">
+                          {selectedType.toUpperCase()} Risk Profile
+                        </div>
+                        <div className="card-subtext" style={{ fontSize: 10, marginTop: 2, color: 'rgba(255,255,255,0.65)' }}>
+                          {risk.prescription.slice(0, 52)}...
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
+
             </div>
 
             {/* Clickable Map Risk Stats Bar (Samsung One UI Squircle Icon Tiles) */}

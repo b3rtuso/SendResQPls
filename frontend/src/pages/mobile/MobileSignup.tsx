@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Phone, Mail, Lock, EyeOff, Eye, CheckCircle } from 'lucide-react';
 import { register as apiRegister, sendVerificationCode, verifyCode } from '../../api/client';
-import Toast, { type ToastType } from '../../components/Toast';
+import { useMobileToast } from '../../components/MobileToastProvider';
 
 export default function MobileSignup() {
   const navigate = useNavigate();
+  const { push: toast } = useMobileToast();
   const [form, setForm] = useState({ name: '', phone: '', email: '', password: '' });
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -17,7 +18,6 @@ export default function MobileSignup() {
   const [sendingCode, setSendingCode] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [cooldown, setCooldown] = useState(0);
-  const [toast, setToast] = useState<{ show: boolean; message: string; detail?: string; type: ToastType }>({ show: false, message: '', type: 'info' });
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -38,7 +38,7 @@ export default function MobileSignup() {
       await sendVerificationCode(form.email);
       setCodeSent(true);
       setCooldown(600);
-      setToast({ show: true, message: 'Code sent! 📩', detail: `The code might be in your Spam folder. Sent to ${form.email}`, type: 'success' });
+      toast({ type: 'success', priority: 'normal', title: 'Code sent! 📩', message: `The code might be in your Spam folder. Sent to ${form.email}` });
     } catch (err: any) {
       console.error('[SendCode] Error:', err.response?.data || err.message);
       const msg = err.response?.data?.error || err.response?.data?.details || err.message || 'Verification code failed to send';
@@ -58,7 +58,7 @@ export default function MobileSignup() {
     try {
       await verifyCode(form.email, codeInput);
       setVerified(true);
-      setToast({ show: true, message: 'Verified! ✅', detail: 'You can now complete your registration.', type: 'success' });
+      toast({ type: 'success', priority: 'normal', title: 'Verified! ✅', message: 'You can now complete your registration.' });
     } catch (err: any) {
       const msg = err.response?.data?.error || 'Incorrect code. Please try again.';
       setError(msg);
@@ -84,7 +84,7 @@ export default function MobileSignup() {
       localStorage.setItem('userName', form.name);
       localStorage.setItem('userEmail', form.email);
       localStorage.setItem('userPhone', form.phone);
-      setToast({ show: true, message: 'Account created! 🎉', detail: 'Redirecting to login...', type: 'success' });
+      toast({ type: 'success', priority: 'important', title: 'Account created! 🎉', message: 'Redirecting to login…' });
       setTimeout(() => navigate('/mobile/login'), 1500);
     } catch {
       setError('Failed to create account. Please try again.');
@@ -152,9 +152,6 @@ export default function MobileSignup() {
           Register now to report emergencies immediately.
         </p>
 
-        {toast.show && (
-          <Toast type={toast.type} message={toast.message} detail={toast.detail} onClose={() => setToast({ ...toast, show: false })} />
-        )}
 
         {error && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: 10, padding: '10px 12px', marginBottom: 16 }}>

@@ -192,6 +192,7 @@ export default function MobileHome() {
           margin: 0 0 14px;
         }
       `}</style>
+      {/* FCM event bridge — renders null, routes push events to toast context */}
       <FcmBannerOverlay />
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }}>
 
@@ -427,8 +428,6 @@ export default function MobileHome() {
       </div>
       <BottomNav />
 
-      {/* ── FCM Foreground Banner (Instagram-style heads-up) ── */}
-      <FcmBannerOverlay />
 
       {/* ── Location Permission Modal ── */}
       {showLocModal && (

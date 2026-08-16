@@ -19,6 +19,7 @@ import MobileNotifications from './pages/mobile/MobileNotifications';
 import MobileOnboarding, { shouldShowOnboarding } from './pages/mobile/MobileOnboarding';
 import MobileForgotPassword from './pages/mobile/MobileForgotPassword';
 import MobileResetPassword from './pages/mobile/MobileResetPassword';
+import { MobileToastProvider } from './components/MobileToastProvider';
 import { useState } from 'react';
 import './App.css';
 
@@ -68,17 +69,18 @@ function App() {
         <Route path="/admin/login" element={<AdminLogin />} />
 
         {/* === PUBLIC MOBILE ROUTES === */}
-        <Route path="/mobile/login" element={<MobileLogin />} />
-        <Route path="/mobile/signup" element={<MobileSignup />} />
+        {/* MobileToastProvider wraps ALL mobile routes so toast context is available everywhere */}
+        <Route path="/mobile/login" element={<MobileToastProvider><MobileLogin /></MobileToastProvider>} />
+        <Route path="/mobile/signup" element={<MobileToastProvider><MobileSignup /></MobileToastProvider>} />
         <Route path="/mobile/forgot-password" element={<MobileForgotPassword />} />
         <Route path="/mobile/reset-password" element={<MobileResetPassword />} />
 
         {/* === PROTECTED MOBILE ROUTES (require login) === */}
-        <Route path="/mobile" element={<MobileHomeWithOnboarding />} />
-        <Route path="/mobile/report" element={<PrivateRoute><MobileReport /></PrivateRoute>} />
-        <Route path="/mobile/history" element={<PrivateRoute><MobileHistory /></PrivateRoute>} />
-        <Route path="/mobile/profile" element={<PrivateRoute><MobileProfile /></PrivateRoute>} />
-        <Route path="/mobile/notifications" element={<PrivateRoute><MobileNotifications /></PrivateRoute>} />
+        <Route path="/mobile" element={<MobileToastProvider><MobileHomeWithOnboarding /></MobileToastProvider>} />
+        <Route path="/mobile/report" element={<MobileToastProvider><PrivateRoute><MobileReport /></PrivateRoute></MobileToastProvider>} />
+        <Route path="/mobile/history" element={<MobileToastProvider><PrivateRoute><MobileHistory /></PrivateRoute></MobileToastProvider>} />
+        <Route path="/mobile/profile" element={<MobileToastProvider><PrivateRoute><MobileProfile /></PrivateRoute></MobileToastProvider>} />
+        <Route path="/mobile/notifications" element={<MobileToastProvider><PrivateRoute><MobileNotifications /></PrivateRoute></MobileToastProvider>} />
 
         {/* === PROTECTED ADMIN ROUTES (require ADMIN role) === */}
         <Route

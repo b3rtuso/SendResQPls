@@ -1,4 +1,4 @@
-﻿import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, AlertTriangle, Camera, Loader, WifiOff, Clock } from 'lucide-react';
 import { reportIncident } from '../../api/client';
@@ -14,30 +14,20 @@ import {
 } from '../../utils/offlineQueue';
 import BottomNav from '../../components/BottomNav';
 import FcmBannerOverlay from '../../components/FcmBannerOverlay';
-import Toast, { type ToastType } from '../../components/Toast';
-
-interface ToastState {
-  show: boolean;
-  message: string;
-  detail?: string;
-  type: ToastType;
-}
+import { useMobileToast } from '../../components/MobileToastProvider';
 
 export default function MobileReport() {
   const navigate = useNavigate();
   const fileRef = useRef<HTMLInputElement>(null);
   const isOnline = useNetworkStatus();
 
+  const { push: showToast } = useMobileToast();
+
   const [photo, setPhoto] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [flushing, setFlushing] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
-  const [toast, setToast] = useState<ToastState>({ show: false, message: '', type: 'info' });
-
-  const showToast = useCallback((type: ToastType, message: string, detail?: string) => {
-    setToast({ show: true, message, detail, type });
-  }, []);
 
   // Prune stale reports on mount and refresh pending count
   useEffect(() => {
@@ -53,7 +43,7 @@ export default function MobileReport() {
 
     const flush = async () => {
       setFlushing(true);
-      showToast('info', `Sending ${ids.length} queued report${ids.length > 1 ? 's' : ''}…`, 'Connection restored — submitting offline reports now.');
+      showToast({ type: 'info', priority: 'normal', title: `Sending ${ids.length} queued report${ids.length > 1 ? 's' : ''}…`, message: 'Connection restored — submitting offline reports now.' });
 
       let successCount = 0;
       let failCount = 0;
@@ -70,7 +60,6 @@ export default function MobileReport() {
           formData.append('photo', file);
           formData.append('latitude', report.latitude);
           formData.append('longitude', report.longitude);
-          // userId comes from JWT in the Authorization header (set by api interceptor)
 
           await reportIncident(formData);
           await dequeueReport(id);
@@ -84,11 +73,11 @@ export default function MobileReport() {
       setFlushing(false);
 
       if (successCount > 0 && failCount === 0) {
-        showToast('success', `${successCount} report${successCount > 1 ? 's' : ''} sent!`, 'All queued emergency reports have been submitted to MDRRMO.');
+        showToast({ type: 'success', priority: 'important', title: `${successCount} report${successCount > 1 ? 's' : ''} sent!`, message: 'All queued emergency reports have been submitted to MDRRMO.' });
       } else if (successCount > 0 && failCount > 0) {
-        showToast('warning', `${successCount} sent, ${failCount} failed`, 'Some reports could not be sent. They will retry next time you are online.');
+        showToast({ type: 'warning', priority: 'important', title: `${successCount} sent, ${failCount} failed`, message: 'Some reports could not be sent. They will retry next time you are online.' });
       } else {
-        showToast('error', 'Failed to send queued reports', 'Reports are still saved. They will retry when you reconnect.');
+        showToast({ type: 'error', priority: 'important', title: 'Failed to send queued reports', message: 'Reports are still saved. They will retry when you reconnect.' });
       }
     };
 
@@ -106,7 +95,7 @@ export default function MobileReport() {
 
   const handleSend = async () => {
     if (!photo) {
-      showToast('warning', 'No photo', 'Please capture or upload an image of the emergency.');
+      showToast({ type: 'warning', priority: 'normal', title: 'No photo', message: 'Please capture or upload an image of the emergency.' });
       return;
     }
 
@@ -127,13 +116,13 @@ export default function MobileReport() {
         lat = String(position.coords.latitude);
         lng = String(position.coords.longitude);
       } catch {
-        showToast('error', 'Location Required', 'Please enable GPS/location to submit a report. Reports are only accepted within Balayan, Batangas.');
+        showToast({ type: 'error', priority: 'important', title: 'Location Required', message: 'Please enable GPS/location to submit a report. Reports are only accepted within Balayan, Batangas.' });
         setSending(false);
         return;
       }
 
       if (!isWithinBalayan(parseFloat(lat), parseFloat(lng))) {
-        showToast('error', 'Outside Balayan', 'Emergency reports are only accepted within the municipality of Balayan, Batangas.');
+        showToast({ type: 'error', priority: 'important', title: 'Outside Balayan', message: 'Emergency reports are only accepted within the municipality of Balayan, Batangas.' });
         setSending(false);
         return;
       }
@@ -145,7 +134,7 @@ export default function MobileReport() {
           userId,
           latitude: lat,
           longitude: lng,
-          photoBlob: photo,          // Stored in IndexedDB — handles large images
+          photoBlob: photo,
           photoName: photo.name,
         });
 
@@ -154,11 +143,7 @@ export default function MobileReport() {
         setPhoto(null);
         setPreview(null);
 
-        showToast(
-          'warning',
-          'Report Saved — Will Send When Online',
-          `Your report has been saved on your device (${newCount} queued). It will be automatically sent to MDRRMO when your internet connection is restored.`
-        );
+        showToast({ type: 'warning', priority: 'important', title: 'Report Saved — Will Send When Online', message: `Your report has been saved on your device (${newCount} queued). It will be automatically sent to MDRRMO when your internet connection is restored.` });
         setSending(false);
         return;
       }
@@ -168,26 +153,21 @@ export default function MobileReport() {
       formData.append('photo', photo);
       formData.append('latitude', lat);
       formData.append('longitude', lng);
-      // userId comes from JWT token via api interceptor — not passed in body
 
-      showToast('info', 'Submitting Emergency Alert...', 'Sending photo and location to MDRRMO emergency dispatch.');
+      showToast({ type: 'info', priority: 'normal', title: 'Submitting Emergency Alert…', message: 'Sending photo and location to MDRRMO emergency dispatch.' });
 
       const response = await reportIncident(formData);
       const { incident } = response.data;
 
-      showToast(
-        'success',
-        'Emergency Report Sent!',
-        `AI-classified as: ${incident?.aiDetectedType || 'Processing...'} — Routed to ${incident?.aiRecommendedDept || 'MDRRMO'}`
-      );
+      showToast({ type: 'success', priority: 'important', title: 'Emergency Report Sent!', message: `AI-classified as: ${incident?.aiDetectedType || 'Processing…'} — Routed to ${incident?.aiRecommendedDept || 'MDRRMO'}`, navigateTo: '/mobile/history' });
 
       setPhoto(null);
       setPreview(null);
-      setTimeout(() => navigate('/mobile/history'), 2500);
+      setTimeout(() => navigate('/mobile/history'), 2800);
 
     } catch (error: any) {
       const detail = error?.response?.data?.details || error?.message || 'Please check your connection and try again.';
-      showToast('error', 'Report failed to send', detail);
+      showToast({ type: 'error', priority: 'important', title: 'Report failed to send', message: detail });
     } finally {
       setSending(false);
     }
@@ -195,14 +175,6 @@ export default function MobileReport() {
 
   return (
     <div className="mobile-shell">
-      {toast.show && (
-        <Toast
-          type={toast.type}
-          message={toast.message}
-          detail={toast.detail}
-          onClose={() => setToast({ ...toast, show: false })}
-        />
-      )}
 
       <div className="mobile-page">
         {/* Header */}

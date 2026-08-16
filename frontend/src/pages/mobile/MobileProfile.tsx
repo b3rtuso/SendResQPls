@@ -5,7 +5,7 @@ import {
   ChevronLeft, Save, Mail, X, Plus, Trash2, Info, MessageCircle, Lock, Eye, EyeOff,
 } from 'lucide-react';
 import { updateProfile, changePassword } from '../../api/client';
-import Toast, { type ToastType } from '../../components/Toast';
+import { useMobileToast } from '../../components/MobileToastProvider';
 import BottomNav from '../../components/BottomNav';
 
 type Section = 'main' | 'account' | 'contacts' | 'notifications' | 'help';
@@ -101,7 +101,7 @@ function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
 export default function MobileProfile() {
   const navigate = useNavigate();
   const [section, setSection] = useState<Section>('main');
-  const [toast, setToast] = useState<{ show: boolean; message: string; detail?: string; type: ToastType }>({ show: false, message: '', type: 'info' });
+  const { push: showToast } = useMobileToast();
   const [saving, setSaving] = useState(false);
 
   const userId = localStorage.getItem('userId') || '';
@@ -136,9 +136,6 @@ export default function MobileProfile() {
     localStorage.setItem(NOTIF_SETTINGS_KEY, JSON.stringify(notifSettings));
   }, [notifSettings]);
 
-  const showToast = (type: ToastType, message: string, detail?: string) =>
-    setToast({ show: true, message, detail, type });
-
   const handleLogout = () => {
     const onboardingDone = localStorage.getItem('srq_onboarding_done');
     localStorage.clear();
@@ -153,38 +150,37 @@ export default function MobileProfile() {
       localStorage.setItem('userName', name);
       localStorage.setItem('userEmail', email);
       localStorage.setItem('userPhone', phone);
-      showToast('success', 'Profile updated', 'Your account details have been saved.');
+      showToast({ type: 'success', priority: 'normal', title: 'Profile updated', message: 'Your account details have been saved.' });
     } catch {
-      showToast('error', 'Update failed', 'Could not save profile changes.');
+      showToast({ type: 'error', priority: 'normal', title: 'Update failed', message: 'Could not save profile changes.' });
     } finally { setSaving(false); }
   };
 
   const handleChangePassword = async () => {
-    if (!currentPass || !newPass) { showToast('error', 'Fill in both fields'); return; }
-    if (newPass.length < 6) { showToast('error', 'Password must be at least 6 characters'); return; }
+    if (!currentPass || !newPass) { showToast({ type: 'error', priority: 'normal', title: 'Fill in both fields' }); return; }
+    if (newPass.length < 6) { showToast({ type: 'error', priority: 'normal', title: 'Password must be at least 6 characters' }); return; }
     setSaving(true);
     try {
       await changePassword({ currentPassword: currentPass, newPassword: newPass });
-      showToast('success', 'Password changed', 'Your password has been updated successfully.');
+      showToast({ type: 'success', priority: 'normal', title: 'Password changed', message: 'Your password has been updated successfully.' });
       setCurrentPass(''); setNewPass('');
     } catch (err: any) {
-      showToast('error', err.response?.data?.error || 'Failed to change password');
+      showToast({ type: 'error', priority: 'normal', title: err.response?.data?.error || 'Failed to change password' });
     } finally { setSaving(false); }
   };
 
   const addContact = () => {
-    if (!newContact.name || !newContact.phone) { showToast('error', 'Name and phone are required'); return; }
+    if (!newContact.name || !newContact.phone) { showToast({ type: 'error', priority: 'normal', title: 'Name and phone are required' }); return; }
     setContacts([...contacts, { ...newContact, id: Date.now().toString() }]);
     setNewContact({ name: '', phone: '', relation: '' });
     setShowAddContact(false);
-    showToast('success', 'Contact added');
+    showToast({ type: 'success', priority: 'normal', title: 'Contact added' });
   };
 
   /* ── MAIN VIEW ─────────────────────────────────────────── */
   if (section === 'main') return (
     <div className="mobile-shell">
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }}>
-        {toast.show && <Toast type={toast.type} message={toast.message} detail={toast.detail} onClose={() => setToast({ ...toast, show: false })} />}
 
         {/* Hero Header — uses percentage width, no 100vw hack */}
         <div style={{
@@ -269,7 +265,7 @@ export default function MobileProfile() {
   if (section === 'account') return (
     <div className="mobile-shell">
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }}>
-        {toast.show && <Toast type={toast.type} message={toast.message} detail={toast.detail} onClose={() => setToast({ ...toast, show: false })} />}
+
         <SectionHeader title="Account Details" onBack={() => setSection('main')} />
 
         <div style={{ padding: 'clamp(14px, 4vw, 20px)' }}>
@@ -350,7 +346,7 @@ export default function MobileProfile() {
   if (section === 'contacts') return (
     <div className="mobile-shell">
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }}>
-        {toast.show && <Toast type={toast.type} message={toast.message} detail={toast.detail} onClose={() => setToast({ ...toast, show: false })} />}
+
         <SectionHeader title="Emergency Contacts" onBack={() => setSection('main')} />
 
         <div style={{ padding: 'clamp(14px, 4vw, 20px)' }}>
@@ -383,7 +379,7 @@ export default function MobileProfile() {
                 <div style={{ fontWeight: 700, fontSize: 14, color: '#0F172A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</div>
                 <div style={{ fontSize: 12, color: '#64748B' }}>{c.phone}{c.relation && ` · ${c.relation}`}</div>
               </div>
-              <button onClick={() => { setContacts(contacts.filter(x => x.id !== c.id)); showToast('info', 'Contact removed'); }}
+              <button onClick={() => { setContacts(contacts.filter(x => x.id !== c.id)); showToast({ type: 'info', priority: 'normal', title: 'Contact removed' }); }}
                 style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', padding: 4, flexShrink: 0 }}>
                 <Trash2 size={17} />
               </button>
@@ -432,7 +428,7 @@ export default function MobileProfile() {
   if (section === 'notifications') return (
     <div className="mobile-shell">
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }}>
-        {toast.show && <Toast type={toast.type} message={toast.message} detail={toast.detail} onClose={() => setToast({ ...toast, show: false })} />}
+
         <SectionHeader title="Notification Settings" onBack={() => setSection('main')} />
         <div style={{ padding: 'clamp(14px, 4vw, 20px)' }}>
           {([

@@ -596,10 +596,10 @@ export default function LandingPage() {
             <div className={`lp-hero-ctas ${heroVisible ? 'visible' : ''}`}>
               <button
                 className="btn-primary"
-                onClick={() => navigate('/mobile/login')}
-                aria-label="Open the SendResQPls mobile app"
+                onClick={() => navigate('/get-the-app')}
+                aria-label="Get the SendResQPls mobile app"
               >
-                Open App &nbsp;→
+                Get the App &nbsp;→
               </button>
               <div className="lp-cta-divider" aria-hidden="true" />
               <button
@@ -698,12 +698,12 @@ export default function LandingPage() {
             </p>
             <button
               className="btn-primary"
-              onClick={() => navigate('/mobile/login')}
-              aria-label="Open or install the SendResQPls mobile app"
+              onClick={() => navigate('/get-the-app')}
+              aria-label="Get the SendResQPls mobile app"
             >
-              Open Mobile App &nbsp;→
+              Get the App &nbsp;→
             </button>
-            <p className="lp-access-sub">Also available as an Android APK</p>
+            <p className="lp-access-sub">Available for Android devices (APK)</p>
           </div>
 
           {/* Admin */}

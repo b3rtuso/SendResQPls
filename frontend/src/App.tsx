@@ -21,6 +21,7 @@ import MobileForgotPassword from './pages/mobile/MobileForgotPassword';
 import MobileResetPassword from './pages/mobile/MobileResetPassword';
 import { MobileToastProvider } from './components/MobileToastProvider';
 import LandingPage from './pages/LandingPage';
+import GetTheApp from './pages/GetTheApp';
 import { useState } from 'react';
 import './App.css';
 
@@ -63,8 +64,9 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* === PUBLIC LANDING PAGE === */}
+        {/* === PUBLIC LANDING PAGE & GET APP === */}
         <Route path="/" element={<LandingPage />} />
+        <Route path="/get-the-app" element={<GetTheApp />} />
 
         {/* === ADMIN LOGIN (public) === */}
         <Route path="/admin/login" element={<AdminLogin />} />

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Vercel Edge Middleware — Mobile Route Guard
  *
  * Runs on Vercel's edge servers BEFORE any HTML/JS is returned to the client.
@@ -17,8 +17,8 @@ export default function middleware(request: Request): Response | undefined {
   const ua = request.headers.get('user-agent') ?? '';
 
   if (!ua.includes('SendResQPls-App')) {
-    // Block: not the app — send to admin login
-    return Response.redirect(new URL('/admin/login', request.url), 302);
+    // Block: not the app — send to install page
+    return Response.redirect(new URL('/get-the-app', request.url), 302);
   }
 
   // Allow: it is the Capacitor APK — return undefined to continue normally

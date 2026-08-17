@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login as apiLogin } from '../api/client';
-import { ShieldAlert, Mail, Lock, Eye, EyeOff, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Lock, Eye, EyeOff, AlertTriangle, ArrowRight, ShieldCheck } from 'lucide-react';
 
 export default function AdminLogin() {
   const navigate = useNavigate();
@@ -10,15 +10,23 @@ export default function AdminLogin() {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [focusField, setFocusField] = useState<'email' | 'pass' | null>(null);
 
   const handleLogin = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!email || !password) { setError('Please enter your email and password.'); return; }
-    setLoading(true); setError('');
+    if (!email || !password) {
+      setError('Please fill in your email and password.');
+      return;
+    }
+    setLoading(true);
+    setError('');
     try {
       const res = await apiLogin(email, password);
       const { token, role, user } = res.data;
-      if (role !== 'ADMIN') { setError('Access denied. This portal is for MDRRMO administrators only.'); return; }
+      if (role !== 'ADMIN') {
+        setError('Access denied. This portal is for MDRRMO administrators only.');
+        return;
+      }
       localStorage.setItem('token', token);
       localStorage.setItem('userId', user?.id || '');
       localStorage.setItem('userName', user?.name || 'Admin');
@@ -26,377 +34,392 @@ export default function AdminLogin() {
       localStorage.setItem('userRole', role);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Invalid email or password.');
-    } finally { setLoading(false); }
+      setError(err.response?.data?.error || 'Incorrect email or password. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
+  const inputStyle = (): React.CSSProperties => ({
+    width: '100%',
+    border: 'none',
+    background: 'transparent',
+    outline: 'none',
+    fontSize: 15,
+    fontFamily: 'inherit',
+    color: '#0F172A',
+    padding: '16px 16px 16px 46px',
+  });
+
+  const wrapStyle = (field: 'email' | 'pass'): React.CSSProperties => ({
+    display: 'flex',
+    alignItems: 'center',
+    position: 'relative',
+    background: focusField === field ? '#fff' : '#F8FAFC',
+    border: `1.5px solid ${focusField === field ? '#2563EB' : '#E2E8F0'}`,
+    borderRadius: 14,
+    transition: 'all 0.18s',
+    boxShadow: focusField === field ? '0 0 0 3px rgba(37,99,235,0.1)' : 'none',
+  });
+
   return (
-    <>
+    <div className="al-page-wrapper">
       <style>{`
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        /* ── Full-screen background ── */
-        .al-bg {
-          min-height: 100vh;
+        .al-page-wrapper {
+          min-height: 100dvh;
           width: 100%;
+          background: #F1F5F9;
           display: flex;
           align-items: center;
           justify-content: center;
           padding: 24px 16px;
-          background: linear-gradient(135deg, #0A0F1E 0%, #0F2044 35%, #1a0a2e 65%, #0D1B2A 100%);
-          position: relative;
-          overflow: hidden;
-          font-family: 'Inter', system-ui, sans-serif;
+          font-family: 'Inter', system-ui, -apple-system, sans-serif;
         }
 
-        /* background decorative orbs */
-        .al-bg-orb {
-          position: absolute;
-          border-radius: 50%;
-          pointer-events: none;
-          filter: blur(90px);
-        }
-        .al-bg-orb-1 { width: 500px; height: 500px; background: rgba(37,99,235,0.18); top: -160px; left: -160px; }
-        .al-bg-orb-2 { width: 400px; height: 400px; background: rgba(220,38,38,0.14); bottom: -120px; right: -120px; }
-        .al-bg-orb-3 { width: 300px; height: 300px; background: rgba(139,92,246,0.12); top: 50%; left: 60%; transform: translate(-50%,-50%); }
-
-        /* dot grid overlay */
-        .al-bg-grid {
-          position: absolute;
-          inset: 0;
-          background-image: radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px);
-          background-size: 30px 30px;
-          pointer-events: none;
-        }
-
-        /* ── Centered card ── */
-        .al-card {
-          position: relative;
-          z-index: 10;
-          display: flex;
+        .al-container {
           width: 100%;
-          max-width: 880px;
-          min-height: 520px;
-          border-radius: 24px;
+          max-width: 440px;
+          background: #F1F5F9;
+          border-radius: 32px;
           overflow: hidden;
-          box-shadow: 0 32px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.07);
-        }
-
-        /* ── Card left — branding ── */
-        .al-card-left {
-          width: 45%;
-          flex-shrink: 0;
-          background: linear-gradient(155deg, #1E3A5F 0%, #0F172A 60%, #1a0a2e 100%);
+          box-shadow: 0 20px 60px rgba(15, 23, 42, 0.12), 0 1px 3px rgba(0, 0, 0, 0.05);
           display: flex;
           flex-direction: column;
-          justify-content: center;
-          padding: 48px 40px;
+        }
+
+        .al-login-header {
+          background: linear-gradient(160deg, #0F1F38 0%, #1D4ED8 60%, #2563EB 100%);
+          padding: 48px 28px 40px;
           position: relative;
           overflow: hidden;
+          border-radius: 0 0 32px 32px;
         }
-        .al-card-left::before {
+        .al-login-header::after {
           content: '';
           position: absolute;
-          inset: 0;
-          background-image: radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px);
-          background-size: 28px 28px;
+          top: -40px;
+          right: -40px;
+          width: 160px;
+          height: 160px;
+          background: rgba(255,255,255,0.05);
+          border-radius: 50%;
         }
-        .al-cl-orb-1 { position:absolute; width:220px; height:220px; border-radius:50%; background:rgba(37,99,235,0.2); top:-80px; right:-60px; filter:blur(60px); pointer-events:none; }
-        .al-cl-orb-2 { position:absolute; width:160px; height:160px; border-radius:50%; background:rgba(220,38,38,0.15); bottom:-50px; left:-40px; filter:blur(50px); pointer-events:none; }
+        .al-login-header::before {
+          content: '';
+          position: absolute;
+          bottom: 20px;
+          left: -30px;
+          width: 100px;
+          height: 100px;
+          background: rgba(255,255,255,0.04);
+          border-radius: 50%;
+        }
 
-        .al-cl-inner { position: relative; z-index: 1; }
+        .al-form-card {
+          margin: 16px 20px 24px;
+          background: #fff;
+          border-radius: 22px;
+          padding: 28px 24px;
+          box-shadow: 0 8px 40px rgba(30,58,95,0.12), 0 2px 8px rgba(0,0,0,0.06);
+          position: relative;
+          z-index: 2;
+        }
 
-        .al-logo-row { display:flex; align-items:center; gap:12px; margin-bottom:36px; }
-        .al-logo-row img {
-          width: 52px; height: 52px;
+        .al-auth-btn {
+          width: 100%;
+          padding: 16px;
+          background: linear-gradient(135deg, #2563EB, #1D4ED8);
+          color: white;
+          border: none;
           border-radius: 14px;
-          object-fit: cover;
-          box-shadow: 0 6px 20px rgba(220,38,38,0.5);
-          flex-shrink: 0;
+          font-size: 15px;
+          font-weight: 700;
+          font-family: inherit;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          box-shadow: 0 4px 16px rgba(37,99,235,0.38);
+          transition: transform 0.18s, box-shadow 0.18s;
+          margin-top: 8px;
+          letter-spacing: 0.01em;
         }
-        .al-logo-name { color:#fff; font-size:17px; font-weight:800; letter-spacing:-0.3px; }
-        .al-logo-sub  { color:rgba(255,255,255,0.42); font-size:11px; font-weight:500; margin-top:3px; }
-
-        .al-hl {
-          color: #fff;
-          font-size: 30px;
-          font-weight: 900;
-          line-height: 1.15;
-          letter-spacing: -0.6px;
-          margin-bottom: 14px;
+        .al-auth-btn:hover:not(:disabled) {
+          transform: translateY(-1px);
+          box-shadow: 0 6px 22px rgba(37,99,235,0.46);
         }
-        .al-hl span { color: #60A5FA; display: block; }
-
-        .al-tagline {
-          color: rgba(255,255,255,0.5);
-          font-size: 13px;
-          line-height: 1.7;
-          margin-bottom: 32px;
+        .al-auth-btn:active:not(:disabled) {
+          transform: translateY(0) scale(0.98);
+        }
+        .al-auth-btn:disabled {
+          background: #94A3B8;
+          box-shadow: none;
+          cursor: not-allowed;
         }
 
-        .al-feats { display:flex; flex-direction:column; gap:11px; margin-bottom:36px; }
-        .al-feat  { display:flex; align-items:center; gap:9px; color:rgba(255,255,255,0.7); font-size:13px; }
+        .al-spin {
+          width: 16px;
+          height: 16px;
+          border: 2px solid rgba(255,255,255,0.3);
+          border-top-color: #fff;
+          border-radius: 50%;
+          animation: alspin .75s linear infinite;
+        }
+        @keyframes alspin {
+          to { transform: rotate(360deg); }
+        }
 
         .al-badge {
           display: inline-flex;
           align-items: center;
-          gap: 8px;
-          background: rgba(255,255,255,0.07);
-          border: 1px solid rgba(255,255,255,0.13);
-          border-radius: 999px;
-          padding: 7px 14px;
-        }
-        .al-badge-dot {
-          width: 7px; height: 7px; border-radius: 50%;
-          background: #34D399;
-          box-shadow: 0 0 8px #34D399;
-          animation: bdot 2s ease-in-out infinite;
-        }
-        @keyframes bdot { 0%,100%{opacity:1} 50%{opacity:0.5} }
-        .al-badge span { color:rgba(255,255,255,0.55); font-size:11px; font-weight:600; }
-
-        /* ── Card right — form ── */
-        .al-card-right {
-          flex: 1;
-          background: #ffffff;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          padding: 48px 44px;
-          overflow-y: auto;
-        }
-
-        .al-form-title { font-size:24px; font-weight:800; color:#0F172A; letter-spacing:-0.4px; margin-bottom:6px; }
-        .al-form-sub   { font-size:13px; color:#64748B; line-height:1.55; margin-bottom:28px; }
-
-        .al-err {
-          display:flex; align-items:center; gap:9px;
-          background:#FEF2F2; border:1px solid #FCA5A5;
-          border-radius:10px; padding:11px 13px;
-          margin-bottom:18px;
-          color:#B91C1C; font-size:13px; font-weight:500;
-        }
-
-        .al-form { display:flex; flex-direction:column; gap:18px; }
-
-        .al-field label {
-          display:block; font-size:13px; font-weight:600;
-          color:#374151; margin-bottom:6px;
-        }
-        .al-inp-wrap { position:relative; }
-        .al-inp-icon {
-          position:absolute; left:13px; top:50%; transform:translateY(-50%);
-          color:#94A3B8; pointer-events:none; display:flex;
-        }
-        .al-inp {
-          width:100%;
-          background:#F8FAFC;
-          border:1.5px solid #E2E8F0;
-          border-radius:11px;
-          padding:13px 13px 13px 40px;
-          font-size:14px; color:#0F172A;
-          font-family:inherit; outline:none;
-          transition:border-color .18s, box-shadow .18s, background .18s;
-        }
-        .al-inp::placeholder { color:#94A3B8; }
-        .al-inp:focus {
-          border-color:#2563EB;
-          box-shadow:0 0 0 3px rgba(37,99,235,0.12);
-          background:#fff;
-        }
-        .al-inp-pass { padding-right:44px; }
-
-        .al-eye {
-            position: absolute;
-            top: 26%;
-            right: 12px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: #9CA3AF;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 4px;
-            border-radius: 6px;
-            transition: color .15s;
-                }
-
-        .al-eye:hover {
-            color: #6B7280;
-                      }
-
-        .al-btn {
-          width:100%; padding:14px;
-          background:linear-gradient(135deg,#2563EB,#1D4ED8);
-          color:#fff; border:none; border-radius:11px;
-          font-size:15px; font-weight:700; font-family:inherit;
-          cursor:pointer;
-          display:flex; align-items:center; justify-content:center; gap:9px;
-          box-shadow:0 4px 16px rgba(37,99,235,0.38);
-          transition:transform .18s, box-shadow .18s;
-          margin-top:4px;
-        }
-        .al-btn:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 6px 22px rgba(37,99,235,0.46); }
-        .al-btn:active:not(:disabled) { transform:translateY(0); }
-        .al-btn:disabled { background:#94A3B8; box-shadow:none; cursor:not-allowed; }
-
-        .al-spin {
-          width:16px; height:16px;
-          border:2px solid rgba(255,255,255,0.3);
-          border-top-color:#fff; border-radius:50%;
-          animation:spin .75s linear infinite; flex-shrink:0;
-        }
-        @keyframes spin { to { transform:rotate(360deg); } }
-
-        .al-foot {
-          text-align:center; margin-top:28px;
-          font-size:11px; color:#94A3B8; line-height:1.6;
-        }
-        .al-foot span { color:#CBD5E1; }
-
-        /* ── Responsive ── */
-        @media (max-width: 700px) {
-          .al-card { flex-direction:column; max-width:420px; border-radius:20px; }
-          .al-card-left { width:100%; padding:36px 28px 32px; }
-          .al-hl { font-size:24px; }
-          .al-card-right { padding:36px 28px 40px; }
-        }
-        @media (max-width: 420px) {
-          .al-card-left  { padding:28px 22px 24px; }
-          .al-card-right { padding:28px 22px 36px; }
-          .al-form-title { font-size:20px; }
+          gap: 6px;
+          background: rgba(37, 99, 235, 0.08);
+          color: #2563EB;
+          padding: 4px 10px;
+          border-radius: 8px;
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+          margin-bottom: 12px;
         }
       `}</style>
 
-      {/* ── Full-screen background ── */}
-      <div className="al-bg">
-        <div className="al-bg-orb al-bg-orb-1" />
-        <div className="al-bg-orb al-bg-orb-2" />
-        <div className="al-bg-orb al-bg-orb-3" />
-        <div className="al-bg-grid" />
+      <div className="al-container">
+        {/* Branded header */}
+        <div className="al-login-header">
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <img
+              src="/logo.jpg"
+              alt="SRQ Logo"
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: 16,
+                objectFit: 'cover',
+                marginBottom: 16,
+                border: '2px solid rgba(255,255,255,0.2)',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+              }}
+            />
+            <div
+              style={{
+                fontSize: 11,
+                color: 'rgba(255,255,255,0.6)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.12em',
+                marginBottom: 6,
+                fontWeight: 700,
+              }}
+            >
+              MDRRMO Balayan, Batangas
+            </div>
+            <h1
+              style={{
+                color: 'white',
+                fontSize: 26,
+                fontWeight: 900,
+                letterSpacing: '-0.5px',
+                lineHeight: 1.15,
+                margin: 0,
+              }}
+            >
+              Command Center<br />
+              <span style={{ color: '#93C5FD' }}>Admin Portal</span>
+            </h1>
+          </div>
+        </div>
 
-        {/* ── Centered card ── */}
-        <div className="al-card">
+        {/* Floating form card */}
+        <div className="al-form-card">
+          <div className="al-badge">
+            <ShieldCheck size={13} />
+            Authorized Personnel Only
+          </div>
 
-          {/* LEFT — logo + branding */}
-          <div className="al-card-left">
-            <div className="al-cl-orb-1" />
-            <div className="al-cl-orb-2" />
-            <div className="al-cl-inner">
+          <p style={{ fontSize: 13, color: '#64748B', margin: '0 0 20px', lineHeight: 1.55 }}>
+            I-login ang iyong MDRRMO administrator account para ma-access ang command center dashboard.
+          </p>
 
-              <div className="al-logo-row">
-                <img src="/logo.jpg" alt="SendResqPls" />
-                <div>
-                  <div className="al-logo-name">SendResqPls</div>
-                  <div className="al-logo-sub">MDRRMO Balayan, Batangas</div>
-                </div>
-              </div>
+          {error && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                background: '#FEF2F2',
+                border: '1px solid #FCA5A5',
+                borderRadius: 10,
+                padding: '10px 12px',
+                marginBottom: 16,
+              }}
+            >
+              <AlertTriangle size={14} color="#EF4444" style={{ flexShrink: 0 }} />
+              <span style={{ fontSize: 13, color: '#B91C1C', fontWeight: 500 }}>{error}</span>
+            </div>
+          )}
 
-              <h1 className="al-hl">
-                Disaster Incident
-                <span>Response Portal</span>
-              </h1>
-
-              <p className="al-tagline">
-                Real-time emergency monitoring and AI-assisted dispatch for MDRRMO Balayan personnel.
-              </p>
-
-              <div className="al-feats">
-                {[
-                  'Live incident feed with AI classification',
-                  'One-click department dispatch & call',
-                  'Balayan barangay risk heat map',
-                  'Full report history & analytics',
-                ].map(f => (
-                  <div key={f} className="al-feat">
-                    <CheckCircle size={14} color="#34D399" style={{ flexShrink: 0 }} />
-                    {f}
-                  </div>
-                ))}
-              </div>
-
-              <div className="al-badge">
-                <div className="al-badge-dot" />
-                <span>System Operational · Authorized Access Only</span>
-              </div>
-
+          {/* Email field */}
+          <div style={{ marginBottom: 14 }}>
+            <label
+              style={{
+                display: 'block',
+                fontSize: 12.5,
+                fontWeight: 700,
+                color: '#374151',
+                marginBottom: 6,
+                letterSpacing: '0.01em',
+              }}
+            >
+              Admin Email Address
+            </label>
+            <div style={wrapStyle('email')}>
+              <span
+                style={{
+                  position: 'absolute',
+                  left: 14,
+                  color: focusField === 'email' ? '#2563EB' : '#94A3B8',
+                  display: 'flex',
+                  transition: 'color 0.18s',
+                }}
+              >
+                <svg
+                  width="17"
+                  height="17"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect x="2" y="4" width="20" height="16" rx="2" />
+                  <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                </svg>
+              </span>
+              <input
+                type="email"
+                placeholder="admin@mdrrmo.gov.ph"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onFocus={() => setFocusField('email')}
+                onBlur={() => setFocusField(null)}
+                onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+                style={inputStyle()}
+                autoComplete="email"
+              />
             </div>
           </div>
 
-          {/* RIGHT — login form */}
-          <div className="al-card-right">
-
-            <h2 className="al-form-title">Administrator Sign In</h2>
-            <p className="al-form-sub">Enter your MDRRMO credentials to access the portal.</p>
-
-            {error && (
-              <div className="al-err">
-                <AlertTriangle size={14} style={{ flexShrink: 0 }} />
-                {error}
-              </div>
-            )}
-
-            <form className="al-form" onSubmit={handleLogin} autoComplete="on">
-
-              <div className="al-field">
-                <label htmlFor="al-email">Email Address</label>
-                <div className="al-inp-wrap">
-                  <span className="al-inp-icon"><Mail size={15} /></span>
-                  <input
-                    id="al-email"
-                    className="al-inp"
-                    type="email"
-                    autoComplete="username"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="al-field">
-                <label htmlFor="al-password">Password</label>
-                <div className="al-inp-wrap">
-                  <span className="al-inp-icon"><Lock size={15} /></span>
-                  <input
-                    id="al-password"
-                    className="al-inp al-inp-pass"
-                    type={showPass ? 'text' : 'password'}
-                    autoComplete="current-password"
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                  />
-                  <button
-                    type="button"
-                    className="al-eye"
-                    onClick={() => setShowPass(p => !p)}
-                    aria-label={showPass ? 'Hide password' : 'Show password'}
-                    tabIndex={-1}
-                  >
-                    {showPass ? <Eye size={15} /> : <EyeOff size={15} />}
-                  </button>
-                </div>
-              </div>
-
-              <button type="submit" className="al-btn" disabled={loading}>
-                {loading
-                  ? <><span className="al-spin" /> Signing in...</>
-                  : <><ShieldAlert size={16} /> Sign In to Admin Portal</>
-                }
+          {/* Password field */}
+          <div style={{ marginBottom: 20 }}>
+            <label
+              style={{
+                display: 'block',
+                fontSize: 12.5,
+                fontWeight: 700,
+                color: '#374151',
+                marginBottom: 6,
+                letterSpacing: '0.01em',
+              }}
+            >
+              Password
+            </label>
+            <div style={wrapStyle('pass')}>
+              <span
+                style={{
+                  position: 'absolute',
+                  left: 14,
+                  color: focusField === 'pass' ? '#2563EB' : '#94A3B8',
+                  display: 'flex',
+                  transition: 'color 0.18s',
+                }}
+              >
+                <Lock size={17} />
+              </span>
+              <input
+                type={showPass ? 'text' : 'password'}
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onFocus={() => setFocusField('pass')}
+                onBlur={() => setFocusField(null)}
+                onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+                style={{ ...inputStyle(), paddingRight: 44 }}
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPass(!showPass)}
+                style={{
+                  position: 'absolute',
+                  right: 12,
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#94A3B8',
+                  display: 'flex',
+                  padding: 4,
+                }}
+                aria-label={showPass ? 'Hide password' : 'Show password'}
+              >
+                {showPass ? <Eye size={17} /> : <EyeOff size={17} />}
               </button>
+            </div>
+          </div>
 
-            </form>
+          {/* Login button */}
+          <button className="al-auth-btn" onClick={handleLogin} disabled={loading}>
+            {loading ? (
+              <>
+                <span className="al-spin" /> Authenticating...
+              </>
+            ) : (
+              <>
+                Access Command Center <ArrowRight size={16} />
+              </>
+            )}
+          </button>
 
-            <p className="al-foot">
-              SendResqPls · MDRRMO Disaster Incident Reporting System<br />
-              <span>Balayan, Batangas · © 2026</span>
-            </p>
-
+          {/* Return to landing page */}
+          <div style={{ textAlign: 'center', marginTop: 20 }}>
+            <button
+              type="button"
+              onClick={() => navigate('/')}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#64748B',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                transition: 'color 0.15s',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#2563EB')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = '#64748B')}
+            >
+              ← Return to Main Page
+            </button>
           </div>
         </div>
+
+        {/* Bottom footer */}
+        <div
+          style={{
+            textAlign: 'center',
+            padding: '8px 24px 20px',
+            fontSize: 11,
+            color: '#94A3B8',
+            fontWeight: 500,
+          }}
+        >
+          MDRRMO Balayan Command Center · SendResQPls Admin
+        </div>
       </div>
-    </>
+    </div>
   );
 }

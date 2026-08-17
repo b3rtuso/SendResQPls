@@ -283,7 +283,7 @@ export default function Dashboard() {
                   Incident Risk Forecast
                 </span>
                 <button
-                  onClick={() => navigate('/analytics?tab=forecast#incident-forecast')}
+                  onClick={() => navigate('/reports')}
                   style={{
                     background: 'none',
                     border: 'none',
@@ -601,7 +601,7 @@ export default function Dashboard() {
                       gap: 4
                     }}
                   >
-                    Filter: {statusFilter === 'RESOLVED' ? 'Resolved Today' : statusFilter} ✕
+                    Filter: {statusFilter === 'RESOLVED' ? 'RESOLVED TODAY' : statusFilter} ✕
                   </span>
                 )}
               </div>

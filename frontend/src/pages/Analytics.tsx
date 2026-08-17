@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import Header from '../components/Header';
 import {
-  AreaChart, Area, BarChart, Bar,
+  Line, LineChart, AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
   Cell,
 } from 'recharts';
@@ -19,9 +19,8 @@ import {
 } from '../data/balayan-data';
 import {
   forecastData, distributionData, reportData, yearlySummary,
-  yearlyTotals, topLocations,
+  incidentTrendsData, yearlyTotals, topLocations,
   TYPE_COLORS, downloadReport, generateFullReport,
-  monthlyDetails,
 } from '../data/mdrrmo-data';
 import {
   downloadDailyReport, downloadWeeklyReport, downloadMonthlyReport,
@@ -309,18 +308,6 @@ export default function Analytics() {
   const [reportFilter, setReportFilter] = useState('All Types');
   const [trendYear, setTrendYear] = useState<string>('all');
   const [riskFilter, setRiskFilter] = useState<'ALL' | 'HIGH' | 'MEDIUM' | 'LOW'>('ALL');
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const hash = window.location.hash;
-    if (params.get('tab') === 'forecast' || hash.includes('forecast')) {
-      setTab('forecast');
-      setTimeout(() => {
-        const el = document.getElementById('incident-forecast');
-        if (el) el.scrollIntoView({ behavior: 'smooth' });
-      }, 150);
-    }
-  }, []);
 
   type RangeKey = 'daily' | 'weekly' | 'monthly';
   const [downloading, setDownloading] = useState<RangeKey | null>(null);
@@ -682,206 +669,41 @@ export default function Analytics() {
 
         {/* ============ FORECAST TAB ============ */}
         {tab === 'forecast' && (
-          <div className="fade-in" id="incident-forecast">
+          <div className="fade-in">
             {/* Stat Cards */}
-            <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 20 }}>
-              <div className="stat-card">
-                <div className="stat-info">
-                  <h3>YTD Total (2026)</h3>
-                  <div className="stat-value">{yearlySummary.totalCurrentYear}</div>
-                  <div className="stat-change up">Jan – May recorded data</div>
-                </div>
-                <div className="stat-icon blue"><BarChart3 size={22} /></div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-info">
-                  <h3>Peak Risk Month</h3>
-                  <div className="stat-value">{yearlySummary.peakMonth}</div>
-                  <div className="stat-change up">{yearlySummary.peakMonthCount} incidents recorded</div>
-                </div>
-                <div className="stat-icon red"><TrendingUp size={22} /></div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-info">
-                  <h3>Full Year Projected</h3>
-                  <div className="stat-value">{yearlySummary.predictedTotal}</div>
-                  <div className="stat-change down">↓ {Math.abs(yearlySummary.yoyGrowth)}% vs 2024 total</div>
-                </div>
-                <div className="stat-icon purple"><TrendingUp size={22} /></div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-info">
-                  <h3>Total Incident Archive</h3>
-                  <div className="stat-value">1,260</div>
-                  <div className="stat-change up">2023–2026 MDRRMO records</div>
-                </div>
-                <div className="stat-icon green"><Calendar size={22} /></div>
-              </div>
-            </div>
-
-            {/* ── Main Incident Risk Forecast Graph Card ── */}
-            <div className="card" style={{ marginBottom: 20 }}>
-              <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
-                <div>
-                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: '#0F172A' }}>
-                    2026 Incident Risk Forecast & Seasonal Projection Model
-                  </h3>
-                  <p style={{ margin: '4px 0 0', fontSize: 12.5, color: '#64748B' }}>
-                    Actual recorded incidents (Jan–May) coupled with statistical predictive modeling (Jun–Dec) based on 4-year historical MDRRMO patterns
-                  </p>
-                </div>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <span style={{ fontSize: 11, fontWeight: 800, background: '#DBEAFE', color: '#1E40AF', padding: '4px 10px', borderRadius: 6 }}>
-                    Confidence: 94.2%
-                  </span>
-                </div>
-              </div>
-              <div className="card-body">
-                <div className="chart-container" style={{ height: 340 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={forecastData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="actualGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#2563EB" stopOpacity={0.25} />
-                          <stop offset="95%" stopColor="#2563EB" stopOpacity={0.0} />
-                        </linearGradient>
-                        <linearGradient id="predictGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.25} />
-                          <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0.0} />
-                        </linearGradient>
-                        <linearGradient id="resolveGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#10B981" stopOpacity={0.2} />
-                          <stop offset="95%" stopColor="#10B981" stopOpacity={0.0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
-                      <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#64748B' }} />
-                      <YAxis tick={{ fontSize: 12, fill: '#64748B' }} />
-                      <Tooltip contentStyle={tooltipStyle} />
-                      <Legend />
-                      <Area type="monotone" dataKey="total" stroke="#2563EB" fill="url(#actualGrad)" strokeWidth={3} name="Actual Recorded" connectNulls={false} />
-                      <Area type="monotone" dataKey="predicted" stroke="#8B5CF6" fill="url(#predictGrad)" strokeWidth={2.5} strokeDasharray="6 4" name="Projected Risk Forecast" />
-                      <Area type="monotone" dataKey="resolved" stroke="#10B981" fill="url(#resolveGrad)" strokeWidth={2} name="Resolved Incidents" connectNulls={false} />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </div>
-
-            {/* ── 12-Month Incident Risk Forecast Breakdown Matrix ── */}
-            <div className="card" style={{ marginBottom: 20 }}>
-              <div className="card-header">
-                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: '#0F172A' }}>
-                  12-Month Incident Risk Breakdown & Operational Advisories
-                </h3>
-                <p style={{ margin: '4px 0 0', fontSize: 12.5, color: '#64748B' }}>
-                  Detailed month-by-month dominant hazard types, primary drivers, and emergency response recommendations
-                </p>
-              </div>
-              <div className="card-body">
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))',
-                  gap: 16,
-                }}>
-                  {monthlyDetails.map((m, idx) => {
-                    const isActual = idx <= 4; // Jan to May are actuals
-                    const countMatch = m.desc.match(/~(\d+)|\b(\d+)\s+incidents/)?.[1] || m.desc.match(/\d+/)?.[0] || '30';
-                    const isPeak = m.month === 'Jan' || m.month === 'Aug';
-                    
-                    const badgeColor = m.type === 'Trauma'
-                      ? { bg: '#FEF3C7', color: '#92400E', border: '#FDE68A', emoji: '🩹' }
-                      : m.type === 'Medical'
-                      ? { bg: '#DCFCE7', color: '#14532D', border: '#BBF7D0', emoji: '🏥' }
-                      : m.type === 'Fire'
-                      ? { bg: '#FEE2E2', color: '#991B1B', border: '#FECACA', emoji: '🔥' }
-                      : { bg: '#DBEAFE', color: '#1E40AF', border: '#BFDBFE', emoji: '⚠️' };
-
-                    return (
-                      <div
-                        key={m.month}
-                        style={{
-                          background: isPeak ? 'linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%)' : '#FFFFFF',
-                          border: isPeak ? '1.5px solid #2563EB' : '1px solid #E2E8F0',
-                          borderRadius: 14,
-                          padding: '16px',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: 10,
-                          boxShadow: isPeak ? '0 4px 14px rgba(37, 99, 235, 0.08)' : '0 1px 3px rgba(0,0,0,0.02)',
-                          position: 'relative',
-                        }}
-                      >
-                        {/* Header: Month + Status Badge */}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <strong style={{ fontSize: 16, color: '#0F172A', fontWeight: 800 }}>
-                              {m.month} 2026
-                            </strong>
-                            {isPeak && (
-                              <span style={{ fontSize: 10, fontWeight: 800, color: '#DC2626', background: '#FEE2E2', padding: '1px 6px', borderRadius: 4 }}>
-                                PEAK
-                              </span>
-                            )}
-                          </div>
-                          <span style={{
-                            fontSize: 10.5,
-                            fontWeight: 700,
-                            padding: '2px 8px',
-                            borderRadius: 6,
-                            background: isActual ? '#EFF6FF' : '#F5F3FF',
-                            color: isActual ? '#2563EB' : '#7C3AED',
-                            border: `1px solid ${isActual ? '#BFDBFE' : '#DDD6FE'}`,
-                          }}>
-                            {isActual ? 'Recorded Actual' : 'AI Projected'}
-                          </span>
-                        </div>
-
-                        {/* Hazard Category Tag */}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 2 }}>
-                          <span style={{
-                            fontSize: 12,
-                            fontWeight: 700,
-                            padding: '3px 9px',
-                            borderRadius: 6,
-                            background: badgeColor.bg,
-                            color: badgeColor.color,
-                            border: `1px solid ${badgeColor.border}`,
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 4,
-                          }}>
-                            <span>{badgeColor.emoji}</span>
-                            <span>{m.type} Risk</span>
-                          </span>
-                          <span style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', fontFamily: 'monospace' }}>
-                            ~{countMatch} cases
-                          </span>
-                        </div>
-
-                        {/* Description / Factors */}
-                        <p style={{
-                          fontSize: 12,
-                          color: '#475569',
-                          lineHeight: 1.55,
-                          margin: '4px 0 0',
-                          flex: 1,
-                        }}>
-                          {m.desc}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+            <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+              <div className="stat-card"><div className="stat-info"><h3>YTD Total (2026)</h3><div className="stat-value">{yearlySummary.totalCurrentYear}</div><div className="stat-change up">Jan – May actual data</div></div><div className="stat-icon blue"><BarChart3 size={22} /></div></div>
+              <div className="stat-card"><div className="stat-info"><h3>Peak Month</h3><div className="stat-value">{yearlySummary.peakMonth}</div><div className="stat-change up">{yearlySummary.peakMonthCount} incidents recorded</div></div><div className="stat-icon red"><TrendingUp size={22} /></div></div>
+              <div className="stat-card"><div className="stat-info"><h3>Full Year Projected</h3><div className="stat-value">{yearlySummary.predictedTotal}</div><div className="stat-change down">↓ {Math.abs(yearlySummary.yoyGrowth)}% vs 2024</div></div><div className="stat-icon purple"><TrendingUp size={22} /></div></div>
+              <div className="stat-card"><div className="stat-info"><h3>Total Records</h3><div className="stat-value">1,260</div><div className="stat-change up">2023–2026 data</div></div><div className="stat-icon green"><Calendar size={22} /></div></div>
             </div>
 
             {/* Forecast + Requests Over Time */}
             <div className="grid-2" style={{ marginTop: 20 }}>
               <div className="card">
-                <div className="card-header"><h3>Monthly Distribution Overview</h3></div>
+                <div className="card-header"><h3>2026 Incident Forecast</h3></div>
                 <div className="card-body">
-                  <div className="chart-container" style={{ height: 280 }}>
+                  <div className="chart-container" style={{ height: 300 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={forecastData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                        <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
+                        <YAxis tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
+                        <Tooltip contentStyle={tooltipStyle} />
+                        <Legend />
+                        <Area type="monotone" dataKey="total" stroke="#3B82F6" fill="rgba(59, 130, 246, 0.1)" strokeWidth={2} name="Actual Total" connectNulls={false} />
+                        <Line type="monotone" dataKey="predicted" stroke="#8B5CF6" strokeWidth={2} strokeDasharray="6 4" name="Predicted Forecast" dot={false} />
+                        <Area type="monotone" dataKey="resolved" stroke="#22C55E" fill="rgba(34, 197, 94, 0.08)" strokeWidth={2} name="Resolved" connectNulls={false} />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
+
+              <div className="card">
+                <div className="card-header"><h3>Requests Over Time</h3></div>
+                <div className="card-body">
+                  <div className="chart-container" style={{ height: 300 }}>
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={distributionData}>
                         <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
@@ -896,11 +718,13 @@ export default function Analytics() {
                   </div>
                 </div>
               </div>
+            </div>
 
-              {/* Coupled Yearly Incident Totals by Category (Bar Chart) */}
+            {/* Year-Over-Year Trends + Coupled Yearly Incident Totals by Category */}
+            <div className="grid-2" style={{ marginTop: 20 }}>
               <div className="card">
                 <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <h3>Yearly Incident Totals by Category</h3>
+                  <h3>Year-Over-Year Incident Trends</h3>
                   <select className="filter-select" value={trendYear} onChange={e => setTrendYear(e.target.value)} style={{ minWidth: 130 }}>
                     <option value="all">All Years (2023–2026)</option>
                     <option value="2023">2023</option>
@@ -908,6 +732,62 @@ export default function Analytics() {
                     <option value="2025">2025</option>
                     <option value="2026">2026</option>
                   </select>
+                </div>
+                <div className="card-body">
+                  <div className="chart-container" style={{ height: 300 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={incidentTrendsData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                        <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
+                        <YAxis tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
+                        <Tooltip contentStyle={tooltipStyle} />
+                        <Legend />
+                        {(() => {
+                          const YEAR_COLORS: Record<string, string> = {
+                            '2023': '#94A3B8',
+                            '2024': '#3B82F6',
+                            '2025': '#F59E0B',
+                            '2026': '#22C55E',
+                          };
+                          const yearKeys = Object.keys(incidentTrendsData[0] || {}).filter(k => k.startsWith('y'));
+                          const yearsWithData = yearKeys
+                            .filter(k => incidentTrendsData.some(row => (row as any)[k] != null))
+                            .map(k => k.replace('y', ''))
+                            .sort();
+                          return yearsWithData
+                            .filter(yr => trendYear === 'all' || trendYear === yr)
+                            .map(yr => {
+                              const isSelected = trendYear === yr;
+                              const isLatest   = yr === yearsWithData[yearsWithData.length - 1];
+                              const color      = YEAR_COLORS[yr] ?? '#94A3B8';
+                              return (
+                                <Line
+                                  key={yr}
+                                  type="monotone"
+                                  dataKey={`y${yr}`}
+                                  stroke={color}
+                                  strokeWidth={isSelected ? 3 : isLatest ? 2.5 : 2}
+                                  name={yr}
+                                  dot={isSelected ? { r: 4 } : isLatest ? { r: 4, strokeWidth: 2 } : trendYear === 'all' ? false : { r: 3 }}
+                                  strokeDasharray={trendYear === 'all' && !isLatest ? '4 4' : undefined}
+                                  connectNulls={false}
+                                />
+                              );
+                            });
+                        })()}
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
+
+              {/* Coupled Yearly Incident Totals by Category (Bar Chart) */}
+              <div className="card">
+                <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3>Yearly Incident Totals by Category</h3>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', background: 'var(--bg-card-hover)', padding: '4px 10px', borderRadius: 6 }}>
+                    {trendYear === 'all' ? 'All Years (2023–2026)' : `Year ${trendYear}`}
+                  </span>
                 </div>
                 <div className="card-body">
                   {(() => {
@@ -927,7 +807,7 @@ export default function Analytics() {
 
                     return (
                       <>
-                        <div className="chart-container" style={{ height: 240 }}>
+                        <div className="chart-container" style={{ height: 260 }}>
                           <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={yearlyCategoryData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />

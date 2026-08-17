@@ -22,73 +22,73 @@ const TYPE_ICON: Record<string, string> = {
   Trauma: '🩹', Crime: '🚨',
 };
 
-const STATUS_TAB_THEMES: Record<string, {
+const TAB_THEMES: Record<string, {
   activeBg: string;
   activeColor: string;
   activeBorder: string;
-  activeShadow: string;
+  activeGlow: string;
   inactiveBg: string;
   inactiveColor: string;
   inactiveBorder: string;
   dotColor: string;
 }> = {
   ALL: {
-    activeBg: '#1E293B',
+    activeBg: '#0F2942',
     activeColor: '#FFFFFF',
-    activeBorder: '#1E293B',
-    activeShadow: '0 2px 8px rgba(30, 41, 59, 0.25)',
+    activeBorder: '#0F2942',
+    activeGlow: 'rgba(15, 41, 66, 0.25)',
     inactiveBg: '#FFFFFF',
     inactiveColor: '#475569',
-    inactiveBorder: '#CBD5E1',
+    inactiveBorder: '#E2E8F0',
     dotColor: '#64748B',
   },
   PENDING: {
-    activeBg: '#D97706',
+    activeBg: '#F59E0B',
     activeColor: '#FFFFFF',
     activeBorder: '#D97706',
-    activeShadow: '0 2px 8px rgba(217, 119, 6, 0.35)',
-    inactiveBg: '#FFFBEB',
-    inactiveColor: '#B45309',
+    activeGlow: 'rgba(245, 158, 11, 0.3)',
+    inactiveBg: '#FEF3C7',
+    inactiveColor: '#92400E',
     inactiveBorder: '#FDE68A',
     dotColor: '#F59E0B',
   },
   REVIEWING: {
     activeBg: '#2563EB',
     activeColor: '#FFFFFF',
-    activeBorder: '#2563EB',
-    activeShadow: '0 2px 8px rgba(37, 99, 235, 0.35)',
-    inactiveBg: '#EFF6FF',
-    inactiveColor: '#1D4ED8',
+    activeBorder: '#1D4ED8',
+    activeGlow: 'rgba(37, 99, 235, 0.3)',
+    inactiveBg: '#DBEAFE',
+    inactiveColor: '#1E40AF',
     inactiveBorder: '#BFDBFE',
-    dotColor: '#3B82F6',
+    dotColor: '#2563EB',
   },
   DISPATCHED: {
-    activeBg: '#7C3AED',
+    activeBg: '#8B5CF6',
     activeColor: '#FFFFFF',
     activeBorder: '#7C3AED',
-    activeShadow: '0 2px 8px rgba(124, 58, 237, 0.35)',
-    inactiveBg: '#F5F3FF',
-    inactiveColor: '#6D28D9',
+    activeGlow: 'rgba(139, 92, 246, 0.3)',
+    inactiveBg: '#EDE9FE',
+    inactiveColor: '#5B21B6',
     inactiveBorder: '#DDD6FE',
     dotColor: '#8B5CF6',
   },
   RESOLVED: {
-    activeBg: '#16A34A',
+    activeBg: '#10B981',
     activeColor: '#FFFFFF',
-    activeBorder: '#16A34A',
-    activeShadow: '0 2px 8px rgba(22, 163, 74, 0.35)',
-    inactiveBg: '#F0FDF4',
-    inactiveColor: '#15803D',
+    activeBorder: '#059669',
+    activeGlow: 'rgba(16, 185, 129, 0.3)',
+    inactiveBg: '#DCFCE7',
+    inactiveColor: '#14532D',
     inactiveBorder: '#BBF7D0',
-    dotColor: '#22C55E',
+    dotColor: '#10B981',
   },
   REJECTED: {
-    activeBg: '#DC2626',
+    activeBg: '#EF4444',
     activeColor: '#FFFFFF',
     activeBorder: '#DC2626',
-    activeShadow: '0 2px 8px rgba(220, 38, 38, 0.35)',
-    inactiveBg: '#FEF2F2',
-    inactiveColor: '#B91C1C',
+    activeGlow: 'rgba(239, 68, 68, 0.3)',
+    inactiveBg: '#FEE2E2',
+    inactiveColor: '#7F1D1D',
     inactiveBorder: '#FECACA',
     dotColor: '#EF4444',
   },
@@ -283,24 +283,22 @@ export default function Requests() {
 
       <div className="page-content" style={{ paddingTop: 12 }}>
 
-        {/* ── Segmented Status Filter Tabs (Color Coded) ── */}
+        {/* ── Segmented Status Filter Tabs ── */}
         <div className="rq-filter-tabs fade-in">
           {STATUS_TABS.map(tab => {
             const isActive = filterStatus === tab;
             const count = tab === 'ALL' ? incidents.length : (countsByStatus[tab] || 0);
-            const theme = STATUS_TAB_THEMES[tab] || STATUS_TAB_THEMES.ALL;
+            const theme = TAB_THEMES[tab] || TAB_THEMES.ALL;
             return (
               <button
                 key={tab}
-                className="rq-tab-btn"
+                className={`rq-tab-btn ${isActive ? 'active' : ''}`}
                 onClick={() => setFilterStatus(tab)}
                 style={{
                   background: isActive ? theme.activeBg : theme.inactiveBg,
                   color: isActive ? theme.activeColor : theme.inactiveColor,
                   border: `1.5px solid ${isActive ? theme.activeBorder : theme.inactiveBorder}`,
-                  boxShadow: isActive ? theme.activeShadow : '0 1px 2px rgba(0,0,0,0.02)',
-                  fontWeight: isActive ? 800 : 600,
-                  transform: isActive ? 'translateY(-1px)' : 'none',
+                  boxShadow: isActive ? `0 2px 10px ${theme.activeGlow}` : 'none',
                 }}
               >
                 <span
@@ -316,7 +314,7 @@ export default function Requests() {
                 <span
                   className="rq-tab-count"
                   style={{
-                    background: isActive ? 'rgba(255, 255, 255, 0.28)' : 'rgba(0, 0, 0, 0.07)',
+                    background: isActive ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.08)',
                     color: isActive ? '#FFFFFF' : theme.inactiveColor,
                   }}
                 >

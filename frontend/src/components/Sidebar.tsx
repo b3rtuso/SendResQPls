@@ -135,21 +135,22 @@ export default function Sidebar() {
         }
 
         .sb-nav-item.active {
-          background: rgba(37, 99, 235, 0.24);
+          background: rgba(255, 255, 255, 0.09);
           color: #FFFFFF;
           font-weight: 700;
-          box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.28);
+          box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
         }
 
         .sb-nav-item.active::before {
           content: '';
           position: absolute;
           left: 0;
-          top: 18%;
-          bottom: 18%;
-          width: 3.5px;
+          top: 16%;
+          bottom: 16%;
+          width: 4px;
           border-radius: 0 4px 4px 0;
-          background: linear-gradient(180deg, #60A5FA, #2563EB);
+          background: linear-gradient(180deg, #FBBF24, #F59E0B, #D97706);
+          box-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
         }
 
         .sb-nav-icon-box {
@@ -166,10 +167,10 @@ export default function Sidebar() {
         }
 
         .sb-nav-item.active .sb-nav-icon-box {
-          background: rgba(37, 99, 235, 0.4);
-          border-color: rgba(96, 165, 250, 0.45);
-          color: #93C5FD;
-          box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+          background: rgba(245, 158, 11, 0.18);
+          border-color: rgba(245, 158, 11, 0.45);
+          color: #FBBF24;
+          box-shadow: 0 2px 10px rgba(245, 158, 11, 0.25);
         }
 
         .sb-footer {

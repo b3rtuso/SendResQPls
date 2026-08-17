@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { RequestsTableSkeleton } from '../components/PageLoader';
-import { Search, RefreshCw, ChevronLeft, ChevronRight, Image as ImageIcon, X, CheckCircle2, Filter, ArrowRight } from 'lucide-react';
+import { Search, RefreshCw, ChevronLeft, ChevronRight, Image as ImageIcon, X, CheckCircle2, Filter, ArrowRight, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import type { Incident, Status } from '../types';
 import { getIncidents, updateIncidentStatus, invalidateCache } from '../api/client';
 import { getNearestBarangay } from '../data/balayan-data';
@@ -119,6 +119,20 @@ export default function Requests() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
+  // Sorting state
+  type SortKey = 'id' | 'type' | 'location' | 'unit' | 'status' | 'createdAt';
+  const [sortKey, setSortKey] = useState<SortKey>('createdAt');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortKey(key);
+      setSortDir('desc');
+    }
+  };
+
   const handleManualRefresh = async () => {
     setRefreshing(true);
     invalidateCache('incidents');
@@ -166,19 +180,58 @@ export default function Requests() {
     return acc;
   }, {} as Record<string, number>);
 
-  const filtered = incidents.filter(inc => {
-    const mStatus = filterStatus === 'ALL' || inc.status === filterStatus;
-    const mType = filterType === 'ALL' || normalizeIncidentType(inc.aiDetectedType) === filterType;
-    const mSearch = search === '' ||
-      inc.id.toLowerCase().includes(search.toLowerCase()) ||
-      (inc.aiDetectedType || '').toLowerCase().includes(search.toLowerCase()) ||
-      (inc.aiRecommendedDept || '').toLowerCase().includes(search.toLowerCase()) ||
-      (inc.latitude && inc.longitude && getNearestBarangay(inc.latitude, inc.longitude).toLowerCase().includes(search.toLowerCase()));
-    return mStatus && mType && mSearch;
-  });
+  const sortedAndFiltered = useMemo(() => {
+    const list = incidents.filter(inc => {
+      const mStatus = filterStatus === 'ALL' || inc.status === filterStatus;
+      const mType = filterType === 'ALL' || normalizeIncidentType(inc.aiDetectedType) === filterType;
+      const mSearch = search === '' ||
+        inc.id.toLowerCase().includes(search.toLowerCase()) ||
+        (inc.aiDetectedType || '').toLowerCase().includes(search.toLowerCase()) ||
+        (inc.aiRecommendedDept || '').toLowerCase().includes(search.toLowerCase()) ||
+        (inc.latitude && inc.longitude && getNearestBarangay(inc.latitude, inc.longitude).toLowerCase().includes(search.toLowerCase()));
+      return mStatus && mType && mSearch;
+    });
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+    return list.sort((a, b) => {
+      let valA: any = '';
+      let valB: any = '';
+
+      switch (sortKey) {
+        case 'id':
+          valA = a.id;
+          valB = b.id;
+          break;
+        case 'type':
+          valA = a.aiDetectedType || '';
+          valB = b.aiDetectedType || '';
+          break;
+        case 'location':
+          valA = a.latitude && a.longitude ? getNearestBarangay(a.latitude, a.longitude) : '';
+          valB = b.latitude && b.longitude ? getNearestBarangay(b.latitude, b.longitude) : '';
+          break;
+        case 'unit':
+          valA = a.assignedDepartment || a.aiRecommendedDept || '';
+          valB = b.assignedDepartment || b.aiRecommendedDept || '';
+          break;
+        case 'status':
+          valA = a.status;
+          valB = b.status;
+          break;
+        case 'createdAt':
+        default:
+          valA = new Date(a.createdAt).getTime();
+          valB = new Date(b.createdAt).getTime();
+          break;
+      }
+
+      if (valA < valB) return sortDir === 'asc' ? -1 : 1;
+      if (valA > valB) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [incidents, filterStatus, filterType, search, sortKey, sortDir]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedAndFiltered.length / PAGE_SIZE));
+  const paged = sortedAndFiltered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
     <>
@@ -260,6 +313,17 @@ export default function Requests() {
           background: #F8FAFC;
           border-bottom: 1px solid #E2E8F0;
           white-space: nowrap;
+          user-select: none;
+        }
+
+        .rq-th.sortable {
+          cursor: pointer;
+          transition: background 0.12s, color 0.12s;
+        }
+
+        .rq-th.sortable:hover {
+          background: #EEF2F6;
+          color: #0F172A;
         }
 
         .rq-tr {
@@ -420,7 +484,7 @@ export default function Requests() {
         <div className="rq-card-container fade-in">
           {loading ? (
             <RequestsTableSkeleton />
-          ) : filtered.length === 0 ? (
+          ) : sortedAndFiltered.length === 0 ? (
             <div style={{ padding: '60px 24px', textAlign: 'center', color: '#94A3B8' }}>
               <div style={{
                 width: 48, height: 48, borderRadius: 12,
@@ -439,13 +503,55 @@ export default function Requests() {
                 <table className="rq-table">
                   <thead>
                     <tr>
-                      <th className="rq-th">Incident ID</th>
+                      <th className="rq-th sortable" onClick={() => handleSort('id')}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                          <span>Incident ID</span>
+                          {sortKey === 'id' ? (
+                            sortDir === 'asc' ? <ArrowUp size={13} color="#2563EB" /> : <ArrowDown size={13} color="#2563EB" />
+                          ) : <ArrowUpDown size={12} style={{ opacity: 0.4 }} />}
+                        </div>
+                      </th>
                       <th className="rq-th">Evidence</th>
-                      <th className="rq-th">Hazard Type</th>
-                      <th className="rq-th">Barangay Location</th>
-                      <th className="rq-th">Assigned Unit</th>
-                      <th className="rq-th">Triage Status</th>
-                      <th className="rq-th">Reported</th>
+                      <th className="rq-th sortable" onClick={() => handleSort('type')}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                          <span>Hazard Type</span>
+                          {sortKey === 'type' ? (
+                            sortDir === 'asc' ? <ArrowUp size={13} color="#2563EB" /> : <ArrowDown size={13} color="#2563EB" />
+                          ) : <ArrowUpDown size={12} style={{ opacity: 0.4 }} />}
+                        </div>
+                      </th>
+                      <th className="rq-th sortable" onClick={() => handleSort('location')}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                          <span>Barangay Location</span>
+                          {sortKey === 'location' ? (
+                            sortDir === 'asc' ? <ArrowUp size={13} color="#2563EB" /> : <ArrowDown size={13} color="#2563EB" />
+                          ) : <ArrowUpDown size={12} style={{ opacity: 0.4 }} />}
+                        </div>
+                      </th>
+                      <th className="rq-th sortable" onClick={() => handleSort('unit')}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                          <span>Assigned Unit</span>
+                          {sortKey === 'unit' ? (
+                            sortDir === 'asc' ? <ArrowUp size={13} color="#2563EB" /> : <ArrowDown size={13} color="#2563EB" />
+                          ) : <ArrowUpDown size={12} style={{ opacity: 0.4 }} />}
+                        </div>
+                      </th>
+                      <th className="rq-th sortable" onClick={() => handleSort('status')}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                          <span>Triage Status</span>
+                          {sortKey === 'status' ? (
+                            sortDir === 'asc' ? <ArrowUp size={13} color="#2563EB" /> : <ArrowDown size={13} color="#2563EB" />
+                          ) : <ArrowUpDown size={12} style={{ opacity: 0.4 }} />}
+                        </div>
+                      </th>
+                      <th className="rq-th sortable" onClick={() => handleSort('createdAt')}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                          <span>Reported</span>
+                          {sortKey === 'createdAt' ? (
+                            sortDir === 'asc' ? <ArrowUp size={13} color="#2563EB" /> : <ArrowDown size={13} color="#2563EB" />
+                          ) : <ArrowUpDown size={12} style={{ opacity: 0.4 }} />}
+                        </div>
+                      </th>
                       <th className="rq-th" style={{ textAlign: 'right' }}>Actions</th>
                     </tr>
                   </thead>
@@ -601,7 +707,7 @@ export default function Requests() {
                 color: '#64748B',
               }}>
                 <div>
-                  Showing <strong>{Math.min(filtered.length, (page - 1) * PAGE_SIZE + 1)}</strong> to <strong>{Math.min(filtered.length, page * PAGE_SIZE)}</strong> of <strong>{filtered.length}</strong> reports
+                  Showing <strong>{Math.min(sortedAndFiltered.length, (page - 1) * PAGE_SIZE + 1)}</strong> to <strong>{Math.min(sortedAndFiltered.length, page * PAGE_SIZE)}</strong> of <strong>{sortedAndFiltered.length}</strong> reports
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

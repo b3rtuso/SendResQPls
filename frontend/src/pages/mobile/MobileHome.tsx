@@ -273,28 +273,52 @@ export default function MobileHome() {
           <div
             className="sos-card"
             onClick={isOnline ? () => navigate('/mobile/report') : undefined}
+            role="button"
+            tabIndex={0}
+            aria-label="Send emergency alert to MDRRMO"
             style={!isOnline ? {
-              opacity: 0.45,
+              opacity: 0.55,
               pointerEvents: 'none',
               filter: 'grayscale(0.5)',
               cursor: 'not-allowed',
             } : {}}
           >
-            <div style={{
-              width: 60, height: 60, margin: '0 auto 14px', borderRadius: '50%',
-              background: 'rgba(255,255,255,0.15)', border: '1.5px solid rgba(255,255,255,0.28)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              backdropFilter: 'blur(4px)',
-            }}>
-              <AlertTriangle size={28} />
+            {/* Concentric radar pulse container */}
+            <div style={{ position: 'relative', width: 72, height: 72, margin: '0 auto 16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {/* Outer radar wave 1 */}
+              <div style={{
+                position: 'absolute', inset: -8, borderRadius: '50%',
+                border: '2px solid rgba(255,255,255,0.4)',
+                animation: 'radarPing 2.2s cubic-bezier(0, 0.2, 0.8, 1) infinite',
+                pointerEvents: 'none',
+              }} />
+              {/* Outer radar wave 2 (staggered) */}
+              <div style={{
+                position: 'absolute', inset: -8, borderRadius: '50%',
+                border: '2px solid rgba(255,255,255,0.3)',
+                animation: 'radarPing 2.2s cubic-bezier(0, 0.2, 0.8, 1) infinite 1.1s',
+                pointerEvents: 'none',
+              }} />
+              {/* Inner Glowing SOS Icon Circle */}
+              <div style={{
+                width: 62, height: 62, borderRadius: '50%',
+                background: 'rgba(255,255,255,0.2)', border: '2px solid rgba(255,255,255,0.45)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                backdropFilter: 'blur(8px)',
+                boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+                position: 'relative', zIndex: 1,
+              }}>
+                <AlertTriangle size={30} strokeWidth={2.4} color="white" />
+              </div>
             </div>
-            <h2 style={{ letterSpacing: '1.5px', fontSize: 20 }}>SEND EMERGENCY ALERT</h2>
-            <p style={{ fontSize: 12.5, opacity: 0.82, marginTop: 6, letterSpacing: '0.1px' }}>
-              Tap to instantly report an emergency to MDRRMO
+
+            <h2 style={{ letterSpacing: '1.5px', fontSize: 20, margin: 0, fontWeight: 900 }}>SEND EMERGENCY ALERT</h2>
+            <p style={{ fontSize: 12.5, opacity: 0.88, marginTop: 6, marginBottom: 0, letterSpacing: '0.1px', lineHeight: 1.45 }}>
+              Tap to instantly report an incident to MDRRMO Balayan
             </p>
-            <div className="tap-hint">
+            <div className="tap-hint" style={{ marginTop: 12 }}>
               <span className="tap-arrow"><ChevronDown size={12} /></span>
-              TAP TO REPORT
+              <span>TAP TO REPORT NOW</span>
               <span className="tap-arrow"><ChevronDown size={12} /></span>
             </div>
           </div>

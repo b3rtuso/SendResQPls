@@ -10,14 +10,27 @@ export default function MobileLogin() {
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
+  // Field-level errors for inline UX
+  const [emailError, setEmailError] = useState('');
+  const [passError, setPassError] = useState('');
+  const [globalError, setGlobalError] = useState('');
   const [focusField, setFocusField] = useState<'email'|'pass'|null>(null);
 
   const handleLogin = async () => {
-    if (!email || !password) { setError('Please fill in your email and password.'); return; }
-    setLoading(true); setError('');
+    // Field-level validation
+    let valid = true;
+    setEmailError(''); setPassError(''); setGlobalError('');
+    if (!email.trim()) { setEmailError('Please enter your email address.'); valid = false; }
+    else if (!/^[^@]+@[^@]+\.[^@]+$/.test(email.trim())) { setEmailError('Enter a valid email address.'); valid = false; }
+    if (!password) { setPassError('Please enter your password.'); valid = false; }
+    if (!valid) return;
+
+    setLoading(true);
     try {
-      const res = await apiLogin(email, password);
+      const res = await apiLogin(email.trim(), password);
+      const storage = rememberMe ? localStorage : sessionStorage;
+      storage.setItem('token', res.data.token);
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('userId', res.data.user?.id || '');
       localStorage.setItem('userName', res.data.user?.name || 'User');
@@ -27,7 +40,7 @@ export default function MobileLogin() {
       setupPushNotifications().catch(err => console.warn('[Login] Push notification setup failed:', err));
       if (res.data.role === 'ADMIN') { navigate('/'); } else { navigate('/mobile'); }
     } catch {
-      setError('Incorrect email or password. Please try again.');
+      setPassError('Incorrect email or password. Please try again.');
     } finally { setLoading(false); }
   };
 
@@ -37,12 +50,14 @@ export default function MobileLogin() {
     color: '#0F172A', padding: '16px 16px 16px 46px',
   });
 
-  const wrapStyle = (field: 'email'|'pass'): React.CSSProperties => ({
+  const wrapStyle = (field: 'email'|'pass', hasError?: boolean): React.CSSProperties => ({
     display: 'flex', alignItems: 'center', position: 'relative',
-    background: focusField === field ? '#fff' : '#F8FAFC',
-    border: `1.5px solid ${focusField === field ? '#2563EB' : '#E2E8F0'}`,
+    background: hasError ? '#FFF8F8' : focusField === field ? '#fff' : '#F8FAFC',
+    border: `1.5px solid ${hasError ? '#EF4444' : focusField === field ? '#2563EB' : '#E2E8F0'}`,
     borderRadius: 14, transition: 'all 0.18s',
-    boxShadow: focusField === field ? '0 0 0 3px rgba(37,99,235,0.1)' : 'none',
+    boxShadow: hasError
+      ? '0 0 0 3px rgba(239,68,68,0.09)'
+      : focusField === field ? '0 0 0 3px rgba(37,99,235,0.1)' : 'none',
   });
 
   return (
@@ -120,23 +135,26 @@ export default function MobileLogin() {
           I-login ang iyong account para makapag-report ng emergency.
         </p>
 
-        {error && (
+        {globalError && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: 10, padding: '10px 12px', marginBottom: 16 }}>
             <AlertTriangle size={14} color="#EF4444" style={{ flexShrink: 0 }} />
-            <span style={{ fontSize: 13, color: '#B91C1C', fontWeight: 500 }}>{error}</span>
+            <span style={{ fontSize: 13, color: '#B91C1C', fontWeight: 500 }}>{globalError}</span>
           </div>
         )}
 
         {/* Email field */}
-        <div style={{ marginBottom: 14 }}>
-          <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#374151', marginBottom: 6, letterSpacing: '0.01em' }}>Email Address</label>
-          <div style={wrapStyle('email')}>
-            <span style={{ position: 'absolute', left: 14, color: focusField === 'email' ? '#2563EB' : '#94A3B8', display: 'flex', transition: 'color 0.18s' }}>
+        <div style={{ marginBottom: emailError ? 6 : 14 }}>
+          <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: emailError ? '#DC2626' : '#374151', marginBottom: 6, letterSpacing: '0.01em' }}>Email Address</label>
+          <div style={wrapStyle('email', !!emailError)}>
+            <span style={{ position: 'absolute', left: 14, color: emailError ? '#EF4444' : focusField === 'email' ? '#2563EB' : '#94A3B8', display: 'flex', transition: 'color 0.18s' }}>
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
             </span>
             <input
-              type="email" placeholder="juan@example.com"
-              value={email} onChange={e => setEmail(e.target.value)}
+              type="email"
+              placeholder="juan@example.com"
+              autoComplete="email"
+              value={email}
+              onChange={e => { setEmail(e.target.value); if (emailError) setEmailError(''); }}
               onFocus={() => setFocusField('email')}
               onBlur={() => setFocusField(null)}
               onKeyDown={e => e.key === 'Enter' && handleLogin()}
@@ -144,33 +162,76 @@ export default function MobileLogin() {
             />
           </div>
         </div>
+        {emailError && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 10, marginTop: 4 }}>
+            <AlertTriangle size={12} color="#EF4444" />
+            <span style={{ fontSize: 11.5, color: '#DC2626', fontWeight: 600 }}>{emailError}</span>
+          </div>
+        )}
 
         {/* Password field */}
-        <div style={{ marginBottom: 8 }}>
-          <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#374151', marginBottom: 6, letterSpacing: '0.01em' }}>Password</label>
-          <div style={wrapStyle('pass')}>
-            <span style={{ position: 'absolute', left: 14, color: focusField === 'pass' ? '#2563EB' : '#94A3B8', display: 'flex', transition: 'color 0.18s' }}>
+        <div style={{ marginBottom: passError ? 4 : 8 }}>
+          <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: passError ? '#DC2626' : '#374151', marginBottom: 6, letterSpacing: '0.01em' }}>Password</label>
+          <div style={wrapStyle('pass', !!passError)}>
+            <span style={{ position: 'absolute', left: 14, color: passError ? '#EF4444' : focusField === 'pass' ? '#2563EB' : '#94A3B8', display: 'flex', transition: 'color 0.18s' }}>
               <Lock size={17} />
             </span>
             <input
-              type={showPass ? 'text' : 'password'} placeholder="••••••••"
-              value={password} onChange={e => setPassword(e.target.value)}
+              type={showPass ? 'text' : 'password'}
+              placeholder="••••••••"
+              autoComplete="current-password"
+              value={password}
+              onChange={e => { setPassword(e.target.value); if (passError) setPassError(''); }}
               onFocus={() => setFocusField('pass')}
               onBlur={() => setFocusField(null)}
               onKeyDown={e => e.key === 'Enter' && handleLogin()}
-              style={{ ...inputStyle(), paddingRight: 44 }}
+              style={{ ...inputStyle(), paddingRight: 52 }}
             />
+            {/* 44×44 tap target for eye toggle */}
             <button
               onClick={() => setShowPass(!showPass)}
-              style={{ position: 'absolute', right: 12, background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8', display: 'flex', padding: 4 }}
+              aria-label={showPass ? 'Hide password' : 'Show password'}
+              style={{
+                position: 'absolute', right: 4,
+                width: 44, height: 44,
+                background: 'none', border: 'none',
+                cursor: 'pointer', color: '#94A3B8',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                borderRadius: 10, transition: 'color 0.15s',
+              }}
             >
-              {showPass ? <Eye size={17} /> : <EyeOff size={17} />}
+              {showPass ? <Eye size={18} /> : <EyeOff size={18} />}
             </button>
           </div>
         </div>
+        {passError && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 8, marginTop: 2 }}>
+            <AlertTriangle size={12} color="#EF4444" />
+            <span style={{ fontSize: 11.5, color: '#DC2626', fontWeight: 600 }}>{passError}</span>
+          </div>
+        )}
 
-        {/* Forgot password */}
-        <div style={{ textAlign: 'right', marginBottom: 20 }}>
+        {/* Remember Me + Forgot password row */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', userSelect: 'none' }}>
+            <div
+              onClick={() => setRememberMe(!rememberMe)}
+              style={{
+                width: 36, height: 20, borderRadius: 10,
+                background: rememberMe ? '#2563EB' : '#E2E8F0',
+                position: 'relative', transition: 'background 0.2s',
+                flexShrink: 0, cursor: 'pointer',
+              }}
+            >
+              <div style={{
+                position: 'absolute', top: 3, left: rememberMe ? 19 : 3,
+                width: 14, height: 14, borderRadius: '50%',
+                background: 'white', transition: 'left 0.2s',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.18)',
+              }} />
+            </div>
+            <span style={{ fontSize: 12.5, fontWeight: 600, color: '#475569' }}>Remember me</span>
+          </label>
           <button
             onClick={() => navigate('/mobile/forgot-password')}
             style={{ background: 'none', border: 'none', color: '#2563EB', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}

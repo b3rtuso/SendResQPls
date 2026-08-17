@@ -1,10 +1,11 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { DashboardSkeleton } from '../components/PageLoader';
 import {
   AlertTriangle, RefreshCw, ArrowRight, Phone, Flame,
   Stethoscope, HardHat, Anchor, ShieldCheck, Clock,
+  TrendingUp, TrendingDown, Minus,
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
 import type { Incident, Status } from '../types';
@@ -54,6 +55,55 @@ const DONUT_COLORS: Record<string, string> = {
 
 const defaultColor = '#64748B';
 
+// ── Count-up animation hook ──────────────────────────────────────────
+function useCountUp(target: number, duration = 900) {
+  const [count, setCount] = useState(0);
+  const rafRef = useRef<number | null>(null);
+  const startRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (target === 0) { setCount(0); return; }
+    startRef.current = null;
+    const step = (ts: number) => {
+      if (!startRef.current) startRef.current = ts;
+      const elapsed = ts - startRef.current;
+      const progress = Math.min(elapsed / duration, 1);
+      // Ease out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setCount(Math.round(eased * target));
+      if (progress < 1) rafRef.current = requestAnimationFrame(step);
+    };
+    rafRef.current = requestAnimationFrame(step);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, [target, duration]);
+
+  return count;
+}
+
+function StatValue({ value }: { value: number }) {
+  const displayed = useCountUp(value);
+  return (
+    <div style={{ fontSize: 36, fontWeight: 900, color: '#0F172A', lineHeight: 1, letterSpacing: '-1px' }}>
+      {displayed}
+    </div>
+  );
+}
+
+// ── Trend badge component ─────────────────────────────────────────────
+function TrendBadge({ value }: { value: number }) {
+  const isUp = value > 0;
+  const isFlat = value === 0;
+  const Icon = isFlat ? Minus : isUp ? TrendingUp : TrendingDown;
+  const color = isFlat ? '#94A3B8' : isUp ? '#EF4444' : '#22C55E';
+  const text = isFlat ? 'Same as yesterday' : `${isUp ? '+' : ''}${value} vs yesterday`;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 8, fontSize: 11, fontWeight: 700, color }}>
+      <Icon size={12} />
+      <span>{text}</span>
+    </div>
+  );
+}
+
 function timeAgo(date: string) {
   const diff = Date.now() - new Date(date).getTime();
   const m = Math.floor(diff / 60000);
@@ -94,6 +144,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [stats, setStats] = useState({ total: 0, pending: 0, dispatched: 0, resolved: 0 });
+  const [prevStats, setPrevStats] = useState({ total: 0, pending: 0, dispatched: 0, resolved: 0 });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [statusFilter, setStatusFilter] = useState<Status | 'ALL'>('ALL');
@@ -150,16 +201,19 @@ export default function Dashboard() {
         const resolvedToday = incRes.data.filter(
           (i: Incident) => i.status === 'RESOLVED' && new Date(i.updatedAt).toDateString() === today
         ).length;
+        setPrevStats(stats); // store previous for trend delta
         setStats({ total: s.total, pending: s.pending, dispatched: s.dispatched, resolved: resolvedToday });
       } else {
         const d = incRes.data;
         const today = new Date().toDateString();
-        setStats({
+        const next = {
           total:      d.length,
           pending:    d.filter((i: Incident) => i.status === 'PENDING').length,
           dispatched: d.filter((i: Incident) => i.status === 'DISPATCHED').length,
           resolved:   d.filter((i: Incident) => i.status === 'RESOLVED' && new Date(i.updatedAt).toDateString() === today).length,
-        });
+        };
+        setPrevStats(stats);
+        setStats(next);
       }
     } catch { setIncidents([]); }
     finally  { setLoading(false); }
@@ -429,6 +483,9 @@ export default function Dashboard() {
         <div className="stats-grid fade-in">
           {STAT_CARDS.map(({ label, value, accent, bg, activeGlow, filter }) => {
             const isActive = statusFilter === filter;
+            const prevValue = prevStats[filter === 'ALL' ? 'total' : filter === 'PENDING' ? 'pending' : filter === 'DISPATCHED' ? 'dispatched' : 'resolved'];
+            const delta = value - prevValue;
+            const isUrgentPending = filter === 'PENDING' && value > 10;
             return (
               <div
                 key={label}
@@ -437,9 +494,11 @@ export default function Dashboard() {
                   background: isActive ? bg : 'white',
                   borderRadius: 14,
                   padding: '22px',
-                  boxShadow: isActive
-                    ? `0 0 0 2px ${accent}30, 0 4px 20px ${activeGlow}`
-                    : '0 1px 4px rgba(0,0,0,0.05)',
+                  boxShadow: isUrgentPending && !isActive
+                    ? `0 0 0 2px ${accent}20, 0 4px 20px rgba(245,158,11,0.2), 0 0 0 4px rgba(245,158,11,0.08)`
+                    : isActive
+                      ? `0 0 0 2px ${accent}30, 0 4px 20px ${activeGlow}`
+                      : '0 1px 4px rgba(0,0,0,0.05)',
                   borderTop: `1px solid ${isActive ? accent + '40' : '#E2E8F0'}`,
                   borderRight: `1px solid ${isActive ? accent + '40' : '#E2E8F0'}`,
                   borderBottom: `1px solid ${isActive ? accent + '40' : '#E2E8F0'}`,
@@ -449,25 +508,13 @@ export default function Dashboard() {
                   transform: isActive ? 'translateY(-2px)' : 'none',
                 }}
               >
-                <div>
-                  <div style={{
-                    fontSize: 10.5, fontWeight: 700, color: '#94A3B8',
-                    textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8,
-                  }}>
-                    {label}
-                  </div>
-                  <div style={{
-                    fontSize: 36, fontWeight: 900, color: '#0F172A',
-                    lineHeight: 1, letterSpacing: '-1px',
-                  }}>
-                    {value}
-                  </div>
+                <div style={{ fontSize: 10.5, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+                  {label}
                 </div>
+                <StatValue value={value} />
+                <TrendBadge value={delta} />
                 {isActive && (
-                  <div style={{
-                    marginTop: 10, fontSize: 11, fontWeight: 700,
-                    color: accent, display: 'flex', alignItems: 'center', gap: 4,
-                  }}>
+                  <div style={{ marginTop: 6, fontSize: 11, fontWeight: 700, color: accent, display: 'flex', alignItems: 'center', gap: 4 }}>
                     <span style={{ width: 5, height: 5, borderRadius: '50%', background: accent, display: 'inline-block' }} />
                     Filtering by {label}
                   </div>

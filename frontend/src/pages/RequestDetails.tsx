@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { RequestDetailsSkeleton } from '../components/PageLoader';
 import Toast, { type ToastType } from '../components/Toast';
-import { ArrowLeft, Brain, MapPin, Camera, User, Clock, ExternalLink, X, Phone, Building2, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, Brain, MapPin, Camera, User, Clock, ExternalLink, X, Phone, Building2, CheckCircle2 } from 'lucide-react';
 import { updateIncidentStatus, getIncident as fetchIncident, reverseGeocode } from '../api/client';
 import type { Status, Incident, ResolutionForm } from '../types';
 import ResolutionFormModal from '../components/ResolutionFormModal';
@@ -97,6 +97,25 @@ export default function RequestDetails() {
   const showToast = useCallback((type: ToastType, message: string, detail?: string) => {
     setToast({ show: true, message, detail, type });
   }, []);
+
+  // ── Confirmation modal state ──────────────────────────────────────
+  const [confirmModal, setConfirmModal] = useState<{
+    open: boolean;
+    targetStatus: Status | null;
+    note: string;
+  }>({ open: false, targetStatus: null, note: '' });
+
+  const requestStatusChange = (status: Status) => {
+    // RESOLVED already has its own ResolutionFormModal flow
+    if (status === 'RESOLVED') { handleStatusUpdate(status); return; }
+    setConfirmModal({ open: true, targetStatus: status, note: '' });
+  };
+
+  const confirmStatusChange = () => {
+    if (!confirmModal.targetStatus) return;
+    setConfirmModal(prev => ({ ...prev, open: false }));
+    handleStatusUpdate(confirmModal.targetStatus);
+  };
 
   useEffect(() => {
     if (id) {
@@ -581,7 +600,7 @@ export default function RequestDetails() {
                       <button
                         key={s}
                         className={`status-btn ${isCurrent ? 'active' : ''}`}
-                        onClick={() => isAvailable && !saving && handleStatusUpdate(s)}
+                        onClick={() => isAvailable && !saving && requestStatusChange(s)}
                         disabled={saving || isPast || isCurrent || isTerminal}
                         title={
                           isCurrent   ? `Current status: ${s}` :
@@ -743,6 +762,113 @@ export default function RequestDetails() {
           incident={incident}
           isSubmitting={saving}
         />
+      )}
+
+      {/* ── Status Change Confirmation Modal ── */}
+      {confirmModal.open && confirmModal.targetStatus && (
+        <>
+          {/* Backdrop */}
+          <div
+            onClick={() => setConfirmModal(prev => ({ ...prev, open: false }))}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 9000,
+              background: 'rgba(15, 23, 42, 0.55)',
+              backdropFilter: 'blur(4px)',
+              WebkitBackdropFilter: 'blur(4px)',
+            }}
+          />
+          {/* Modal card */}
+          <div style={{
+            position: 'fixed', top: '50%', left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 9001,
+            background: 'white',
+            borderRadius: 20,
+            width: 'min(480px, 90vw)',
+            padding: '28px',
+            boxShadow: '0 24px 64px rgba(15,23,42,0.22), 0 8px 24px rgba(15,23,42,0.1)',
+            animation: 'fadeUp 0.25s cubic-bezier(0.16,1,0.3,1) both',
+          }}>
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 20 }}>
+              <div style={{
+                width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+                background: confirmModal.targetStatus === 'REJECTED' ? '#FEF2F2' : '#EFF6FF',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <AlertTriangle size={20} color={confirmModal.targetStatus === 'REJECTED' ? '#EF4444' : '#2563EB'} />
+              </div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.2px' }}>
+                  Confirm Status Change
+                </h3>
+                <p style={{ margin: '4px 0 0', fontSize: 13, color: '#64748B', lineHeight: 1.5 }}>
+                  You are about to update this incident to{' '}
+                  <strong style={{ color: confirmModal.targetStatus === 'REJECTED' ? '#EF4444' : '#2563EB' }}>
+                    {confirmModal.targetStatus}
+                  </strong>.
+                  This action cannot be reversed.
+                </p>
+              </div>
+            </div>
+
+            {/* Optional note */}
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Note (optional)
+              </label>
+              <textarea
+                rows={3}
+                placeholder={`Reason for setting to ${confirmModal.targetStatus}...`}
+                value={confirmModal.note}
+                onChange={e => setConfirmModal(prev => ({ ...prev, note: e.target.value }))}
+                style={{
+                  width: '100%', border: '1.5px solid #E2E8F0', borderRadius: 10,
+                  padding: '10px 12px', fontSize: 13, fontFamily: 'var(--font)',
+                  color: '#0F172A', background: '#F8FAFC', resize: 'vertical',
+                  outline: 'none', transition: 'border 0.18s',
+                  boxSizing: 'border-box',
+                }}
+                onFocus={e => { e.target.style.borderColor = '#2563EB'; e.target.style.boxShadow = '0 0 0 3px rgba(37,99,235,0.1)'; }}
+                onBlur={e => { e.target.style.borderColor = '#E2E8F0'; e.target.style.boxShadow = 'none'; }}
+              />
+            </div>
+
+            {/* Action row */}
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={() => setConfirmModal(prev => ({ ...prev, open: false }))}
+                style={{
+                  flex: 1, padding: '12px', borderRadius: 10,
+                  background: '#F1F5F9', border: '1.5px solid #E2E8F0',
+                  fontSize: 14, fontWeight: 700, color: '#475569',
+                  cursor: 'pointer', fontFamily: 'var(--font)',
+                  transition: 'background 0.15s',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmStatusChange}
+                style={{
+                  flex: 2, padding: '12px', borderRadius: 10,
+                  background: confirmModal.targetStatus === 'REJECTED'
+                    ? 'linear-gradient(135deg, #EF4444, #DC2626)'
+                    : 'linear-gradient(135deg, #2563EB, #1D4ED8)',
+                  border: 'none',
+                  fontSize: 14, fontWeight: 700, color: 'white',
+                  cursor: 'pointer', fontFamily: 'var(--font)',
+                  boxShadow: confirmModal.targetStatus === 'REJECTED'
+                    ? '0 4px 14px rgba(239,68,68,0.35)'
+                    : '0 4px 14px rgba(37,99,235,0.35)',
+                  transition: 'opacity 0.15s',
+                }}
+              >
+                Confirm — Set to {confirmModal.targetStatus}
+              </button>
+            </div>
+          </div>
+        </>
       )}
     </>
   );

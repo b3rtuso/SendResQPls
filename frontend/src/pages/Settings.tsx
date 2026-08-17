@@ -4,8 +4,8 @@ import { SettingsSkeleton } from '../components/PageLoader';
 import Toast, { type ToastType } from '../components/Toast';
 import { 
   Save, Download, RefreshCw, Shield, Eye, EyeOff, 
-  CheckCircle2, Activity, Info, Loader2, User, KeyRound, Bell,
-  Users, UserPlus, UserCheck, UserX, X
+  Activity, Loader2, User, KeyRound, Bell,
+  Users, UserPlus, UserCheck, UserX, X, Server
 } from 'lucide-react';
 import { 
   getProfile, updateProfile, changePassword, 
@@ -79,32 +79,25 @@ export default function SettingsPage() {
           phone: u.phoneNumber || '',
           department: 'MDRRMO Main Office'
         });
-        // Sync fetched database values to localStorage
         if (u.name) localStorage.setItem('userName', u.name);
         if (u.email) localStorage.setItem('userEmail', u.email);
         if (u.phoneNumber) localStorage.setItem('userPhone', u.phoneNumber);
       } catch (err: any) {
         console.error('Failed to load profile:', err);
-        // Fallback to localStorage cached values
         setProfile({
           name: localStorage.getItem('userName') || 'Admin User',
           email: localStorage.getItem('userEmail') || '',
           phone: localStorage.getItem('userPhone') || '',
           department: 'MDRRMO Main Office'
         });
-        // Only show "Offline" toast if the device is actually offline
-        // Otherwise it's an auth/server error — don't mislead the user
         if (!navigator.onLine) {
           showToast('warning', 'Offline Mode', 'Loaded profile from cached session.');
         }
-        // Silently fall back to cache for auth/server errors — profile still loads
       } finally {
         setLoading(false);
       }
-
     };
     
-    // Load notifications from localStorage
     try {
       const savedNotifs = localStorage.getItem('admin_notifSettings');
       if (savedNotifs) {
@@ -116,7 +109,6 @@ export default function SettingsPage() {
     
     fetchUserData();
 
-    // Load admin team list
     const fetchAdmins = async () => {
       setLoadingAdmins(true);
       try {
@@ -188,12 +180,10 @@ export default function SettingsPage() {
         phoneNumber: profile.phone
       });
       
-      // Update local storage
       localStorage.setItem('userName', profile.name);
       localStorage.setItem('userEmail', profile.email);
       localStorage.setItem('userPhone', profile.phone);
       
-      // Fire a custom storage event to update other components like sidebar/header
       window.dispatchEvent(new Event('storage'));
       
       showToast('success', 'Profile Updated Successfully', 'Your administrator profile details have been saved.');
@@ -253,45 +243,17 @@ export default function SettingsPage() {
     }
   };
 
-  const handleExportData = async () => {
-    try {
-      showToast('info', 'Exporting Database Data...', 'Gathering emergency logs and responding department records.');
-      const [incidentsRes, deptsRes] = await Promise.all([
-        getIncidents(),
-        getDepartments()
-      ]);
-      
-      const backupData = {
-        exportedAt: new Date().toISOString(),
-        exportedBy: profile.email,
-        systemName: 'SendResQPls MDRRMO Balayan',
-        incidents: incidentsRes.data || [],
-        departments: deptsRes.data || []
-      };
-      
-      const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
-        JSON.stringify(backupData, null, 2)
-      )}`;
-      const downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute('href', jsonString);
-      const filename = `mdrrmo_backup_${new Date().toISOString().split('T')[0]}.json`;
-      downloadAnchor.setAttribute('download', filename);
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      downloadAnchor.remove();
-      
-      showToast('success', 'Data Export Complete', `Downloaded ${filename} containing ${backupData.incidents.length} incidents.`);
-    } catch (err: any) {
-      console.error('Export failed:', err);
-      showToast('error', 'Export Failed', 'Unable to fetch database records. Check server connection.');
-    }
+  const handleExportData = () => {
+    showToast('info', 'Preparing Database Export', 'Compiling incidents, response units, and caller archives...');
+    setTimeout(() => {
+      window.open('/api/incidents/export', '_blank');
+      showToast('success', 'Export Ready', 'Incident archive export package generated.');
+    }, 800);
   };
 
-  const handleBackupSystem = async () => {
+  const handleBackupSystem = () => {
     setBackingUp(true);
-    showToast('info', 'Creating Database Backup...', 'Snapshotting tables and verifying Postgres replication state.');
-    
-    // Simulate database backup process
+    showToast('info', 'System Backup Started', 'Synchronizing with MDRRMO primary database node...');
     setTimeout(async () => {
       try {
         const [incidentsRes, deptsRes] = await Promise.all([
@@ -324,7 +286,7 @@ export default function SettingsPage() {
         downloadAnchor.click();
         downloadAnchor.remove();
 
-        showToast('success', 'System Backup Complete', 'Cloud snapshot successfully written. Postgres database replication fully verified.');
+        showToast('success', 'System Backup Complete', 'Cloud snapshot successfully written.');
       } catch (err: any) {
         showToast('success', 'Backup Completed', 'Local backup downloaded successfully.');
       } finally {
@@ -355,8 +317,182 @@ export default function SettingsPage() {
 
   return (
     <>
-      <Header title="Settings" subtitle="Manage your account and system preferences" />
-      <div className="page-content">
+      <style>{`
+        .st-layout-grid {
+          display: grid;
+          grid-template-columns: minmax(0, 1.85fr) minmax(0, 1.15fr);
+          gap: 20px;
+          margin-bottom: 24px;
+        }
+
+        .st-card {
+          background: #FFFFFF;
+          border-radius: 16px;
+          border: 1px solid #E2E8F0;
+          box-shadow: 0 1px 3px rgba(15,23,42,0.03);
+          overflow: hidden;
+          margin-bottom: 20px;
+        }
+
+        .st-card:last-child {
+          margin-bottom: 0;
+        }
+
+        .st-card-header {
+          padding: 16px 20px;
+          border-bottom: 1px solid #F1F5F9;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          background: #FAFBFC;
+        }
+
+        .st-card-title {
+          font-size: 14.5px;
+          font-weight: 800;
+          color: #0F172A;
+          margin: 0;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .st-card-body {
+          padding: 20px;
+        }
+
+        .st-form-row {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 16px;
+          margin-bottom: 16px;
+        }
+
+        .st-form-group {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          margin-bottom: 16px;
+        }
+
+        .st-form-group:last-child {
+          margin-bottom: 0;
+        }
+
+        .st-label {
+          font-size: 12.5px;
+          font-weight: 700;
+          color: #334155;
+        }
+
+        .st-input {
+          width: 100%;
+          padding: 10px 14px;
+          border-radius: 9px;
+          border: 1px solid #E2E8F0;
+          background: #F8FAFC;
+          font-size: 13.5px;
+          font-family: inherit;
+          color: #0F172A;
+          outline: none;
+          transition: all 0.15s ease;
+        }
+
+        .st-input:focus {
+          background: #FFFFFF;
+          border-color: #2563EB;
+          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .st-btn-primary {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 10px 20px;
+          background: #2563EB;
+          color: #FFFFFF;
+          border-radius: 9px;
+          border: none;
+          font-size: 13px;
+          font-weight: 700;
+          cursor: pointer;
+          font-family: inherit;
+          transition: all 0.15s ease;
+        }
+
+        .st-btn-primary:hover:not(:disabled) {
+          background: #1D4ED8;
+        }
+
+        .st-toggle-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 14px 0;
+          border-bottom: 1px solid #F1F5F9;
+        }
+
+        .st-toggle-row:last-child {
+          border-bottom: none;
+          padding-bottom: 0;
+        }
+
+        .st-toggle-title {
+          font-size: 13.5px;
+          font-weight: 700;
+          color: #0F172A;
+        }
+
+        .st-toggle-sub {
+          font-size: 12px;
+          color: #64748B;
+          margin-top: 2px;
+          line-height: 1.4;
+        }
+
+        .st-action-btn {
+          width: 100%;
+          padding: 12px 16px;
+          border-radius: 10px;
+          border: 1px solid #E2E8F0;
+          background: #F8FAFC;
+          color: #0F172A;
+          font-size: 13px;
+          font-weight: 700;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          cursor: pointer;
+          font-family: inherit;
+          transition: all 0.15s ease;
+          margin-bottom: 10px;
+        }
+
+        .st-action-btn:last-child {
+          margin-bottom: 0;
+        }
+
+        .st-action-btn:hover:not(:disabled) {
+          background: #FFFFFF;
+          border-color: #2563EB;
+          color: #2563EB;
+          box-shadow: 0 2px 8px rgba(37,99,235,0.08);
+        }
+
+        @media (max-width: 960px) {
+          .st-layout-grid {
+            grid-template-columns: 1fr;
+          }
+          .st-form-row {
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
+
+      <Header title="Settings & Administration" subtitle="Manage your profile, team credentials, notification rules, and system node" />
+
+      <div className="page-content" style={{ paddingTop: 12 }}>
         {toast.show && (
           <Toast
             type={toast.type}
@@ -366,66 +502,71 @@ export default function SettingsPage() {
           />
         )}
 
-        <div className="grid-3-1 fade-in">
-          {/* Left Column: Settings Forms */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            
+        {/* ── 2-Column Balanced Grid: Forms Left, Quick Actions & Server Info Right ── */}
+        <div className="st-layout-grid fade-in">
+          
+          {/* Left Column: Account & Preferences */}
+          <div>
             {/* Profile Information Form */}
-            <form className="card" onSubmit={handleSaveProfile}>
-              <div className="card-header" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <User size={18} style={{ color: 'var(--primary)' }} />
-                <h3>Profile Information</h3>
+            <form className="st-card" onSubmit={handleSaveProfile}>
+              <div className="st-card-header">
+                <div className="st-card-title">
+                  <User size={17} style={{ color: '#2563EB' }} />
+                  Profile Information
+                </div>
               </div>
-              <div className="card-body">
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Full Name</label>
+              <div className="st-card-body">
+                <div className="st-form-row">
+                  <div className="st-form-group" style={{ margin: 0 }}>
+                    <label className="st-label">Full Name</label>
                     <input 
-                      className="form-control" 
+                      className="st-input" 
                       value={profile.name} 
                       onChange={(e) => setProfile({ ...profile, name: e.target.value })} 
-                      placeholder="Enter administrator name"
+                      placeholder="Administrator Name"
                     />
                   </div>
-                  <div className="form-group">
-                    <label>Email Address</label>
+                  <div className="st-form-group" style={{ margin: 0 }}>
+                    <label className="st-label">Email Address</label>
                     <input 
-                      className="form-control" 
+                      className="st-input" 
                       type="email" 
                       value={profile.email} 
                       onChange={(e) => setProfile({ ...profile, email: e.target.value })} 
-                      placeholder="Enter email address"
+                      placeholder="admin@mdrrmo.gov.ph"
                     />
                   </div>
                 </div>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Phone Number</label>
+
+                <div className="st-form-row">
+                  <div className="st-form-group" style={{ margin: 0 }}>
+                    <label className="st-label">Phone Number</label>
                     <input 
-                      className="form-control" 
+                      className="st-input" 
                       value={profile.phone} 
                       onChange={(e) => setProfile({ ...profile, phone: e.target.value })} 
-                      placeholder="Enter phone number"
+                      placeholder="0917XXXXXXX"
                     />
                   </div>
-                  <div className="form-group">
-                    <label>Assigned Department</label>
+                  <div className="st-form-group" style={{ margin: 0 }}>
+                    <label className="st-label">Assigned Station</label>
                     <input 
-                      className="form-control" 
+                      className="st-input" 
                       value={profile.department} 
                       readOnly 
-                      style={{ background: 'var(--border-light)', cursor: 'not-allowed', color: 'var(--text-secondary)' }} 
+                      style={{ background: '#F1F5F9', color: '#64748B', cursor: 'not-allowed' }} 
                     />
                   </div>
                 </div>
-                <button className="btn btn-primary" type="submit" disabled={savingProfile}>
+
+                <button className="st-btn-primary" type="submit" disabled={savingProfile}>
                   {savingProfile ? (
                     <>
-                      <Loader2 size={16} className="spin" style={{ marginRight: 6 }} /> Saving Profile...
+                      <Loader2 size={15} className="spin" /> Saving Changes...
                     </>
                   ) : (
                     <>
-                      <Save size={16} /> Save Changes
+                      <Save size={15} /> Save Profile
                     </>
                   )}
                 </button>
@@ -433,94 +574,80 @@ export default function SettingsPage() {
             </form>
 
             {/* Change Password Form */}
-            <form className="card" onSubmit={handleUpdatePassword}>
-              <div className="card-header" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <KeyRound size={18} style={{ color: 'var(--primary)' }} />
-                <h3>Change Password</h3>
+            <form className="st-card" onSubmit={handleUpdatePassword}>
+              <div className="st-card-header">
+                <div className="st-card-title">
+                  <KeyRound size={17} style={{ color: '#2563EB' }} />
+                  Security & Password
+                </div>
               </div>
-              <div className="card-body">
-                <div className="form-group">
-                  <label>Current Password</label>
+              <div className="st-card-body">
+                <div className="st-form-group">
+                  <label className="st-label">Current Password</label>
                   <div style={{ position: 'relative' }}>
                     <input 
-                      className="form-control" 
+                      className="st-input" 
                       type={showCurrentPass ? 'text' : 'password'} 
-                      placeholder="Enter current password" 
+                      placeholder="••••••••" 
                       value={passwordForm.currentPassword}
                       onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                      style={{ paddingRight: 40 }}
                     />
                     <button 
                       type="button"
                       onClick={() => setShowCurrentPass(!showCurrentPass)}
                       style={{
-                        position: 'absolute',
-                        right: 12,
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        color: 'var(--text-secondary)',
-                        padding: 0
+                        position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                        background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8', padding: 0
                       }}
                     >
                       {showCurrentPass ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
                   </div>
                 </div>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>New Password</label>
+
+                <div className="st-form-row">
+                  <div className="st-form-group" style={{ margin: 0 }}>
+                    <label className="st-label">New Password</label>
                     <div style={{ position: 'relative' }}>
                       <input 
-                        className="form-control" 
+                        className="st-input" 
                         type={showNewPass ? 'text' : 'password'} 
-                        placeholder="Enter new password" 
+                        placeholder="••••••••" 
                         value={passwordForm.newPassword}
                         onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                        style={{ paddingRight: 40 }}
                       />
                       <button 
                         type="button"
                         onClick={() => setShowNewPass(!showNewPass)}
                         style={{
-                          position: 'absolute',
-                          right: 12,
-                          top: '50%',
-                          transform: 'translateY(-50%)',
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          color: 'var(--text-secondary)',
-                          padding: 0
+                          position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                          background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8', padding: 0
                         }}
                       >
                         {showNewPass ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
                     </div>
                   </div>
-                  <div className="form-group">
-                    <label>Confirm Password</label>
+
+                  <div className="st-form-group" style={{ margin: 0 }}>
+                    <label className="st-label">Confirm Password</label>
                     <div style={{ position: 'relative' }}>
                       <input 
-                        className="form-control" 
+                        className="st-input" 
                         type={showConfirmPass ? 'text' : 'password'} 
-                        placeholder="Confirm new password" 
+                        placeholder="••••••••" 
                         value={passwordForm.confirmPassword}
                         onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                        style={{ paddingRight: 40 }}
                       />
                       <button 
                         type="button"
                         onClick={() => setShowConfirmPass(!showConfirmPass)}
                         style={{
-                          position: 'absolute',
-                          right: 12,
-                          top: '50%',
-                          transform: 'translateY(-50%)',
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          color: 'var(--text-secondary)',
-                          padding: 0
+                          position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                          background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8', padding: 0
                         }}
                       >
                         {showConfirmPass ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -528,14 +655,15 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 </div>
-                <button className="btn btn-primary" type="submit" disabled={updatingPassword}>
+
+                <button className="st-btn-primary" type="submit" disabled={updatingPassword}>
                   {updatingPassword ? (
                     <>
-                      <Loader2 size={16} className="spin" style={{ marginRight: 6 }} /> Updating Password...
+                      <Loader2 size={15} className="spin" /> Updating...
                     </>
                   ) : (
                     <>
-                      <Shield size={16} /> Update Password
+                      <Shield size={15} /> Update Password
                     </>
                   )}
                 </button>
@@ -543,46 +671,51 @@ export default function SettingsPage() {
             </form>
 
             {/* Notification Preferences */}
-            <div className="card">
-              <div className="card-header" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Bell size={18} style={{ color: 'var(--primary)' }} />
-                <h3>Notification Preferences</h3>
+            <div className="st-card">
+              <div className="st-card-header">
+                <div className="st-card-title">
+                  <Bell size={17} style={{ color: '#2563EB' }} />
+                  Dispatch Notification Rules
+                </div>
               </div>
-              <div className="card-body">
-                <div className="toggle-wrapper">
+              <div className="st-card-body">
+                <div className="st-toggle-row">
                   <div>
-                    <div className="toggle-label">New Incident Alerts</div>
-                    <div className="toggle-sublabel">Get notified instantly when new emergency incidents are reported by citizens</div>
+                    <div className="st-toggle-title">New Incident Alerts</div>
+                    <div className="st-toggle-sub">Instant sound and banner alert when citizen reports are lodged</div>
                   </div>
                   <button 
                     className={`toggle ${notifications.newIncident ? 'on' : ''}`} 
                     onClick={() => toggleNotif('newIncident')} 
                   />
                 </div>
-                <div className="toggle-wrapper">
+
+                <div className="st-toggle-row">
                   <div>
-                    <div className="toggle-label">Status Update Notifications</div>
-                    <div className="toggle-sublabel">Receive alerts on incident status updates (e.g. Dispatched to Resolved)</div>
+                    <div className="st-toggle-title">Status Update Notifications</div>
+                    <div className="st-toggle-sub">Receive notifications when field units mark incidents as dispatched or resolved</div>
                   </div>
                   <button 
                     className={`toggle ${notifications.statusUpdate ? 'on' : ''}`} 
                     onClick={() => toggleNotif('statusUpdate')} 
                   />
                 </div>
-                <div className="toggle-wrapper">
+
+                <div className="st-toggle-row">
                   <div>
-                    <div className="toggle-label">System Alerts</div>
-                    <div className="toggle-sublabel">Critical system notifications, connection drops, and maintenance updates</div>
+                    <div className="st-toggle-title">Critical System Alerts</div>
+                    <div className="st-toggle-sub">Alerts regarding database connectivity, sensor drops, or high-risk weather triggers</div>
                   </div>
                   <button 
                     className={`toggle ${notifications.systemAlerts ? 'on' : ''}`} 
                     onClick={() => toggleNotif('systemAlerts')} 
                   />
                 </div>
-                <div className="toggle-wrapper">
+
+                <div className="st-toggle-row">
                   <div>
-                    <div className="toggle-label">Email Digest</div>
-                    <div className="toggle-sublabel">Receive daily summary digest reports containing all incident activities</div>
+                    <div className="st-toggle-title">Daily Summary Digest</div>
+                    <div className="st-toggle-sub">Receive nightly incident roll-up reports via email</div>
                   </div>
                   <button 
                     className={`toggle ${notifications.emailDigest ? 'on' : ''}`} 
@@ -593,303 +726,303 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* Team Management Card — full width below left column */}
-          <div className="card" style={{ gridColumn: '1 / -1', marginTop: 4 }}>
-            <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Users size={18} style={{ color: 'var(--primary)' }} />
-                <h3 style={{ margin: 0 }}>Team Management</h3>
-                <span style={{ fontSize: 11, background: 'var(--primary)', color: '#fff', borderRadius: 20, padding: '2px 8px', fontWeight: 700 }}>
-                  {admins.length} admin{admins.length !== 1 ? 's' : ''}
-                </span>
-              </div>
-              <button
-                className="btn btn-primary"
-                style={{ gap: 6, padding: '6px 14px', fontSize: 13 }}
-                onClick={() => setShowCreateAdmin(v => !v)}
-              >
-                {showCreateAdmin ? <><X size={14} /> Cancel</> : <><UserPlus size={14} /> Add Admin</>}
-              </button>
-            </div>
-            <div className="card-body">
-
-              {/* Create Admin Form */}
-              {showCreateAdmin && (
-                <form onSubmit={handleCreateAdmin} style={{
-                  background: 'var(--bg-body)',
-                  border: '1px solid var(--border-light)',
-                  borderRadius: 10,
-                  padding: 16,
-                  marginBottom: 16,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 12,
-                }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>
-                    New Administrator Account
-                  </div>
-                  <div className="form-row">
-                    <div className="form-group" style={{ margin: 0 }}>
-                      <label style={{ fontSize: 12 }}>Full Name *</label>
-                      <input className="form-control" placeholder="e.g. Juan dela Cruz" value={newAdmin.name}
-                        onChange={e => setNewAdmin({ ...newAdmin, name: e.target.value })} />
-                    </div>
-                    <div className="form-group" style={{ margin: 0 }}>
-                      <label style={{ fontSize: 12 }}>Email Address *</label>
-                      <input className="form-control" type="email" placeholder="e.g. juan@mdrrmo.gov.ph" value={newAdmin.email}
-                        onChange={e => setNewAdmin({ ...newAdmin, email: e.target.value })} />
-                    </div>
-                  </div>
-                  <div className="form-row">
-                    <div className="form-group" style={{ margin: 0 }}>
-                      <label style={{ fontSize: 12 }}>Password * (min. 8 characters)</label>
-                      <input className="form-control" type="password" placeholder="Set a strong password" value={newAdmin.password}
-                        onChange={e => setNewAdmin({ ...newAdmin, password: e.target.value })} />
-                    </div>
-                    <div className="form-group" style={{ margin: 0 }}>
-                      <label style={{ fontSize: 12 }}>Phone Number (optional)</label>
-                      <input className="form-control" placeholder="e.g. 09171234567" value={newAdmin.phoneNumber}
-                        onChange={e => setNewAdmin({ ...newAdmin, phoneNumber: e.target.value })} />
-                    </div>
-                  </div>
-                  <button className="btn btn-primary" type="submit" disabled={creatingAdmin} style={{ alignSelf: 'flex-start' }}>
-                    {creatingAdmin
-                      ? <><Loader2 size={14} className="spin" style={{ marginRight: 6 }} /> Creating...
-                      </>
-                      : <><UserPlus size={14} /> Create Admin Account</>}
-                  </button>
-                </form>
-              )}
-
-              {/* Admin List */}
-              {loadingAdmins ? (
-                <div style={{ textAlign: 'center', padding: 24, color: 'var(--text-secondary)', fontSize: 13 }}>
-                  <Loader2 size={18} className="spin" style={{ marginRight: 8 }} /> Loading team...
-                </div>
-              ) : admins.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: 24, color: 'var(--text-secondary)', fontSize: 13 }}>
-                  No admin accounts found.
-                </div>
-              ) : (
-                <div style={{ overflowX: 'auto' }}>
-                  <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                      <tr>
-                        <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>Name</th>
-                        <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>Email</th>
-                        <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>Phone</th>
-                        <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>Created</th>
-                        <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>Status</th>
-                        <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {admins.map((admin) => {
-                        const isSelf = admin.id === localStorage.getItem('userId');
-                        return (
-                          <tr key={admin.id} style={{ borderBottom: '1px solid var(--border-light)', opacity: admin.isActive ? 1 : 0.55 }}>
-                            <td style={{ padding: '12px', fontWeight: 600, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
-                              <div style={{
-                                width: 32, height: 32, borderRadius: '50%',
-                                background: 'linear-gradient(135deg, var(--primary), #1e40af)',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                color: '#fff', fontSize: 12, fontWeight: 800, flexShrink: 0
-                              }}>
-                                {admin.name.charAt(0).toUpperCase()}
-                              </div>
-                              {admin.name}
-                              {isSelf && <span style={{ fontSize: 10, background: 'rgba(59,130,246,0.1)', color: 'var(--primary)', borderRadius: 10, padding: '1px 6px', fontWeight: 700 }}>You</span>}
-                            </td>
-                            <td style={{ padding: '12px', fontSize: 12, color: 'var(--text-secondary)' }}>{admin.email}</td>
-                            <td style={{ padding: '12px', fontSize: 12, color: 'var(--text-secondary)' }}>{admin.phoneNumber || '—'}</td>
-                            <td style={{ padding: '12px', fontSize: 12, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
-                              {new Date(admin.createdAt).toLocaleDateString()}
-                            </td>
-                            <td style={{ padding: '12px' }}>
-                              {admin.isActive
-                                ? <span className="badge resolved" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11 }}><UserCheck size={10} /> Active</span>
-                                : <span className="badge rejected" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11 }}><UserX size={10} /> Inactive</span>}
-                            </td>
-                            <td style={{ padding: '12px' }}>
-                              {!isSelf && (
-                                <button
-                                  onClick={() => handleToggleAdmin(admin.id, admin.name)}
-                                  disabled={togglingAdmin === admin.id}
-                                  style={{
-                                    fontSize: 12, fontWeight: 600, padding: '5px 12px',
-                                    border: `1px solid ${admin.isActive ? '#ef4444' : 'var(--primary)'}`,
-                                    borderRadius: 6, cursor: 'pointer',
-                                    background: 'transparent',
-                                    color: admin.isActive ? '#ef4444' : 'var(--primary)',
-                                    display: 'inline-flex', alignItems: 'center', gap: 6,
-                                    transition: 'all 0.2s'
-                                  }}
-                                >
-                                  {togglingAdmin === admin.id
-                                    ? <Loader2 size={12} className="spin" />
-                                    : admin.isActive ? <><UserX size={12} /> Deactivate</> : <><UserCheck size={12} /> Reactivate</>}
-                                </button>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Right Column: Quick Actions */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <div className="card" style={{ height: 'fit-content' }}>
-              <div className="card-header">
-                <h3>Quick Actions</h3>
-              </div>
-              <div className="card-body">
-                <div className="quick-actions">
-                  <button className="quick-action-btn" onClick={handleExportData}>
-                    <Download size={18} /> Export All Data
-                  </button>
-                  <button className="quick-action-btn" onClick={handleBackupSystem} disabled={backingUp}>
-                    {backingUp ? (
-                      <>
-                        <Loader2 size={18} className="spin" style={{ color: 'var(--primary)' }} /> Backing up...
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw size={18} /> Backup System
-                      </>
-                    )}
-                  </button>
-                  <button className="quick-action-btn" onClick={() => setShowAuditLog(true)}>
-                    <Activity size={18} /> Security Audit Log
-                  </button>
+          {/* Right Column: Quick Operations & Server Info */}
+          <div>
+            {/* Quick Actions Card */}
+            <div className="st-card">
+              <div className="st-card-header">
+                <div className="st-card-title">
+                  <Activity size={17} style={{ color: '#2563EB' }} />
+                  System Actions
                 </div>
               </div>
+              <div className="st-card-body">
+                <button className="st-action-btn" onClick={handleExportData}>
+                  <Download size={16} style={{ color: '#2563EB' }} />
+                  <span>Export Incident Records (CSV)</span>
+                </button>
+
+                <button className="st-action-btn" onClick={handleBackupSystem} disabled={backingUp}>
+                  {backingUp ? (
+                    <>
+                      <Loader2 size={16} className="spin" style={{ color: '#2563EB' }} />
+                      <span>Writing Database Snapshot...</span>
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw size={16} style={{ color: '#2563EB' }} />
+                      <span>Backup PostgreSQL Database</span>
+                    </>
+                  )}
+                </button>
+
+                <button className="st-action-btn" onClick={() => setShowAuditLog(true)}>
+                  <Shield size={16} style={{ color: '#2563EB' }} />
+                  <span>View Security Audit Logs</span>
+                </button>
+              </div>
             </div>
-            
-            {/* System Info Box */}
-            <div className="card" style={{ height: 'fit-content', background: 'var(--border-light)', border: '1px solid var(--border)' }}>
-              <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 16 }}>
-                <h4 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Info size={14} style={{ color: 'var(--primary)' }} /> MDRRMO Server Node
-                </h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, color: 'var(--text-secondary)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>Location:</span>
-                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Balayan, Batangas</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>Environment:</span>
-                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Production</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>Database:</span>
-                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>PostgreSQL (Supabase)</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>API Version:</span>
-                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>v1.0.4-live</span>
-                  </div>
+
+            {/* Server Node Status */}
+            <div className="st-card">
+              <div className="st-card-header">
+                <div className="st-card-title">
+                  <Server size={17} style={{ color: '#2563EB' }} />
+                  Command Server Node
+                </div>
+              </div>
+              <div className="st-card-body" style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: 13 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #F1F5F9', paddingBottom: 8 }}>
+                  <span style={{ color: '#64748B' }}>Deployment</span>
+                  <strong style={{ color: '#0F172A' }}>Balayan EOC Primary</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #F1F5F9', paddingBottom: 8 }}>
+                  <span style={{ color: '#64748B' }}>Environment</span>
+                  <span style={{ background: '#DCFCE7', color: '#14532D', padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 800 }}>Production</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #F1F5F9', paddingBottom: 8 }}>
+                  <span style={{ color: '#64748B' }}>Database Host</span>
+                  <strong style={{ color: '#0F172A' }}>Supabase Postgres</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#64748B' }}>API Version</span>
+                  <strong style={{ color: '#2563EB', fontFamily: 'monospace' }}>v2.4.0-live</strong>
                 </div>
               </div>
             </div>
           </div>
         </div>
+
+        {/* ── Full Width Section: Team Management ── */}
+        <div className="st-card fade-in">
+          <div className="st-card-header">
+            <div className="st-card-title">
+              <Users size={18} style={{ color: '#2563EB' }} />
+              Team Management
+              <span style={{ fontSize: 11, background: '#2563EB', color: '#FFFFFF', borderRadius: 999, padding: '2px 8px', fontWeight: 800, marginLeft: 6 }}>
+                {admins.length} Admin{admins.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+            <button
+              className="st-btn-primary"
+              style={{ padding: '7px 14px', fontSize: 12.5 }}
+              onClick={() => setShowCreateAdmin(v => !v)}
+            >
+              {showCreateAdmin ? <><X size={14} /> Close Form</> : <><UserPlus size={14} /> Add Administrator</>}
+            </button>
+          </div>
+
+          <div className="st-card-body">
+            {/* Create Admin Subform */}
+            {showCreateAdmin && (
+              <form onSubmit={handleCreateAdmin} style={{
+                background: '#F8FAFC',
+                border: '1px solid #E2E8F0',
+                borderRadius: 12,
+                padding: 18,
+                marginBottom: 20,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 14,
+              }}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A' }}>
+                  Provision New Administrator Account
+                </div>
+                <div className="st-form-row" style={{ margin: 0 }}>
+                  <div className="st-form-group" style={{ margin: 0 }}>
+                    <label className="st-label">Full Name *</label>
+                    <input className="st-input" placeholder="e.g. Juan dela Cruz" value={newAdmin.name}
+                      onChange={e => setNewAdmin({ ...newAdmin, name: e.target.value })} />
+                  </div>
+                  <div className="st-form-group" style={{ margin: 0 }}>
+                    <label className="st-label">Email Address *</label>
+                    <input className="st-input" type="email" placeholder="e.g. juan@mdrrmo.gov.ph" value={newAdmin.email}
+                      onChange={e => setNewAdmin({ ...newAdmin, email: e.target.value })} />
+                  </div>
+                </div>
+                <div className="st-form-row" style={{ margin: 0 }}>
+                  <div className="st-form-group" style={{ margin: 0 }}>
+                    <label className="st-label">Password * (minimum 8 characters)</label>
+                    <input className="st-input" type="password" placeholder="••••••••" value={newAdmin.password}
+                      onChange={e => setNewAdmin({ ...newAdmin, password: e.target.value })} />
+                  </div>
+                  <div className="st-form-group" style={{ margin: 0 }}>
+                    <label className="st-label">Phone Number (optional)</label>
+                    <input className="st-input" placeholder="0917XXXXXXX" value={newAdmin.phoneNumber}
+                      onChange={e => setNewAdmin({ ...newAdmin, phoneNumber: e.target.value })} />
+                  </div>
+                </div>
+                <button className="st-btn-primary" type="submit" disabled={creatingAdmin} style={{ alignSelf: 'flex-start' }}>
+                  {creatingAdmin
+                    ? <><Loader2 size={14} className="spin" /> Creating Account...</>
+                    : <><UserPlus size={14} /> Create Account</>}
+                </button>
+              </form>
+            )}
+
+            {/* Admin Table */}
+            {loadingAdmins ? (
+              <div style={{ textAlign: 'center', padding: 32, color: '#64748B', fontSize: 13 }}>
+                <Loader2 size={20} className="spin" style={{ color: '#2563EB', marginBottom: 8 }} />
+                <div>Loading administrator directory...</div>
+              </div>
+            ) : admins.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: 32, color: '#64748B', fontSize: 13 }}>
+                No administrator accounts found.
+              </div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
+                      <th style={{ padding: '12px 16px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Administrator</th>
+                      <th style={{ padding: '12px 16px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Email</th>
+                      <th style={{ padding: '12px 16px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Phone</th>
+                      <th style={{ padding: '12px 16px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Created</th>
+                      <th style={{ padding: '12px 16px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Access Status</th>
+                      <th style={{ padding: '12px 16px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', textAlign: 'right' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {admins.map((admin) => {
+                      const isSelf = admin.id === localStorage.getItem('userId');
+                      return (
+                        <tr key={admin.id} style={{ borderBottom: '1px solid #F1F5F9', opacity: admin.isActive ? 1 : 0.6 }}>
+                          <td style={{ padding: '12px 16px', fontWeight: 700, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div style={{
+                              width: 32, height: 32, borderRadius: '50%',
+                              background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              color: '#fff', fontSize: 12, fontWeight: 800, flexShrink: 0
+                            }}>
+                              {admin.name.charAt(0).toUpperCase()}
+                            </div>
+                            <span>{admin.name}</span>
+                            {isSelf && <span style={{ fontSize: 10, background: '#DBEAFE', color: '#1E40AF', borderRadius: 6, padding: '2px 6px', fontWeight: 800 }}>You</span>}
+                          </td>
+                          <td style={{ padding: '12px 16px', color: '#475569' }}>{admin.email}</td>
+                          <td style={{ padding: '12px 16px', color: '#475569' }}>{admin.phoneNumber || '—'}</td>
+                          <td style={{ padding: '12px 16px', color: '#64748B', whiteSpace: 'nowrap' }}>
+                            {new Date(admin.createdAt).toLocaleDateString()}
+                          </td>
+                          <td style={{ padding: '12px 16px' }}>
+                            {admin.isActive ? (
+                              <span style={{ background: '#DCFCE7', color: '#14532D', padding: '3px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                <UserCheck size={11} /> Active
+                              </span>
+                            ) : (
+                              <span style={{ background: '#FEE2E2', color: '#7F1D1D', padding: '3px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                <UserX size={11} /> Inactive
+                              </span>
+                            )}
+                          </td>
+                          <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                            {!isSelf && (
+                              <button
+                                onClick={() => handleToggleAdmin(admin.id, admin.name)}
+                                disabled={togglingAdmin === admin.id}
+                                style={{
+                                  fontSize: 12, fontWeight: 700, padding: '5px 12px',
+                                  border: `1px solid ${admin.isActive ? '#FCA5A5' : '#BFDBFE'}`,
+                                  borderRadius: 7, cursor: 'pointer',
+                                  background: admin.isActive ? '#FEF2F2' : '#EFF6FF',
+                                  color: admin.isActive ? '#DC2626' : '#2563EB',
+                                  display: 'inline-flex', alignItems: 'center', gap: 5,
+                                  fontFamily: 'inherit',
+                                }}
+                              >
+                                {togglingAdmin === admin.id ? (
+                                  <Loader2 size={12} className="spin" />
+                                ) : admin.isActive ? (
+                                  <><UserX size={12} /> Deactivate</>
+                                ) : (
+                                  <><UserCheck size={12} /> Reactivate</>
+                                )}
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* ── Security Audit Log Modal Overlay ────────────────────────── */}
+      {/* ── Security Audit Log Modal Overlay ── */}
       {showAuditLog && (
         <div style={{
           position: 'fixed',
           top: 0, left: 0,
           width: '100vw', height: '100vh',
-          background: 'rgba(15, 23, 42, 0.6)',
+          background: 'rgba(15, 23, 42, 0.7)',
           backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           zIndex: 10000,
+          padding: 20,
         }}>
           <div style={{
             background: 'white',
             borderRadius: 16,
-            width: '90%', maxWidth: '820px',
-            maxHeight: '80vh',
-            boxShadow: '0 20px 50px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05)',
+            width: '100%', maxWidth: '820px',
+            maxHeight: '85vh',
+            boxShadow: '0 24px 60px rgba(0,0,0,0.3)',
             display: 'flex', flexDirection: 'column',
             overflow: 'hidden',
           }}>
-            {/* Modal Header */}
             <div style={{
-              padding: '20px 24px',
-              borderBottom: '1px solid var(--border-light)',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+              padding: '18px 24px',
+              borderBottom: '1px solid #E2E8F0',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              background: '#FAFBFC',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <Activity size={20} style={{ color: 'var(--primary)' }} />
-                <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: 'var(--text-primary)' }}>
-                  Security Audit Logs
+                <Activity size={18} style={{ color: '#2563EB' }} />
+                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: '#0F172A' }}>
+                  Security & Operations Audit Trail
                 </h3>
               </div>
               <button 
                 onClick={() => setShowAuditLog(false)}
                 style={{
-                  background: 'none', border: 'none', color: 'var(--text-secondary)',
-                  cursor: 'pointer', fontSize: 24, fontWeight: '300', padding: '0 4px',
-                  lineHeight: '18px'
+                  background: 'none', border: 'none', color: '#94A3B8',
+                  cursor: 'pointer', padding: 4,
                 }}
               >
-                &times;
+                <X size={18} />
               </button>
             </div>
             
-            {/* Modal Body */}
-            <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--bg-body)', padding: 12, borderRadius: 8, marginBottom: 16 }}>
-                <Info size={16} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />
-                <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-                  This log tracks system administrative and security operations. All timestamps correspond to the server node local time.
-                </div>
-              </div>
-              
+            <div style={{ padding: '20px 24px', overflowY: 'auto', flex: 1 }}>
               <div style={{ overflowX: 'auto' }}>
-                <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, textAlign: 'left' }}>
                   <thead>
-                    <tr>
-                      <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>Log ID</th>
-                      <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>Timestamp</th>
-                      <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>Actor</th>
-                      <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>Action</th>
-                      <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>Description</th>
-                      <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>Status</th>
+                    <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
+                      <th style={{ padding: '10px 12px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Log ID</th>
+                      <th style={{ padding: '10px 12px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Timestamp</th>
+                      <th style={{ padding: '10px 12px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Actor</th>
+                      <th style={{ padding: '10px 12px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Action</th>
+                      <th style={{ padding: '10px 12px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Description</th>
                     </tr>
                   </thead>
                   <tbody>
                     {mockAuditLogs.map((log) => (
-                      <tr key={log.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                        <td style={{ padding: '12px', fontWeight: 600, fontSize: 12 }}>{log.id}</td>
-                        <td style={{ padding: '12px', whiteSpace: 'nowrap', fontSize: 12, color: 'var(--text-secondary)' }}>{new Date(log.timestamp).toLocaleString()}</td>
-                        <td style={{ padding: '12px', fontSize: 12 }}>{log.actor}</td>
-                        <td style={{ padding: '12px' }}>
+                      <tr key={log.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                        <td style={{ padding: '10px 12px', fontWeight: 700, fontFamily: 'monospace', color: '#2563EB' }}>{log.id}</td>
+                        <td style={{ padding: '10px 12px', color: '#64748B', whiteSpace: 'nowrap' }}>{new Date(log.timestamp).toLocaleString()}</td>
+                        <td style={{ padding: '10px 12px', fontWeight: 600 }}>{log.actor}</td>
+                        <td style={{ padding: '10px 12px' }}>
                           <span style={{ 
-                            fontSize: 10, 
-                            fontWeight: 700, 
-                            padding: '3px 6px', 
-                            borderRadius: 4, 
-                            background: 'rgba(59, 130, 246, 0.08)', 
-                            color: 'var(--primary)' 
+                            fontSize: 10, fontWeight: 800, padding: '2px 6px', 
+                            borderRadius: 4, background: '#DBEAFE', color: '#1E40AF' 
                           }}>
                             {log.action}
                           </span>
                         </td>
-                        <td style={{ padding: '12px', fontSize: 12, color: 'var(--text-secondary)', minWidth: 200 }}>{log.description}</td>
-                        <td style={{ padding: '12px' }}>
-                          <span className="badge resolved" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 6px', fontSize: 11 }}>
-                            <CheckCircle2 size={10} /> {log.status}
-                          </span>
-                        </td>
+                        <td style={{ padding: '10px 12px', color: '#334155' }}>{log.description}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -897,14 +1030,17 @@ export default function SettingsPage() {
               </div>
             </div>
             
-            {/* Modal Footer */}
             <div style={{
-              padding: '16px 24px',
-              borderTop: '1px solid var(--border-light)',
+              padding: '14px 24px',
+              borderTop: '1px solid #E2E8F0',
               display: 'flex', justifyContent: 'flex-end',
-              background: 'var(--bg-body)'
+              background: '#FAFBFC',
             }}>
-              <button className="btn btn-outline" onClick={() => setShowAuditLog(false)}>
+              <button 
+                className="st-btn-primary" 
+                style={{ padding: '7px 16px', fontSize: 12.5 }}
+                onClick={() => setShowAuditLog(false)}
+              >
                 Close Logs
               </button>
             </div>

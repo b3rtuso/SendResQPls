@@ -482,7 +482,7 @@ export default function Requests() {
                                   gap: 4,
                                 }}
                               >
-                                Dossier <ArrowRight size={12} />
+                                View <ArrowRight size={12} />
                               </button>
                             </div>
                           </td>

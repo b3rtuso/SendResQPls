@@ -179,6 +179,10 @@ export default function Dashboard() {
 
   const filteredIncidents = useMemo(() => {
     if (statusFilter === 'ALL') return incidents;
+    if (statusFilter === 'RESOLVED') {
+      const today = new Date().toDateString();
+      return incidents.filter(inc => inc.status === 'RESOLVED' && new Date(inc.updatedAt).toDateString() === today);
+    }
     return incidents.filter(inc => inc.status === statusFilter);
   }, [incidents, statusFilter]);
 
@@ -279,7 +283,7 @@ export default function Dashboard() {
                   Incident Risk Forecast
                 </span>
                 <button
-                  onClick={() => navigate('/reports')}
+                  onClick={() => navigate('/analytics?tab=forecast#incident-forecast')}
                   style={{
                     background: 'none',
                     border: 'none',
@@ -597,7 +601,7 @@ export default function Dashboard() {
                       gap: 4
                     }}
                   >
-                    Filter: {statusFilter} ✕
+                    Filter: {statusFilter === 'RESOLVED' ? 'Resolved Today' : statusFilter} ✕
                   </span>
                 )}
               </div>

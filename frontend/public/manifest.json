@@ -1,6 +1,6 @@
 {
-  "name": "SendResqPls - Emergency Reporting",
-  "short_name": "SendResqPls",
+  "name": "SendResQPls - Emergency Reporting",
+  "short_name": "SendResQPls",
   "description": "Report emergencies instantly. AI-powered disaster incident reporting for MDRRMO Balayan.",
   "start_url": "/mobile",
   "scope": "/mobile",

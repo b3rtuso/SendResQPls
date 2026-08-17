@@ -22,6 +22,7 @@ import MobileResetPassword from './pages/mobile/MobileResetPassword';
 import { MobileToastProvider } from './components/MobileToastProvider';
 import LandingPage from './pages/LandingPage';
 import GetTheApp from './pages/GetTheApp';
+import ErrorBoundary from './components/ErrorBoundary';
 import { useState } from 'react';
 import './App.css';
 
@@ -62,55 +63,57 @@ function MobileHomeWithOnboarding() {
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* === PUBLIC LANDING PAGE & GET APP === */}
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/get-the-app" element={<GetTheApp />} />
+    <ErrorBoundary>
+      <BrowserRouter>
+        <Routes>
+          {/* === PUBLIC LANDING PAGE & GET APP === */}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/get-the-app" element={<GetTheApp />} />
 
-        {/* === ADMIN LOGIN (public) === */}
-        <Route path="/admin/login" element={<AdminLogin />} />
+          {/* === ADMIN LOGIN (public) === */}
+          <Route path="/admin/login" element={<AdminLogin />} />
 
-        {/* === PUBLIC MOBILE ROUTES === */}
-        {/* MobileToastProvider wraps ALL mobile routes so toast context is available everywhere */}
-        <Route path="/mobile/login" element={<MobileToastProvider><MobileLogin /></MobileToastProvider>} />
-        <Route path="/mobile/signup" element={<MobileToastProvider><MobileSignup /></MobileToastProvider>} />
-        <Route path="/mobile/forgot-password" element={<MobileForgotPassword />} />
-        <Route path="/mobile/reset-password" element={<MobileResetPassword />} />
+          {/* === PUBLIC MOBILE ROUTES === */}
+          {/* MobileToastProvider wraps ALL mobile routes so toast context is available everywhere */}
+          <Route path="/mobile/login" element={<MobileToastProvider><MobileLogin /></MobileToastProvider>} />
+          <Route path="/mobile/signup" element={<MobileToastProvider><MobileSignup /></MobileToastProvider>} />
+          <Route path="/mobile/forgot-password" element={<MobileForgotPassword />} />
+          <Route path="/mobile/reset-password" element={<MobileResetPassword />} />
 
-        {/* === PROTECTED MOBILE ROUTES (require login) === */}
-        <Route path="/mobile" element={<MobileToastProvider><MobileHomeWithOnboarding /></MobileToastProvider>} />
-        <Route path="/mobile/report" element={<MobileToastProvider><PrivateRoute><MobileReport /></PrivateRoute></MobileToastProvider>} />
-        <Route path="/mobile/history" element={<MobileToastProvider><PrivateRoute><MobileHistory /></PrivateRoute></MobileToastProvider>} />
-        <Route path="/mobile/profile" element={<MobileToastProvider><PrivateRoute><MobileProfile /></PrivateRoute></MobileToastProvider>} />
-        <Route path="/mobile/notifications" element={<MobileToastProvider><PrivateRoute><MobileNotifications /></PrivateRoute></MobileToastProvider>} />
+          {/* === PROTECTED MOBILE ROUTES (require login) === */}
+          <Route path="/mobile" element={<MobileToastProvider><MobileHomeWithOnboarding /></MobileToastProvider>} />
+          <Route path="/mobile/report" element={<MobileToastProvider><PrivateRoute><MobileReport /></PrivateRoute></MobileToastProvider>} />
+          <Route path="/mobile/history" element={<MobileToastProvider><PrivateRoute><MobileHistory /></PrivateRoute></MobileToastProvider>} />
+          <Route path="/mobile/profile" element={<MobileToastProvider><PrivateRoute><MobileProfile /></PrivateRoute></MobileToastProvider>} />
+          <Route path="/mobile/notifications" element={<MobileToastProvider><PrivateRoute><MobileNotifications /></PrivateRoute></MobileToastProvider>} />
 
-        {/* === PROTECTED ADMIN ROUTES (require ADMIN role) === */}
-        <Route
-          path="*"
-          element={
-            <AdminRoute>
-              <div className="app-layout">
-                <Sidebar />
-                <main className="main-content">
-                  <Routes>
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/requests" element={<Requests />} />
-                    <Route path="/requests/:id" element={<RequestDetails />} />
-                    <Route path="/call-logs" element={<CallLogs />} />
-                    <Route path="/analytics" element={<Analytics />} />
-                    <Route path="/departments" element={<Departments />} />
-                    <Route path="/settings" element={<SettingsPage />} />
-                    {/* Fallback inside admin: go to dashboard */}
-                    <Route path="*" element={<Navigate to="/dashboard" replace />} />
-                  </Routes>
-                </main>
-              </div>
-            </AdminRoute>
-          }
-        />
-      </Routes>
-    </BrowserRouter>
+          {/* === PROTECTED ADMIN ROUTES (require ADMIN role) === */}
+          <Route
+            path="*"
+            element={
+              <AdminRoute>
+                <div className="app-layout">
+                  <Sidebar />
+                  <main className="main-content">
+                    <Routes>
+                      <Route path="/dashboard" element={<Dashboard />} />
+                      <Route path="/requests" element={<Requests />} />
+                      <Route path="/requests/:id" element={<RequestDetails />} />
+                      <Route path="/call-logs" element={<CallLogs />} />
+                      <Route path="/analytics" element={<Analytics />} />
+                      <Route path="/departments" element={<Departments />} />
+                      <Route path="/settings" element={<SettingsPage />} />
+                      {/* Fallback inside admin: go to dashboard */}
+                      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                    </Routes>
+                  </main>
+                </div>
+              </AdminRoute>
+            }
+          />
+        </Routes>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 

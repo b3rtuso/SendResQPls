@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, AlertCircle, Truck, ShieldCheck, XCircle, Clock, ChevronLeft } from 'lucide-react';
+import { Bell, AlertCircle, Truck, ShieldCheck, XCircle, Clock, ChevronLeft, CheckCheck, Trash2, ArrowRight } from 'lucide-react';
 import BottomNav from '../../components/BottomNav';
 
 // Pull notifications from localStorage (written by MobileHome polling)
@@ -37,34 +38,47 @@ const STATUS_META: Record<string, { label: string; color: string; bg: string; bo
 
 export default function MobileNotifications() {
   const navigate = useNavigate();
-  const notifications = getStoredNotifications();
+  const [notifications, setNotifications] = useState<StoredNotif[]>(() => getStoredNotifications());
 
   const handleClearAll = () => {
     clearNotifications();
-    // Force re-render by navigating to same page
-    navigate('/mobile/notifications', { replace: true });
+    setNotifications([]);
+  };
+
+  const handleMarkAllRead = () => {
+    const updated = notifications.map(n => ({ ...n, read: true }));
+    saveNotifications(updated);
+    setNotifications(updated);
   };
 
   const handleMarkRead = (id: string) => {
     const updated = notifications.map(n => n.id === id ? { ...n, read: true } : n);
     saveNotifications(updated);
+    setNotifications(updated);
   };
 
-  const unread = notifications.filter(n => !n.read).length;
+  const handleDeleteOne = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    const updated = notifications.filter(n => n.id !== id);
+    saveNotifications(updated);
+    setNotifications(updated);
+  };
+
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
     <div className="mobile-shell" style={{ background: '#F8FAFC' }}>
-      <div className="mobile-page" style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }}>
+      <div className="mobile-page" style={{ flex: 1, overflowY: 'auto', paddingBottom: 85 }}>
         {/* Header */}
         <div style={{
-          background: 'linear-gradient(135deg, #1E3A5F 0%, #2563EB 100%)',
-          margin: '0 -24px 20px',
-          padding: '16px 24px',
+          background: 'linear-gradient(135deg, #0F2942 0%, #1E3A5F 100%)',
+          margin: '0 -24px 16px',
+          padding: '18px 24px',
           display: 'flex',
           alignItems: 'center',
           gap: 12,
           color: 'white',
-          boxShadow: '0 4px 12px rgba(14, 165, 233, 0.15)',
+          boxShadow: '0 4px 16px rgba(15, 41, 66, 0.18)',
         }}>
           <button 
             onClick={() => navigate('/mobile')}
@@ -72,8 +86,8 @@ export default function MobileNotifications() {
               width: 36,
               height: 36,
               borderRadius: 12,
-              border: '1.5px solid rgba(255, 255, 255, 0.3)',
-              background: 'rgba(255, 255, 255, 0.15)',
+              border: '1.5px solid rgba(255, 255, 255, 0.25)',
+              background: 'rgba(255, 255, 255, 0.12)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -86,100 +100,130 @@ export default function MobileNotifications() {
             <ChevronLeft size={20} />
           </button>
           <div style={{ flex: 1 }}>
-            <h1 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: 'white', letterSpacing: '0.3px', display: 'flex', alignItems: 'center', gap: 8 }}>
-              Notifications
-              {unread > 0 && (
+            <h1 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: 'white', letterSpacing: '-0.2px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              Alerts & Updates
+              {unreadCount > 0 && (
                 <span style={{
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                   background: '#EF4444', color: 'white', fontSize: 10, fontWeight: 800,
                   minWidth: 18, height: 18, borderRadius: 9, padding: '0 4px',
-                  border: '1.5px solid #1E3A5F',
+                  border: '1.5px solid #0F2942',
                 }}>
-                  {unread > 9 ? '9+' : unread}
+                  {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
             </h1>
-            <p style={{ fontSize: 11, opacity: 0.85, margin: '2px 0 0' }}>Updates on your emergency reports</p>
+            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', margin: '2px 0 0' }}>Real-time notifications on your reports</p>
           </div>
-          {notifications.length > 0 && (
-            <button
-              onClick={handleClearAll}
-              style={{
-                background: 'rgba(255, 255, 255, 0.15)', border: '1.5px solid rgba(255, 255, 255, 0.3)', borderRadius: 10,
-                padding: '6px 12px', fontSize: 12, fontWeight: 700, color: 'white',
-                cursor: 'pointer', fontFamily: 'var(--font)',
-              }}
-            >
-              Clear all
-            </button>
-          )}
         </div>
+
+        {/* Action Bar (Mark all read & Clear all) */}
+        {notifications.length > 0 && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 14,
+            padding: '0 4px',
+          }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: '#64748B' }}>
+              {unreadCount > 0 ? `${unreadCount} unread update${unreadCount > 1 ? 's' : ''}` : 'All caught up'}
+            </span>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {unreadCount > 0 && (
+                <button
+                  onClick={handleMarkAllRead}
+                  style={{
+                    background: 'white', border: '1px solid #E2E8F0', borderRadius: 8,
+                    padding: '5px 10px', fontSize: 11.5, fontWeight: 700, color: '#2563EB',
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
+                  }}
+                >
+                  <CheckCheck size={13} /> Mark all read
+                </button>
+              )}
+              <button
+                onClick={handleClearAll}
+                style={{
+                  background: 'white', border: '1px solid #E2E8F0', borderRadius: 8,
+                  padding: '5px 10px', fontSize: 11.5, fontWeight: 700, color: '#94A3B8',
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
+                }}
+              >
+                <Trash2 size={13} /> Clear
+              </button>
+            </div>
+          </div>
+        )}
+
         {notifications.length === 0 ? (
           /* Empty state */
           <div style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center',
-            justifyContent: 'center', padding: '80px 32px', textAlign: 'center',
+            justifyContent: 'center', padding: '60px 24px', textAlign: 'center',
+            background: 'white', borderRadius: 20, border: '1px solid #E2E8F0', marginTop: 10,
           }}>
             <div style={{
-              width: 64, height: 64, borderRadius: 18,
-              background: '#F1F5F9',
+              width: 56, height: 56, borderRadius: 18,
+              background: '#EFF6FF',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              marginBottom: 16,
+              marginBottom: 14, color: '#2563EB',
             }}>
-              <Bell size={28} color="#CBD5E1" />
+              <Bell size={26} />
             </div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: '#0F172A', marginBottom: 4 }}>
               No notifications yet
             </div>
-            <div style={{ fontSize: 13, color: '#94A3B8', lineHeight: 1.6 }}>
-              You will see updates here when the status of your report changes.
+            <div style={{ fontSize: 13, color: '#64748B', lineHeight: 1.5, maxWidth: 260, marginBottom: 18 }}>
+              You will receive alerts here whenever your emergency reports are reviewed or dispatched.
             </div>
+            <button
+              onClick={() => navigate('/mobile/history')}
+              style={{
+                padding: '10px 18px', borderRadius: 12,
+                background: '#F1F5F9', border: '1px solid #E2E8F0',
+                fontSize: 13, fontWeight: 700, color: '#0F172A',
+                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+              }}
+            >
+              View Report History <ArrowRight size={14} />
+            </button>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {notifications.map((n, i) => {
               const meta = STATUS_META[n.status] || STATUS_META.PENDING;
               const Icon = meta.icon;
               return (
                 <div
                   key={`${n.id}-${i}`}
-                  onClick={() => handleMarkRead(n.id)}
+                  onClick={() => { handleMarkRead(n.id); navigate('/mobile/history'); }}
                   style={{
-                    display: 'flex', alignItems: 'flex-start', gap: 14,
-                    padding: '16px 20px 16px 20px',
-                    borderBottom: '1px solid rgba(241,245,249,0.9)',
-                    background: n.read ? 'white' : 'rgba(239,246,255,0.5)',
-                    cursor: 'default',
+                    display: 'flex', alignItems: 'flex-start', gap: 12,
+                    padding: '14px 16px',
+                    borderRadius: 16,
+                    background: 'white',
+                    boxShadow: '0 1px 4px rgba(15,23,42,0.04)',
+                    cursor: 'pointer',
                     position: 'relative',
-                    transition: 'background 0.15s',
-                    /* colored left border via box-shadow to avoid layout shift */
-                    borderLeft: `3px solid ${n.read ? 'transparent' : meta.border}`,
+                    transition: 'all 0.15s ease',
+                    border: `1px solid ${!n.read ? meta.border + '50' : '#E2E8F0'}`,
+                    borderLeft: `4px solid ${!n.read ? meta.border : '#CBD5E1'}`,
                   }}
                 >
-                  {/* Unread indicator dot */}
-                  {!n.read && (
-                    <div style={{
-                      position: 'absolute', left: 11, top: '50%',
-                      transform: 'translateY(-50%)',
-                      width: 7, height: 7, borderRadius: '50%',
-                      background: meta.color,
-                      boxShadow: `0 0 0 3px ${meta.color}22`,
-                    }} />
-                  )}
-
                   {/* Icon square with tinted bg */}
                   <div style={{
-                    width: 46, height: 46, borderRadius: 14,
+                    width: 42, height: 42, borderRadius: 12,
                     background: meta.bg, flexShrink: 0,
-                    border: `1.5px solid ${meta.color}22`,
+                    border: `1.5px solid ${meta.color}25`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
-                    <Icon size={20} color={meta.color} strokeWidth={2} />
+                    <Icon size={20} color={meta.color} strokeWidth={2.2} />
                   </div>
 
                   {/* Text block */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
                       <div style={{ fontSize: 13.5, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.1px' }}>
                         {n.type}
                       </div>
@@ -187,21 +231,34 @@ export default function MobileNotifications() {
                         {n.time}
                       </div>
                     </div>
-                    <div style={{ fontSize: 12.5, color: meta.color, fontWeight: 700, marginBottom: 2 }}>
+                    <div style={{ fontSize: 12.5, color: meta.color, fontWeight: 700, lineHeight: 1.35 }}>
                       {meta.label}
                     </div>
-                    {!n.read && (
-                      <div style={{
-                        display: 'inline-flex', alignItems: 'center',
-                        fontSize: 10, fontWeight: 700, color: meta.color,
-                        background: `${meta.color}12`,
-                        border: `1px solid ${meta.color}22`,
-                        borderRadius: 6, padding: '2px 7px', marginTop: 4,
-                        letterSpacing: '0.04em', textTransform: 'uppercase',
-                      }}>
-                        New
-                      </div>
-                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
+                      {!n.read ? (
+                        <span style={{
+                          fontSize: 9.5, fontWeight: 800, color: meta.color,
+                          background: `${meta.color}14`,
+                          border: `1px solid ${meta.color}30`,
+                          borderRadius: 6, padding: '1px 6px',
+                          letterSpacing: '0.04em', textTransform: 'uppercase',
+                        }}>
+                          NEW UPDATE
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: 11, color: '#94A3B8' }}>Tap to view</span>
+                      )}
+                      <button
+                        onClick={(e) => handleDeleteOne(e, n.id)}
+                        style={{
+                          background: 'none', border: 'none', color: '#CBD5E1',
+                          cursor: 'pointer', padding: 2, display: 'flex',
+                        }}
+                        aria-label="Delete notification"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
                   </div>
                 </div>
               );

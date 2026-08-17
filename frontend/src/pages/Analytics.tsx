@@ -47,11 +47,32 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-const tooltipStyle = {
-  background: 'var(--bg-card)',
-  border: '1px solid var(--border)',
-  borderRadius: 'var(--radius-md)',
-  fontSize: '13px',
+const CustomAnalyticsTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div style={{
+        background: 'rgba(15, 23, 42, 0.94)',
+        backdropFilter: 'blur(12px)',
+        border: '1px solid rgba(255, 255, 255, 0.12)',
+        borderRadius: 12,
+        padding: '10px 14px',
+        boxShadow: '0 8px 30px rgba(0, 0, 0, 0.35)',
+        color: 'white',
+        fontFamily: 'var(--font)',
+        minWidth: 140,
+      }}>
+        {label && <p style={{ margin: '0 0 6px', fontWeight: 800, fontSize: 13, color: '#F1F5F9' }}>{label}</p>}
+        {payload.map((p: any) => (
+          <div key={p.name} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'rgba(255,255,255,0.85)', padding: '2px 0' }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: p.fill || p.color || '#2563EB', flexShrink: 0 }} />
+            <span style={{ textTransform: 'capitalize' }}>{p.name}:</span>
+            <strong style={{ marginLeft: 'auto', color: 'white', fontWeight: 800 }}>{p.value}</strong>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return null;
 };
 
 function createMarkerIcon(riskLevel: string): L.DivIcon {
@@ -689,7 +710,7 @@ export default function Analytics() {
                         <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                         <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
                         <YAxis tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
-                        <Tooltip contentStyle={tooltipStyle} />
+                        <Tooltip content={<CustomAnalyticsTooltip />} />
                         <Legend />
                         <Area type="monotone" dataKey="total" stroke="#3B82F6" fill="rgba(59, 130, 246, 0.1)" strokeWidth={2} name="Actual Total" connectNulls={false} />
                         <Line type="monotone" dataKey="predicted" stroke="#8B5CF6" strokeWidth={2} strokeDasharray="6 4" name="Predicted Forecast" dot={false} />
@@ -709,7 +730,7 @@ export default function Analytics() {
                         <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                         <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
                         <YAxis tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
-                        <Tooltip contentStyle={tooltipStyle} />
+                        <Tooltip content={<CustomAnalyticsTooltip />} />
                         <Legend />
                         <Bar dataKey="total" fill="#1E3A5F" radius={[4, 4, 0, 0]} name="Total Requests" />
                         <Bar dataKey="completed" fill="#14B8A6" radius={[4, 4, 0, 0]} name="Completed" />
@@ -740,7 +761,7 @@ export default function Analytics() {
                         <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                         <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
                         <YAxis tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
-                        <Tooltip contentStyle={tooltipStyle} />
+                        <Tooltip content={<CustomAnalyticsTooltip />} />
                         <Legend />
                         {(() => {
                           const YEAR_COLORS: Record<string, string> = {
@@ -813,7 +834,7 @@ export default function Analytics() {
                               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                               <XAxis dataKey="category" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
                               <YAxis tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
-                              <Tooltip contentStyle={tooltipStyle} />
+                              <Tooltip content={<CustomAnalyticsTooltip />} />
                               <Bar dataKey="count" name="Incidents" radius={[6, 6, 0, 0]}>
                                 {yearlyCategoryData.map((entry, index) => (
                                   <Cell key={`cell-${index}`} fill={entry.fill} />

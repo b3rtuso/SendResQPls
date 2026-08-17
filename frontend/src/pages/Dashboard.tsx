@@ -149,6 +149,7 @@ export default function Dashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [statusFilter, setStatusFilter] = useState<Status | 'ALL'>('ALL');
   const [dashboardYear, setDashboardYear] = useState<string>(String(new Date().getFullYear()));
+  const [activeDonutIndex, setActiveDonutIndex] = useState<number | null>(null);
 
   // Live operational clock & dynamic dispatcher greeting
   const [time, setTime] = useState(new Date());
@@ -588,34 +589,79 @@ export default function Dashboard() {
               <h3 style={{ fontWeight: 700, fontSize: 16, color: '#0F172A' }}>Incident Distribution</h3>
             </div>
             <div className="card-body" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 16, alignItems: 'center' }}>
-              <div style={{ height: '260px', width: '100%' }}>
+              <div style={{ height: '260px', width: '100%', position: 'relative' }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
                       data={donutData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
-                      paddingAngle={4}
+                      innerRadius={62}
+                      outerRadius={84}
+                      paddingAngle={3}
                       dataKey="value"
                     >
-                      {donutData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={DONUT_COLORS[entry.name] || defaultColor} />
-                      ))}
+                      {donutData.map((entry, index) => {
+                        const baseColor = DONUT_COLORS[entry.name] || defaultColor;
+                        const isHovered = activeDonutIndex === index;
+                        const hasHover = activeDonutIndex !== null;
+                        return (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={baseColor}
+                            opacity={hasHover ? (isHovered ? 1 : 0.35) : 1}
+                            style={{ transition: 'opacity 0.2s ease', cursor: 'pointer' }}
+                          />
+                        );
+                      })}
                     </Pie>
                     <Tooltip content={<CustomTooltip />} />
                   </PieChart>
                 </ResponsiveContainer>
+
+                {/* Center Donut Total Label */}
+                <div style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  textAlign: 'center',
+                  pointerEvents: 'none',
+                }}>
+                  <div style={{ fontSize: 24, fontWeight: 900, color: '#0F172A', lineHeight: 1, letterSpacing: '-0.5px' }}>
+                    {donutData.reduce((acc, curr) => acc + curr.value, 0)}
+                  </div>
+                  <div style={{ fontSize: 10.5, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 3 }}>
+                    Reports
+                  </div>
+                </div>
               </div>
+
               <div className="donut-legend-list">
-                {donutData.map((entry) => {
+                {donutData.map((entry, index) => {
                   const color = DONUT_COLORS[entry.name] || defaultColor;
+                  const isHovered = activeDonutIndex === index;
                   return (
-                    <div key={entry.name} className="donut-legend-item">
+                    <div
+                      key={entry.name}
+                      className="donut-legend-item"
+                      onMouseEnter={() => setActiveDonutIndex(index)}
+                      onMouseLeave={() => setActiveDonutIndex(null)}
+                      style={{
+                        padding: '6px 10px',
+                        borderRadius: 8,
+                        background: isHovered ? `${color}14` : 'transparent',
+                        cursor: 'pointer',
+                        transition: 'background 0.15s ease',
+                      }}
+                    >
                       <div className="donut-legend-color" style={{ background: color }} />
-                      <span style={{ textTransform: 'capitalize' }}>{entry.name}</span>
-                      <span className="donut-legend-value">{entry.value}</span>
+                      <span style={{ textTransform: 'capitalize', fontWeight: isHovered ? 700 : 500 }}>
+                        {entry.name}
+                      </span>
+                      <span className="donut-legend-value" style={{ color: isHovered ? color : '#0F172A' }}>
+                        {entry.value}
+                      </span>
                     </div>
                   );
                 })}

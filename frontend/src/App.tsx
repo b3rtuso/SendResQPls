@@ -20,6 +20,7 @@ import MobileOnboarding, { shouldShowOnboarding } from './pages/mobile/MobileOnb
 import MobileForgotPassword from './pages/mobile/MobileForgotPassword';
 import MobileResetPassword from './pages/mobile/MobileResetPassword';
 import { MobileToastProvider } from './components/MobileToastProvider';
+import LandingPage from './pages/LandingPage';
 import { useState } from 'react';
 import './App.css';
 
@@ -62,8 +63,8 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* === DEFAULT LANDING: redirect / to admin login === */}
-        <Route path="/" element={<Navigate to="/admin/login" replace />} />
+        {/* === PUBLIC LANDING PAGE === */}
+        <Route path="/" element={<LandingPage />} />
 
         {/* === ADMIN LOGIN (public) === */}
         <Route path="/admin/login" element={<AdminLogin />} />

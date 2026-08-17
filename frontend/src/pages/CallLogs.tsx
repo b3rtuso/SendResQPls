@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Header from '../components/Header';
-import { Phone, PhoneOff, PhoneIncoming, Clock } from 'lucide-react';
+import { Phone, PhoneOff, PhoneIncoming, Clock, Search } from 'lucide-react';
 import type { CallLog } from '../types';
 
 const mockCallLogs: CallLog[] = [];
@@ -10,7 +10,14 @@ const statusBadge = { Accepted: 'resolved', 'No Response': 'pending', Declined: 
 
 export default function CallLogs() {
   const [filter, setFilter] = useState('ALL');
-  const filtered = filter === 'ALL' ? mockCallLogs : mockCallLogs.filter((c) => c.status === filter);
+  const [search, setSearch] = useState('');
+
+  const filtered = (filter === 'ALL' ? mockCallLogs : mockCallLogs.filter((c) => c.status === filter))
+    .filter(log => search === '' ||
+      log.id.toLowerCase().includes(search.toLowerCase()) ||
+      log.callerName.toLowerCase().includes(search.toLowerCase()) ||
+      log.department.toLowerCase().includes(search.toLowerCase())
+    );
 
   const metrics = {
     total: mockCallLogs.length,
@@ -21,87 +28,212 @@ export default function CallLogs() {
 
   return (
     <>
-      <Header title="Call Logs" subtitle="Track all incoming and outgoing emergency calls" />
-      <div className="page-content">
-        {/* Metrics */}
-        <div className="stats-grid fade-in">
-          <div className="stat-card">
-            <div className="stat-info"><h3>Total Calls</h3><div className="stat-value">{metrics.total}</div></div>
-            <div className="stat-icon blue"><Phone size={22} /></div>
+      <style>{`
+        .cl-stats-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 16px;
+          margin-bottom: 20px;
+        }
+
+        .cl-stat-card {
+          background: #FFFFFF;
+          border-radius: 14px;
+          padding: 18px 20px;
+          border: 1px solid #E2E8F0;
+          box-shadow: 0 1px 3px rgba(15,23,42,0.03);
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .cl-stat-label {
+          font-size: 11px;
+          font-weight: 700;
+          color: #64748B;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          margin-bottom: 4px;
+        }
+
+        .cl-stat-value {
+          font-size: 24px;
+          font-weight: 800;
+          color: #0F172A;
+          font-variant-numeric: tabular-nums;
+        }
+
+        .cl-stat-icon {
+          width: 44px;
+          height: 44px;
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+
+        @media (max-width: 900px) {
+          .cl-stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+      `}</style>
+
+      <Header title="Call & Radio Logs" subtitle="Communication records between dispatchers, citizens, and field units" />
+
+      <div className="page-content" style={{ paddingTop: 12 }}>
+
+        {/* ── Metric Summary Cards ── */}
+        <div className="cl-stats-grid fade-in">
+          <div className="cl-stat-card">
+            <div>
+              <div className="cl-stat-label">Total Logs</div>
+              <div className="cl-stat-value">{metrics.total}</div>
+            </div>
+            <div className="cl-stat-icon" style={{ background: 'rgba(37, 99, 235, 0.08)', color: '#2563EB' }}>
+              <Phone size={20} />
+            </div>
           </div>
-          <div className="stat-card">
-            <div className="stat-info"><h3>Accepted</h3><div className="stat-value">{metrics.accepted}</div></div>
-            <div className="stat-icon green"><PhoneIncoming size={22} /></div>
+
+          <div className="cl-stat-card">
+            <div>
+              <div className="cl-stat-label">Accepted Calls</div>
+              <div className="cl-stat-value">{metrics.accepted}</div>
+            </div>
+            <div className="cl-stat-icon" style={{ background: 'rgba(16, 185, 129, 0.08)', color: '#10B981' }}>
+              <PhoneIncoming size={20} />
+            </div>
           </div>
-          <div className="stat-card">
-            <div className="stat-info"><h3>No Response</h3><div className="stat-value">{metrics.noResponse}</div></div>
-            <div className="stat-icon yellow"><Clock size={22} /></div>
+
+          <div className="cl-stat-card">
+            <div>
+              <div className="cl-stat-label">No Response</div>
+              <div className="cl-stat-value">{metrics.noResponse}</div>
+            </div>
+            <div className="cl-stat-icon" style={{ background: 'rgba(245, 158, 11, 0.08)', color: '#F59E0B' }}>
+              <Clock size={20} />
+            </div>
           </div>
-          <div className="stat-card">
-            <div className="stat-info"><h3>Declined</h3><div className="stat-value">{metrics.declined}</div></div>
-            <div className="stat-icon red"><PhoneOff size={22} /></div>
+
+          <div className="cl-stat-card">
+            <div>
+              <div className="cl-stat-label">Declined</div>
+              <div className="cl-stat-value">{metrics.declined}</div>
+            </div>
+            <div className="cl-stat-icon" style={{ background: 'rgba(239, 68, 68, 0.08)', color: '#EF4444' }}>
+              <PhoneOff size={20} />
+            </div>
           </div>
         </div>
 
-        <div className="filters-bar">
-          <select className="filter-select" value={filter} onChange={(e) => setFilter(e.target.value)}>
-            <option value="ALL">All Calls</option>
+        {/* ── Filters & Search ── */}
+        <div className="fade-in" style={{
+          background: '#FFFFFF',
+          borderRadius: 14,
+          padding: '14px 18px',
+          marginBottom: 16,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          border: '1px solid #E2E8F0',
+        }}>
+          <div style={{ position: 'relative', width: 280 }}>
+            <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
+            <input
+              type="text"
+              placeholder="Search call logs by caller or department..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '9px 12px 9px 36px',
+                border: '1px solid #E2E8F0',
+                borderRadius: 9,
+                fontSize: 13,
+                outline: 'none',
+                fontFamily: 'inherit',
+                color: '#0F172A',
+                background: '#F8FAFC',
+              }}
+            />
+          </div>
+
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            style={{
+              padding: '9px 14px',
+              border: '1px solid #E2E8F0',
+              borderRadius: 9,
+              fontSize: 13,
+              color: '#334155',
+              background: '#F8FAFC',
+              fontFamily: 'inherit',
+              cursor: 'pointer',
+              outline: 'none',
+              fontWeight: 600,
+            }}
+          >
+            <option value="ALL">All Call Statuses</option>
             <option value="Accepted">Accepted</option>
             <option value="No Response">No Response</option>
             <option value="Declined">Declined</option>
           </select>
         </div>
 
-        <div className="card fade-in" style={{ animationDelay: '0.1s' }}>
-          <table className="data-table">
+        {/* ── Data Table ── */}
+        <div className="fade-in" style={{
+          background: '#FFFFFF',
+          borderRadius: 16,
+          border: '1px solid #E2E8F0',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+          overflow: 'hidden',
+        }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, textAlign: 'left' }}>
             <thead>
-              <tr>
-                <th>Call ID</th>
-                <th>Request ID</th>
-                <th>Caller</th>
-                <th>Department</th>
-                <th>Duration</th>
-                <th>Status</th>
-                <th>Time</th>
+              <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
+                {['Log ID', 'Linked Request', 'Caller Identity', 'Target Department', 'Duration', 'Call Status', 'Timestamp'].map(h => (
+                  <th key={h} style={{ padding: '14px 18px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '48px 24px', color: 'var(--text-secondary)' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-                      <div style={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: '50%',
-                        background: 'rgba(255, 255, 255, 0.03)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        border: '1px solid var(--border-color)',
-                        marginBottom: 4
-                      }}>
-                        <Phone size={20} style={{ color: 'var(--text-secondary)' }} />
-                      </div>
-                      <div>
-                        <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 14 }}>No Call Logs</div>
-                        <div style={{ fontSize: 12, marginTop: 4, opacity: 0.7 }}>Emergency call history will appear here once calls are initiated.</div>
-                      </div>
+                  <td colSpan={7} style={{ textAlign: 'center', padding: '64px 24px', color: '#94A3B8' }}>
+                    <div style={{
+                      width: 48, height: 48, borderRadius: 12,
+                      background: '#F8FAFC', border: '1px solid #E2E8F0',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      margin: '0 auto 12px', color: '#64748B',
+                    }}>
+                      <Phone size={22} />
                     </div>
+                    <div style={{ fontWeight: 700, color: '#0F172A', fontSize: 15 }}>No Call Logs Available</div>
+                    <div style={{ fontSize: 13, marginTop: 4 }}>Field communications and 911 dispatch records will be indexed here in real time.</div>
                   </td>
                 </tr>
               ) : (
                 filtered.map((log) => {
                   const Icon = statusIcon[log.status] || Phone;
                   return (
-                    <tr key={log.id}>
-                      <td style={{ fontWeight: 600 }}>{log.id}</td>
-                      <td><span className="table-link">{log.requestId}</span></td>
-                      <td>{log.callerName}</td>
-                      <td>{log.department}</td>
-                      <td>{log.duration}</td>
-                      <td><span className={`badge ${statusBadge[log.status]}`}><Icon size={12} /> {log.status}</span></td>
-                      <td>{new Date(log.timestamp).toLocaleTimeString()}</td>
+                    <tr key={log.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                      <td style={{ padding: '14px 18px', fontWeight: 700, fontFamily: 'monospace', color: '#2563EB' }}>{log.id}</td>
+                      <td style={{ padding: '14px 18px' }}><span style={{ color: '#2563EB', fontWeight: 600 }}>{log.requestId}</span></td>
+                      <td style={{ padding: '14px 18px', fontWeight: 600, color: '#0F172A' }}>{log.callerName}</td>
+                      <td style={{ padding: '14px 18px', color: '#475569' }}>{log.department}</td>
+                      <td style={{ padding: '14px 18px', fontVariantNumeric: 'tabular-nums' }}>{log.duration}</td>
+                      <td style={{ padding: '14px 18px' }}>
+                        <span className={`badge ${statusBadge[log.status]}`}>
+                          <Icon size={12} /> {log.status}
+                        </span>
+                      </td>
+                      <td style={{ padding: '14px 18px', color: '#94A3B8', fontVariantNumeric: 'tabular-nums' }}>
+                        {new Date(log.timestamp).toLocaleTimeString()}
+                      </td>
                     </tr>
                   );
                 })

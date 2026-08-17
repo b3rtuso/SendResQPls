@@ -1,4 +1,4 @@
-import { Search, Bell, X, AlertCircle, AlertTriangle, HelpCircle, CheckCircle, XCircle } from 'lucide-react';
+import { Search, Bell, X, AlertCircle, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { getIncidents, updateIncidentStatus } from '../api/client';
 import { fetchEventSource } from '@microsoft/fetch-event-source';
@@ -66,14 +66,13 @@ export default function Header({ title, subtitle }: HeaderProps) {
     }
   }, []);
 
-  /** Show the animated banner and auto-dismiss after 8 seconds */
   const showBanner = useCallback((banner: NewReportBanner) => {
     setNewReportBanner(banner);
     if (bannerTimerRef.current) clearTimeout(bannerTimerRef.current);
     bannerTimerRef.current = setTimeout(() => setNewReportBanner(null), 8000);
   }, []);
 
-  // ── SSE: Subscribe to real-time new-incident events ───────────────────────
+  // Real-time SSE listener
   useEffect(() => {
     let aborted = false;
 
@@ -81,7 +80,6 @@ export default function Header({ title, subtitle }: HeaderProps) {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      // Abort any existing SSE connection before reconnecting
       sseRef.current?.abort();
       const ctrl = new AbortController();
       sseRef.current = ctrl;
@@ -108,7 +106,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
               };
               setNotifications(prev => [newItem, ...prev].slice(0, 20));
               setUnseenCount(prev => prev + 1);
-            } catch { /* ignore malformed events */ }
+            } catch { /* ignore */ }
           }
 
           if (event.event === 'unrecognized_incident') {
@@ -133,19 +131,18 @@ export default function Header({ title, subtitle }: HeaderProps) {
         },
 
         onerror(err) {
-          // Reconnect after 5s if SSE drops (unless component unmounted)
           if (!aborted) {
             setTimeout(connect, 5000);
           }
-          throw err; // tells fetchEventSource to stop its internal retry
+          throw err;
         },
 
-        openWhenHidden: true, // keep SSE alive even if tab is in background
-      }).catch(() => {}); // silence abort errors on cleanup
+        openWhenHidden: true,
+      }).catch(() => {});
     };
 
     connect();
-    fetchNotifications(); // Initial load
+    fetchNotifications();
 
     return () => {
       aborted = true;
@@ -153,9 +150,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
       if (bannerTimerRef.current) clearTimeout(bannerTimerRef.current);
     };
   }, [fetchNotifications, showBanner]);
-  // ──────────────────────────────────────────────────────────────────────────
 
-  // Close panel when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
@@ -179,11 +174,11 @@ export default function Header({ title, subtitle }: HeaderProps) {
   const statusColor = (status: string) => {
     switch (status) {
       case 'PENDING': return '#D97706';
-      case 'REVIEWING': return '#3B82F6';
+      case 'REVIEWING': return '#2563EB';
       case 'DISPATCHED': return '#8B5CF6';
-      case 'RESOLVED': return '#22C55E';
+      case 'RESOLVED': return '#10B981';
       case 'REJECTED': return '#EF4444';
-      default: return '#6B7280';
+      default: return '#64748B';
     }
   };
 
@@ -198,19 +193,19 @@ export default function Header({ title, subtitle }: HeaderProps) {
     }
   };
 
-  /** Handle admin decision on unrecognized incident: reject or keep for review */
   const handleDecision = async (action: 'reject' | 'keep') => {
     if (!unrecognizedModal) return;
     setDecidingIncident(true);
     try {
       if (action === 'reject') {
-        await updateIncidentStatus(unrecognizedModal.id, { status: 'REJECTED', adminNotes: 'Rejected by admin — AI could not recognize the incident and admin determined it is not a valid emergency.' });
+        await updateIncidentStatus(unrecognizedModal.id, {
+          status: 'REJECTED',
+          adminNotes: 'Rejected by admin — AI could not recognize the incident and admin determined it is not a valid emergency.'
+        });
       } else {
-        // Keep at REVIEWING — admin will handle it manually from Requests page
-        await updateIncidentStatus(unrecognizedModal.id, { adminNotes: 'Flagged for manual review — AI could not classify this incident. Admin will assess.' });
-      }
-      // Navigate to incident if keeping for review
-      if (action === 'keep') {
+        await updateIncidentStatus(unrecognizedModal.id, {
+          adminNotes: 'Flagged for manual review — AI could not classify this incident. Admin will assess.'
+        });
         window.location.href = `/requests/${unrecognizedModal.id}`;
       }
     } catch (e) {
@@ -223,21 +218,109 @@ export default function Header({ title, subtitle }: HeaderProps) {
 
   return (
     <>
-      {/* ── Unrecognized Incident Decision Modal ─────────────────────────── */}
+      <style>{`
+        .top-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 16px 32px;
+          background: rgba(255, 255, 255, 0.85);
+          backdrop-filter: blur(14px);
+          -webkit-backdrop-filter: blur(14px);
+          border-bottom: 1px solid #E2E8F0;
+          position: sticky;
+          top: 0;
+          z-index: 40;
+          gap: 16px;
+        }
+
+        .header-title-box h2 {
+          font-size: 20px;
+          font-weight: 800;
+          color: #0F172A;
+          letter-spacing: -0.4px;
+          margin: 0;
+          line-height: 1.2;
+        }
+
+        .header-title-box p {
+          font-size: 12.5px;
+          color: #64748B;
+          margin: 3px 0 0;
+          font-weight: 500;
+        }
+
+        .header-actions {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .header-search-wrap {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          background: #F8FAFC;
+          border: 1px solid #E2E8F0;
+          border-radius: 10px;
+          padding: 8px 14px;
+          width: 240px;
+          transition: all 0.15s ease;
+        }
+
+        .header-search-wrap:focus-within {
+          background: #FFFFFF;
+          border-color: #2563EB;
+          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+          width: 280px;
+        }
+
+        .header-search-input {
+          border: none;
+          background: transparent;
+          outline: none;
+          font-size: 13px;
+          font-family: inherit;
+          color: #0F172A;
+          width: 100%;
+        }
+
+        .header-icon-btn {
+          width: 38px;
+          height: 38px;
+          border-radius: 10px;
+          background: #FFFFFF;
+          border: 1px solid #E2E8F0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          color: #475569;
+          position: relative;
+          transition: all 0.15s ease;
+        }
+
+        .header-icon-btn:hover {
+          background: #F8FAFC;
+          color: #0F172A;
+          border-color: #CBD5E1;
+        }
+      `}</style>
+
+      {/* Unrecognized Incident Modal */}
       {unrecognizedModal && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 10000,
-          background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)',
+          background: 'rgba(15,23,42,0.65)', backdropFilter: 'blur(4px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           padding: 20,
         }}>
           <div style={{
             background: 'white', borderRadius: 20, maxWidth: 480, width: '100%',
-            boxShadow: '0 32px 80px rgba(0,0,0,0.4)',
+            boxShadow: '0 24px 60px rgba(0,0,0,0.3)',
             overflow: 'hidden',
             animation: 'slideDown 0.3s cubic-bezier(0.16,1,0.3,1)',
           }}>
-            {/* Modal header */}
             <div style={{
               background: 'linear-gradient(135deg, #F59E0B, #D97706)',
               padding: '20px 24px',
@@ -249,54 +332,34 @@ export default function Header({ title, subtitle }: HeaderProps) {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 flexShrink: 0,
               }}>
-                <HelpCircle size={24} color="white" />
+                <AlertTriangle size={24} color="white" />
               </div>
               <div>
-                <div style={{ color: 'white', fontWeight: 800, fontSize: 16 }}>
-                  ⚠️ AI Could Not Recognize Incident
-                </div>
-                <div style={{ color: 'rgba(255,255,255,0.85)', fontSize: 12, marginTop: 2 }}>
-                  Admin decision required
-                </div>
+                <h3 style={{ color: 'white', margin: 0, fontSize: 17, fontWeight: 800 }}>
+                  Unrecognized Incident Reported
+                </h3>
+                <p style={{ color: 'rgba(255,255,255,0.85)', margin: '2px 0 0', fontSize: 12.5 }}>
+                  AI Confidence: {unrecognizedModal.confidence}
+                </p>
               </div>
             </div>
 
-            {/* Modal body */}
             <div style={{ padding: '20px 24px' }}>
-              <div style={{
-                background: '#FFFBEB', border: '1px solid #FDE68A',
-                borderRadius: 12, padding: '14px 16px', marginBottom: 20,
-              }}>
-                <div style={{ fontSize: 13, color: '#92400E', marginBottom: 8, fontWeight: 600 }}>
-                  Incident Details
-                </div>
-                <div style={{ fontSize: 13, color: '#78350F', lineHeight: 1.6 }}>
-                  <div><strong>AI Type:</strong> {unrecognizedModal.type}</div>
-                  <div><strong>AI Confidence:</strong> <span style={{
-                    color: '#DC2626', fontWeight: 700, textTransform: 'capitalize',
-                  }}>{unrecognizedModal.confidence}</span></div>
-                  <div><strong>ID:</strong> {unrecognizedModal.id.slice(0, 12)}...</div>
-                </div>
-              </div>
-
-              <p style={{ fontSize: 14, color: '#374151', lineHeight: 1.65, marginBottom: 20 }}>
-                The AI system <strong>could not confidently identify</strong> this incident. 
-                Please review the photo and decide whether to <strong style={{ color: '#DC2626' }}>reject</strong> it as a false report, 
-                or <strong style={{ color: '#2563EB' }}>keep it for review</strong> to assess manually.
+              <p style={{ fontSize: 14, color: '#374151', lineHeight: 1.5, margin: '0 0 20px' }}>
+                A report was submitted that could not be confidently identified by the AI system. Please review and decide whether to keep or reject this report.
               </p>
 
-              <div style={{ display: 'flex', gap: 12 }}>
+              <div style={{ display: 'flex', gap: 10 }}>
                 <button
                   onClick={() => handleDecision('reject')}
                   disabled={decidingIncident}
                   style={{
-                    flex: 1, padding: '12px', borderRadius: 12,
-                    background: decidingIncident ? '#E5E7EB' : '#FEF2F2',
-                    color: decidingIncident ? '#9CA3AF' : '#DC2626',
-                    border: '1.5px solid #FECACA',
-                    fontWeight: 700, fontSize: 14, cursor: decidingIncident ? 'not-allowed' : 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                    transition: 'all 0.15s', fontFamily: 'inherit',
+                    flex: 1, padding: '12px', borderRadius: 10,
+                    background: '#FEE2E2', color: '#DC2626',
+                    border: '1px solid #FCA5A5', fontWeight: 700, fontSize: 13,
+                    cursor: decidingIncident ? 'not-allowed' : 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    fontFamily: 'inherit',
                   }}
                 >
                   <XCircle size={16} />
@@ -306,109 +369,92 @@ export default function Header({ title, subtitle }: HeaderProps) {
                   onClick={() => handleDecision('keep')}
                   disabled={decidingIncident}
                   style={{
-                    flex: 1, padding: '12px', borderRadius: 12,
-                    background: decidingIncident ? '#E5E7EB' : 'linear-gradient(135deg, #2563EB, #1D4ED8)',
-                    color: 'white',
-                    border: 'none',
-                    fontWeight: 700, fontSize: 14, cursor: decidingIncident ? 'not-allowed' : 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                    boxShadow: decidingIncident ? 'none' : '0 4px 14px rgba(37,99,235,0.35)',
-                    transition: 'all 0.15s', fontFamily: 'inherit',
+                    flex: 1, padding: '12px', borderRadius: 10,
+                    background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
+                    color: 'white', border: 'none',
+                    fontWeight: 700, fontSize: 13,
+                    cursor: decidingIncident ? 'not-allowed' : 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    boxShadow: '0 4px 14px rgba(37,99,235,0.3)',
+                    fontFamily: 'inherit',
                   }}
                 >
                   <CheckCircle size={16} />
                   {decidingIncident ? 'Processing...' : 'Keep for Review'}
                 </button>
               </div>
-
-              <button
-                onClick={() => setUnrecognizedModal(null)}
-                disabled={decidingIncident}
-                style={{
-                  width: '100%', marginTop: 10, padding: '8px',
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  color: '#94A3B8', fontSize: 12, fontFamily: 'inherit',
-                }}
-              >
-                Decide later (incident stays in Reviewing)
-              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ── Real-time New Report Banner ──────────────────────────────────── */}
+      {/* Real-time Emergency Banner */}
       {newReportBanner && (
         <div
-          id="new-report-banner"
           style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
+            position: 'fixed', top: 0, left: 0, right: 0,
             zIndex: 9999,
             background: 'linear-gradient(90deg, #DC2626 0%, #EF4444 100%)',
-            color: 'white',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            padding: '12px 20px',
-            boxShadow: '0 4px 24px rgba(220, 38, 38, 0.45)',
-            animation: 'slideDown 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
+            color: 'white', display: 'flex', alignItems: 'center', gap: 12,
+            padding: '12px 24px', boxShadow: '0 4px 20px rgba(220,38,38,0.4)',
+            animation: 'slideDown 0.3s cubic-bezier(0.16,1,0.3,1)',
           }}
         >
           <div style={{
-            width: 38, height: 38, borderRadius: '50%',
+            width: 36, height: 36, borderRadius: '50%',
             background: 'rgba(255,255,255,0.2)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexShrink: 0, animation: 'pulse-emergency 1.2s infinite',
+            flexShrink: 0,
           }}>
-            <AlertTriangle size={20} />
+            <AlertTriangle size={18} />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontWeight: 800, fontSize: 14, letterSpacing: '0.2px' }}>
-              🚨 BAGONG EMERGENCY REPORT!
+            <div style={{ fontWeight: 800, fontSize: 14 }}>
+              NEW EMERGENCY REPORT
             </div>
-            <div style={{ fontSize: 12, opacity: 0.9, marginTop: 2 }}>
-              <strong>{newReportBanner.type}</strong> · Recommended: {newReportBanner.dept} · ID: {newReportBanner.id.slice(0, 8)}...
+            <div style={{ fontSize: 12, opacity: 0.9, marginTop: 1 }}>
+              <strong>{newReportBanner.type}</strong> · Recommended Unit: {newReportBanner.dept}
             </div>
           </div>
           <a
             href={`/requests/${newReportBanner.id}`}
             style={{
               padding: '7px 16px', borderRadius: 8, background: 'white',
-              color: '#DC2626', fontWeight: 700, fontSize: 13,
+              color: '#DC2626', fontWeight: 700, fontSize: 12.5,
               textDecoration: 'none', flexShrink: 0,
-              transition: 'opacity 0.15s',
             }}
           >
-            View Now →
+            Review Report →
           </a>
           <button
             onClick={() => setNewReportBanner(null)}
             style={{
               background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%',
-              width: 30, height: 30, display: 'flex', alignItems: 'center',
+              width: 28, height: 28, display: 'flex', alignItems: 'center',
               justifyContent: 'center', cursor: 'pointer', color: 'white', flexShrink: 0,
             }}
             aria-label="Dismiss"
           >
-            <X size={15} />
+            <X size={14} />
           </button>
         </div>
       )}
 
+      {/* Top Header Bar */}
       <header className="top-header">
-        <div className="header-left">
-          <div>
-            <h2>{title}</h2>
-            {subtitle && <p>{subtitle}</p>}
-          </div>
+        <div className="header-title-box">
+          <h2>{title}</h2>
+          {subtitle && <p>{subtitle}</p>}
         </div>
-        <div className="header-right">
-          <div className="search-bar">
-            <Search size={16} color="var(--text-muted)" />
-            <input type="text" placeholder="Search incidents, reports..." />
+
+        <div className="header-actions">
+          <div className="header-search-wrap">
+            <Search size={15} color="#94A3B8" />
+            <input
+              type="text"
+              placeholder="Search reports or incidents..."
+              className="header-search-input"
+            />
           </div>
 
           {/* Notification Bell */}
@@ -417,53 +463,54 @@ export default function Header({ title, subtitle }: HeaderProps) {
               className="header-icon-btn"
               aria-label="Notifications"
               onClick={handleBellClick}
-              style={showPanel ? { borderColor: 'var(--primary)', color: 'var(--primary)', background: 'var(--primary-bg)' } : undefined}
+              style={showPanel ? { borderColor: '#2563EB', color: '#2563EB', background: 'rgba(37,99,235,0.08)' } : undefined}
             >
-              <Bell size={18} />
+              <Bell size={17} />
               {unseenCount > 0 && (
                 <span style={{
-                  position: 'absolute', top: 2, right: 2,
+                  position: 'absolute', top: -2, right: -2,
                   minWidth: 18, height: 18, borderRadius: 9,
                   background: '#DC2626', border: '2px solid white',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 10, fontWeight: 700, color: 'white',
-                  lineHeight: 1, padding: '0 3px',
-                }}>{unseenCount > 9 ? '9+' : unseenCount}</span>
+                  fontSize: 10, fontWeight: 800, color: 'white',
+                  lineHeight: 1, padding: '0 4px',
+                }}>
+                  {unseenCount > 9 ? '9+' : unseenCount}
+                </span>
               )}
             </button>
 
-            {/* Notification Dropdown */}
+            {/* Notification Drawer Panel */}
             {showPanel && (
               <div style={{
-                position: 'absolute', top: 'calc(100% + 8px)', right: 0,
-                width: 320, background: 'white',
-                border: '1px solid var(--border)',
-                borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                position: 'absolute', top: 'calc(100% + 10px)', right: 0,
+                width: 330, background: 'white',
+                border: '1px solid #E2E8F0',
+                borderRadius: 14, boxShadow: '0 12px 36px rgba(15,23,42,0.14)',
                 zIndex: 200, overflow: 'hidden',
               }}>
-                {/* Panel Header */}
                 <div style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  padding: '14px 16px 10px',
-                  borderBottom: '1px solid var(--border-light)',
+                  padding: '14px 16px',
+                  borderBottom: '1px solid #F1F5F9',
+                  background: '#F8FAFC',
                 }}>
-                  <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>
+                  <span style={{ fontWeight: 800, fontSize: 13.5, color: '#0F172A' }}>
                     Recent Incidents
                   </span>
                   <button
                     onClick={() => setShowPanel(false)}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0 }}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8', padding: 0 }}
                   >
                     <X size={16} />
                   </button>
                 </div>
 
-                {/* Notification Items */}
                 <div style={{ maxHeight: 320, overflowY: 'auto' }}>
                   {notifications.length === 0 ? (
-                    <div style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                      <Bell size={28} style={{ marginBottom: 8, opacity: 0.4 }} />
-                      <div style={{ fontSize: 13 }}>No recent incidents</div>
+                    <div style={{ padding: '28px 16px', textAlign: 'center', color: '#94A3B8' }}>
+                      <Bell size={24} style={{ marginBottom: 6, opacity: 0.3 }} />
+                      <div style={{ fontSize: 12.5 }}>No recent incidents</div>
                     </div>
                   ) : (
                     notifications.map((n, i) => (
@@ -473,32 +520,32 @@ export default function Header({ title, subtitle }: HeaderProps) {
                         onClick={() => setShowPanel(false)}
                         style={{
                           display: 'flex', alignItems: 'flex-start', gap: 10,
-                          padding: '10px 16px',
-                          borderTop: i === 0 ? 'none' : '1px solid var(--border-light)',
-                          background: n.isNew ? 'rgba(59,130,246,0.04)' : 'transparent',
+                          padding: '12px 16px',
+                          borderTop: i === 0 ? 'none' : '1px solid #F1F5F9',
+                          background: n.isNew ? 'rgba(37,99,235,0.04)' : 'transparent',
                           textDecoration: 'none',
                           cursor: 'pointer',
                           transition: 'background 0.15s',
                         }}
                         onMouseEnter={e => (e.currentTarget.style.background = 'rgba(37,99,235,0.06)')}
-                        onMouseLeave={e => (e.currentTarget.style.background = n.isNew ? 'rgba(59,130,246,0.04)' : 'transparent')}
+                        onMouseLeave={e => (e.currentTarget.style.background = n.isNew ? 'rgba(37,99,235,0.04)' : 'transparent')}
                       >
                         <AlertCircle size={16} color={statusColor(n.status)} style={{ marginTop: 2, flexShrink: 0 }} />
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 2 }}>
                             {n.type}
                             {n.isNew && (
                               <span style={{
-                                marginLeft: 6, fontSize: 10, fontWeight: 700, color: 'var(--primary)',
-                                background: 'var(--primary-bg)', padding: '1px 6px', borderRadius: 8,
+                                marginLeft: 6, fontSize: 9.5, fontWeight: 800, color: '#2563EB',
+                                background: 'rgba(37,99,235,0.1)', padding: '2px 6px', borderRadius: 6,
                               }}>NEW</span>
                             )}
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <span style={{ fontSize: 11, fontWeight: 600, color: statusColor(n.status) }}>
+                            <span style={{ fontSize: 11, fontWeight: 700, color: statusColor(n.status) }}>
                               {statusLabel(n.status)}
                             </span>
-                            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>• {n.time}</span>
+                            <span style={{ fontSize: 11, color: '#94A3B8' }}>• {n.time}</span>
                           </div>
                         </div>
                         <span style={{ fontSize: 11, color: '#94A3B8', flexShrink: 0, alignSelf: 'center' }}>→</span>
@@ -507,20 +554,19 @@ export default function Header({ title, subtitle }: HeaderProps) {
                   )}
                 </div>
 
-                {/* Footer */}
                 <div style={{
                   padding: '10px 16px',
-                  borderTop: '1px solid var(--border-light)',
+                  borderTop: '1px solid #F1F5F9',
                   textAlign: 'center',
+                  background: '#FAFBFC',
                 }}>
-                  <a href="/requests" style={{ fontSize: 12, color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}>
-                    View all requests →
+                  <a href="/requests" style={{ fontSize: 12, color: '#2563EB', fontWeight: 700, textDecoration: 'none' }}>
+                    View full request queue →
                   </a>
                 </div>
               </div>
             )}
           </div>
-
         </div>
       </header>
     </>

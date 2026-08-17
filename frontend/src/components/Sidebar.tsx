@@ -14,77 +14,6 @@ const navItems = [
   { to: '/settings',   icon: Settings,          label: 'Settings'    },
 ];
 
-const S: Record<string, React.CSSProperties> = {
-  aside: {
-    position: 'fixed', left: 0, top: 0, bottom: 0, width: 256,
-    background: 'linear-gradient(180deg, #0F2942 0%, #1E3A5F 100%)',
-    display: 'flex', flexDirection: 'column',
-    zIndex: 50,
-    borderRight: '1px solid rgba(255,255,255,0.08)',
-  },
-  brand: {
-    padding: '22px 20px 18px',
-    display: 'flex', alignItems: 'center', gap: 12,
-    borderBottom: '1px solid rgba(255,255,255,0.08)',
-  },
-  logoWrap: {
-    width: 38, height: 38, borderRadius: '22%', flexShrink: 0,
-    overflow: 'hidden', border: '1px solid rgba(255,255,255,0.18)',
-    boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.3), 0 4px 12px rgba(0,0,0,0.25)',
-  },
-  logo: { width: '100%', height: '100%', objectFit: 'cover' },
-  brandName: {
-    color: '#fff', fontSize: 14, fontWeight: 800,
-    letterSpacing: '-0.3px', lineHeight: 1.2,
-  },
-  brandSub: {
-    color: 'rgba(255,255,255,0.4)', fontSize: 10.5,
-    fontWeight: 500, marginTop: 2, letterSpacing: '0.02em',
-  },
-  sectionLabel: {
-    fontSize: 10, fontWeight: 700,
-    color: 'rgba(255,255,255,0.35)',
-    letterSpacing: '0.1em', textTransform: 'uppercase' as const,
-    padding: '20px 18px 8px',
-  },
-  nav: { flex: 1, padding: '4px 12px', overflowY: 'auto' as const },
-  footer: {
-    padding: '10px 12px 16px',
-    borderTop: '1px solid rgba(255,255,255,0.08)',
-  },
-  logoutBtn: {
-    width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-    padding: '9px 14px', borderRadius: 9, marginBottom: 8,
-    background: 'transparent', border: 'none', cursor: 'pointer',
-    color: 'rgba(255,255,255,0.45)', fontSize: 13.5, fontWeight: 500,
-    transition: 'all 0.15s', fontFamily: 'inherit',
-  },
-  adminCard: {
-    display: 'flex', alignItems: 'center', gap: 10,
-    padding: '10px 12px', borderRadius: 12,
-    background: 'rgba(255,255,255,0.05)',
-    border: '1px solid rgba(255,255,255,0.09)',
-  },
-  avatar: {
-    width: 34, height: 34, borderRadius: '22%', flexShrink: 0,
-    background: 'linear-gradient(135deg, #1D4ED8, #2563EB)',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    fontSize: 12, fontWeight: 800, color: 'white',
-    border: '1px solid rgba(255,255,255,0.2)',
-    boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.3)',
-  },
-  adminName: {
-    color: '#fff', fontSize: 12.5, fontWeight: 700,
-    lineHeight: 1.2, width: 138,
-    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const,
-  },
-  adminEmail: {
-    color: 'rgba(255,255,255,0.4)', fontSize: 10.5,
-    width: 138, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const,
-    marginTop: 1,
-  },
-};
-
 export default function Sidebar() {
   const navigate = useNavigate();
   const [userName, setUserName] = useState(() => localStorage.getItem('userName') || 'MDRRMO Admin');
@@ -99,92 +28,272 @@ export default function Sidebar() {
     return () => window.removeEventListener('storage', syncUser);
   }, []);
 
-  const initials = userName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'AD';
+  const initials = userName
+    .split(' ')
+    .map(w => w[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase() || 'AD';
 
   const handleLogout = () => {
-    ['token','userId','userName','userEmail','userRole'].forEach(k => localStorage.removeItem(k));
+    ['token', 'userId', 'userName', 'userEmail', 'userRole'].forEach(k => localStorage.removeItem(k));
     navigate('/admin/login');
   };
 
   return (
-    <aside style={S.aside}>
+    <aside className="app-sidebar">
       <style>{`
-        @keyframes sidebarPulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.6;transform:scale(1.15)} }
-        .sb-nav-link {
-          display:flex; align-items:center; gap:11px;
-          padding:9px 12px; border-radius:12px; margin-bottom:3px;
-          text-decoration:none; font-size:13.5px; font-weight:500;
-          transition:all 0.15s ease; color:rgba(255,255,255,0.52);
-          position:relative; overflow:hidden;
+        .app-sidebar {
+          position: fixed;
+          left: 0;
+          top: 0;
+          bottom: 0;
+          width: 260px;
+          background: linear-gradient(180deg, #0F2942 0%, #153454 50%, #1B3C62 100%);
+          display: flex;
+          flex-direction: column;
+          z-index: 50;
+          border-right: 1px solid rgba(255, 255, 255, 0.08);
+          font-family: 'Geist', 'Inter', system-ui, sans-serif;
+          user-select: none;
         }
-        .sb-nav-link:hover { background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.9); }
-        .sb-nav-link.active {
-          background:rgba(37,99,235,0.22);
-          color:#fff; font-weight:700;
-          box-shadow:inset 0 0 0 1px rgba(37,99,235,0.35);
+
+        .sb-brand {
+          padding: 24px 20px 20px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         }
-        .sb-nav-link.active::before {
-          content:''; position:absolute; left:0; top:20%; bottom:20%;
-          width:3px; border-radius:0 3px 3px 0;
-          background:linear-gradient(180deg, #60A5FA, #2563EB);
+
+        .sb-logo-box {
+          width: 40px;
+          height: 40px;
+          border-radius: 12px;
+          overflow: hidden;
+          flex-shrink: 0;
+          border: 1.5px solid rgba(255, 255, 255, 0.2);
+          box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
         }
-        .sb-nav-link .sb-icon-box {
-          width: 28px; height: 28px; border-radius: 22%;
-          background: rgba(255, 255, 255, 0.06);
-          display: flex; align-items: center; justify-content: center;
-          flex-shrink: 0; transition: all 0.15s ease;
+
+        .sb-logo-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .sb-brand-title {
+          color: #FFFFFF;
+          font-size: 15px;
+          font-weight: 800;
+          letter-spacing: -0.3px;
+          line-height: 1.15;
+        }
+
+        .sb-brand-sub {
+          color: rgba(255, 255, 255, 0.45);
+          font-size: 11px;
+          font-weight: 500;
+          margin-top: 3px;
+          letter-spacing: 0.01em;
+        }
+
+        .sb-section-label {
+          font-size: 10.5px;
+          font-weight: 700;
+          color: rgba(255, 255, 255, 0.35);
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          padding: 20px 16px 8px;
+        }
+
+        .sb-nav-container {
+          flex: 1;
+          padding: 6px 12px;
+          overflow-y: auto;
+        }
+
+        .sb-nav-item {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 10px 14px;
+          border-radius: 12px;
+          margin-bottom: 4px;
+          text-decoration: none;
+          font-size: 13.5px;
+          font-weight: 500;
+          color: rgba(255, 255, 255, 0.6);
+          position: relative;
+          transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .sb-nav-item:hover {
+          background: rgba(255, 255, 255, 0.07);
+          color: #FFFFFF;
+          transform: translateX(2px);
+        }
+
+        .sb-nav-item.active {
+          background: rgba(37, 99, 235, 0.24);
+          color: #FFFFFF;
+          font-weight: 700;
+          box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.28);
+        }
+
+        .sb-nav-item.active::before {
+          content: '';
+          position: absolute;
+          left: 0;
+          top: 18%;
+          bottom: 18%;
+          width: 3.5px;
+          border-radius: 0 4px 4px 0;
+          background: linear-gradient(180deg, #60A5FA, #2563EB);
+        }
+
+        .sb-nav-icon-box {
+          width: 30px;
+          height: 30px;
+          border-radius: 9px;
+          background: rgba(255, 255, 255, 0.05);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          transition: all 0.15s ease;
+          border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .sb-nav-item.active .sb-nav-icon-box {
+          background: rgba(37, 99, 235, 0.4);
+          border-color: rgba(96, 165, 250, 0.45);
+          color: #93C5FD;
+          box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+        }
+
+        .sb-footer {
+          padding: 14px 14px 18px;
+          border-top: 1px solid rgba(255, 255, 255, 0.08);
+          background: rgba(0, 0, 0, 0.12);
+        }
+
+        .sb-signout-btn {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 10px 14px;
+          border-radius: 10px;
+          margin-bottom: 10px;
+          background: transparent;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          cursor: pointer;
+          color: rgba(255, 255, 255, 0.55);
+          font-size: 13px;
+          font-weight: 600;
+          font-family: inherit;
+          transition: all 0.15s ease;
+        }
+
+        .sb-signout-btn:hover {
+          background: rgba(239, 68, 68, 0.14);
+          border-color: rgba(239, 68, 68, 0.3);
+          color: #FCA5A5;
+        }
+
+        .sb-user-card {
+          display: flex;
+          align-items: center;
+          gap: 11px;
+          padding: 10px 12px;
+          border-radius: 12px;
+          background: rgba(255, 255, 255, 0.05);
           border: 1px solid rgba(255, 255, 255, 0.08);
         }
-        .sb-nav-link.active .sb-icon-box {
-          background: rgba(37, 99, 235, 0.35);
-          border-color: rgba(96, 165, 250, 0.4);
-          box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.25);
+
+        .sb-user-avatar {
+          width: 36px;
+          height: 36px;
+          border-radius: 10px;
+          background: linear-gradient(135deg, #1D4ED8, #2563EB);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 13px;
+          font-weight: 800;
+          color: #FFFFFF;
+          flex-shrink: 0;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         }
-        .sb-logout:hover { background:rgba(239,68,68,0.12)!important; color:#FCA5A5!important; }
+
+        .sb-user-name {
+          color: #FFFFFF;
+          font-size: 13px;
+          font-weight: 700;
+          line-height: 1.2;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .sb-user-email {
+          color: rgba(255, 255, 255, 0.4);
+          font-size: 11px;
+          margin-top: 2px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
       `}</style>
 
-      {/* Brand */}
-      <div style={S.brand}>
-        <div style={S.logoWrap}>
-          <img src="/logo.jpg" alt="SRQ" style={S.logo} />
+      {/* Brand Header */}
+      <div className="sb-brand">
+        <div className="sb-logo-box">
+          <img src="/logo.jpg" alt="MDRRMO Logo" className="sb-logo-img" />
         </div>
-        <div>
-          <div style={S.brandName}>SendResqPls</div>
-          <div style={S.brandSub}>MDRRMO Balayan, Batangas</div>
+        <div style={{ minWidth: 0 }}>
+          <div className="sb-brand-title">SendResQPls</div>
+          <div className="sb-brand-sub">MDRRMO Balayan</div>
         </div>
       </div>
 
-      {/* Nav */}
-      <nav style={S.nav}>
-        <div style={S.sectionLabel}>Navigation</div>
+      {/* Navigation list */}
+      <nav className="sb-nav-container">
+        <div className="sb-section-label">Command Navigation</div>
         {navItems.map(({ to, icon: Icon, label }) => (
-          <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) => `sb-nav-link${isActive ? ' active' : ''}`}>
-            <div className="sb-icon-box">
-              <Icon size={15} />
+          <NavLink
+            key={to}
+            to={to}
+            end={to === '/'}
+            className={({ isActive }) => `sb-nav-item${isActive ? ' active' : ''}`}
+          >
+            <div className="sb-nav-icon-box">
+              <Icon size={16} />
             </div>
             <span style={{ flex: 1 }}>{label}</span>
           </NavLink>
         ))}
       </nav>
 
-      {/* Footer */}
-      <div style={S.footer}>
+      {/* Footer User Info */}
+      <div className="sb-footer">
         <button
-          className="sb-logout"
+          className="sb-signout-btn"
           onClick={handleLogout}
-          style={S.logoutBtn}
+          aria-label="Sign out of admin session"
         >
-          <LogOut size={16} style={{ flexShrink: 0 }} />
+          <LogOut size={15} />
           <span>Sign Out</span>
         </button>
-        <div style={S.adminCard}>
-          <div style={S.avatar}>{initials}</div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ color: '#F1F5F9', fontSize: 12.5, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {userName}
-            </div>
-            <div style={{ color: 'rgba(255,255,255,0.32)', fontSize: 10.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {userEmail}
+
+        <div className="sb-user-card">
+          <div className="sb-user-avatar">{initials}</div>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div className="sb-user-name" title={userName}>{userName}</div>
+            <div className="sb-user-email" title={userEmail || 'Administrator'}>
+              {userEmail || 'Administrator'}
             </div>
           </div>
         </div>

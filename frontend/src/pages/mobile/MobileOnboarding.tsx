@@ -357,48 +357,96 @@ export default function MobileOnboarding({ onDone }: { onDone: () => void }) {
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#EF4444' }} />
               </div>
 
-              {/* Viewfinder Screen */}
+              {/* Viewfinder Screen with Real Flood Photo */}
               <div
                 style={{
-                  height: 150,
+                  height: 165,
                   borderRadius: 14,
-                  background: 'linear-gradient(180deg, #1E293B 0%, #0F172A 100%)',
+                  backgroundImage: 'url(/flood_sample.jpg)',
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
                   position: 'relative',
-                  border: '1.5px dashed rgba(255,255,255,0.2)',
+                  overflow: 'hidden',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 10,
+                  justifyContent: 'space-between',
+                  padding: '10px 8px',
+                  border: '1.5px solid rgba(255,255,255,0.25)',
+                  boxShadow: 'inset 0 0 20px rgba(0,0,0,0.5)',
                 }}
               >
+                {/* Gradient scrim for high contrast */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: 'linear-gradient(180deg, rgba(15,23,42,0.3) 0%, rgba(0,0,0,0.0) 40%, rgba(15,23,42,0.8) 100%)',
+                    pointerEvents: 'none',
+                  }}
+                />
+
                 {/* Viewfinder crosshairs */}
-                <div style={{ position: 'absolute', top: 8, left: 8, width: 12, height: 12, borderTop: '2px solid #2563EB', borderLeft: '2px solid #2563EB' }} />
-                <div style={{ position: 'absolute', top: 8, right: 8, width: 12, height: 12, borderTop: '2px solid #2563EB', borderRight: '2px solid #2563EB' }} />
-                <div style={{ position: 'absolute', bottom: 8, left: 8, width: 12, height: 12, borderBottom: '2px solid #2563EB', borderLeft: '2px solid #2563EB' }} />
-                <div style={{ position: 'absolute', bottom: 8, right: 8, width: 12, height: 12, borderBottom: '2px solid #2563EB', borderRight: '2px solid #2563EB' }} />
+                <div style={{ position: 'absolute', top: 8, left: 8, width: 12, height: 12, borderTop: '2.5px solid #2563EB', borderLeft: '2.5px solid #2563EB', zIndex: 2 }} />
+                <div style={{ position: 'absolute', top: 8, right: 8, width: 12, height: 12, borderTop: '2.5px solid #2563EB', borderRight: '2.5px solid #2563EB', zIndex: 2 }} />
+                <div style={{ position: 'absolute', bottom: 8, left: 8, width: 12, height: 12, borderBottom: '2.5px solid #2563EB', borderLeft: '2.5px solid #2563EB', zIndex: 2 }} />
+                <div style={{ position: 'absolute', bottom: 8, right: 8, width: 12, height: 12, borderBottom: '2.5px solid #2563EB', borderRight: '2.5px solid #2563EB', zIndex: 2 }} />
+
+                {/* Center Reticle / Focus target */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -60%)',
+                    width: 42,
+                    height: 42,
+                    border: '1.5px solid rgba(255,255,255,0.7)',
+                    borderRadius: 6,
+                    pointerEvents: 'none',
+                    zIndex: 2,
+                  }}
+                />
+
+                {/* Spacer */}
+                <div style={{ zIndex: 2 }} />
 
                 {/* AI Detection Pill */}
                 <div
                   style={{
-                    background: 'rgba(255,255,255,0.95)',
+                    background: 'rgba(255,255,255,0.96)',
                     color: '#0F172A',
-                    padding: '6px 14px',
+                    padding: '5px 12px',
                     borderRadius: 999,
-                    fontSize: 12,
+                    fontSize: 11.5,
                     fontWeight: 800,
                     display: 'flex',
                     alignItems: 'center',
                     gap: 6,
-                    boxShadow: '0 4px 14px rgba(0,0,0,0.25)',
+                    boxShadow: '0 4px 14px rgba(0,0,0,0.3)',
+                    zIndex: 2,
                   }}
                 >
                   <span style={{ fontSize: 13 }}>🌊</span> Flood Hazard Detected
                 </div>
 
-                <span style={{ fontSize: 10.5, color: '#94A3B8', fontWeight: 600 }}>
-                  GPS: 13.9372° N, 120.7345° E (Balayan)
-                </span>
+                {/* GPS Location & Resolution */}
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    width: '100%',
+                    padding: '0 6px',
+                    fontSize: 10,
+                    color: 'rgba(255,255,255,0.9)',
+                    fontWeight: 700,
+                    textShadow: '0 1px 3px rgba(0,0,0,0.8)',
+                    zIndex: 2,
+                  }}
+                >
+                  <span>📍 Balayan, Batangas</span>
+                  <span>13.937° N, 120.734° E</span>
+                </div>
               </div>
             </div>
           )}

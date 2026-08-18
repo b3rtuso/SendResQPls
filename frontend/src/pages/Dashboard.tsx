@@ -5,7 +5,8 @@ import { DashboardSkeleton } from '../components/PageLoader';
 import {
   AlertTriangle, RefreshCw, ArrowRight, Phone, Flame,
   Stethoscope, HardHat, Anchor, ShieldCheck, Clock,
-  TrendingUp, TrendingDown, Minus,
+  TrendingUp, TrendingDown, Minus, Calculator, X, ExternalLink,
+  Info, Sparkles,
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
 import type { Incident, Status } from '../types';
@@ -150,6 +151,7 @@ export default function Dashboard() {
   const [statusFilter, setStatusFilter] = useState<Status | 'ALL'>('ALL');
   const [dashboardYear, setDashboardYear] = useState<string>(String(new Date().getFullYear()));
   const [activeDonutIndex, setActiveDonutIndex] = useState<number | null>(null);
+  const [showComputationModal, setShowComputationModal] = useState(false);
 
   // Live operational clock & dynamic dispatcher greeting
   const [time, setTime] = useState(new Date());
@@ -261,6 +263,55 @@ export default function Dashboard() {
     }));
   }, [incidents]);
 
+  // Dynamic Computation Analysis for 'See detail' modal & Donut Chart
+  const computationAnalysis = useMemo(() => {
+    const total = incidents.length;
+    const currentMonthShort = new Date().toLocaleDateString('en-PH', { month: 'short' });
+    const currentMonthLong = new Date().toLocaleDateString('en-PH', { month: 'long' });
+    const currentMonthIdx = new Date().getMonth();
+
+    const categoryMap: Record<string, { count: number; active: number; resolved: number }> = {};
+    incidents.forEach(inc => {
+      const type = normalizeIncidentType(inc.aiDetectedType);
+      if (!categoryMap[type]) {
+        categoryMap[type] = { count: 0, active: 0, resolved: 0 };
+      }
+      categoryMap[type].count += 1;
+      if (inc.status === 'RESOLVED') {
+        categoryMap[type].resolved += 1;
+      } else {
+        categoryMap[type].active += 1;
+      }
+    });
+
+    const categories = Object.entries(categoryMap)
+      .map(([name, data]) => ({
+        name,
+        count: data.count,
+        active: data.active,
+        resolved: data.resolved,
+        percentage: total > 0 ? ((data.count / total) * 100).toFixed(1) : '0.0',
+        dept: name === 'Fire' ? 'BFP Fire' : name === 'Crime' ? 'PNP Police' : name === 'Medical' || name === 'Trauma' ? 'Medical EMS' : name === 'Flood' ? 'MDRRMO Rescue' : 'Engineering',
+      }))
+      .sort((a, b) => b.count - a.count);
+
+    const forecast = monthlyDetails.find(m => m.month.toLowerCase() === currentMonthShort.toLowerCase()) || monthlyDetails[currentMonthIdx];
+    const topHazard = categories[0]?.name || forecast?.type || 'Medical';
+    const topHazardCount = categories[0]?.count || 0;
+    const topHazardShare = categories[0]?.percentage || '0.0';
+
+    return {
+      total,
+      currentMonthLong,
+      currentMonthShort,
+      categories,
+      forecast,
+      topHazard,
+      topHazardCount,
+      topHazardShare,
+    };
+  }, [incidents]);
+
   const STAT_CARDS = [
     { label: 'Total Reports',   value: stats.total,      accent: '#2563EB', bg: 'rgba(37, 99, 235, 0.05)', glow: 'rgba(37, 99, 235, 0.15)', activeGlow: 'rgba(37, 99, 235, 0.3)', filter: 'ALL' },
     { label: 'Pending',         value: stats.pending,    accent: '#F59E0B', bg: 'rgba(245, 158, 11, 0.05)', glow: 'rgba(245, 158, 11, 0.15)', activeGlow: 'rgba(245, 158, 11, 0.3)', filter: 'PENDING' },
@@ -338,7 +389,7 @@ export default function Dashboard() {
                   Incident Risk Forecast
                 </span>
                 <button
-                  onClick={() => navigate('/reports')}
+                  onClick={() => setShowComputationModal(true)}
                   style={{
                     background: 'none',
                     border: 'none',
@@ -586,8 +637,26 @@ export default function Dashboard() {
 
           {/* Incident Distribution Donut Chart */}
           <div className="card">
-            <div className="card-header">
+            <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <h3 style={{ fontWeight: 700, fontSize: 16, color: '#0F172A' }}>Incident Distribution</h3>
+              <button
+                onClick={() => setShowComputationModal(true)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#2563EB',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  padding: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 3,
+                  fontFamily: 'inherit',
+                }}
+              >
+                <Calculator size={13} /> View Computation
+              </button>
             </div>
             <div className="card-body" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 16, alignItems: 'center' }}>
               <div style={{ height: '260px', width: '100%', position: 'relative', minWidth: 0 }}>
@@ -875,6 +944,286 @@ export default function Dashboard() {
         </div>
 
       </div>
+
+      {/* ── Dynamic Incident Computation & Breakdown Modal ── */}
+      {showComputationModal && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 10000,
+          background: 'rgba(15, 23, 42, 0.65)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 20,
+        }}>
+          <div style={{
+            background: '#FFFFFF',
+            borderRadius: 24,
+            width: '100%',
+            maxWidth: 680,
+            maxHeight: '90vh',
+            display: 'flex',
+            flexDirection: 'column',
+            boxShadow: '0 24px 60px rgba(15, 23, 42, 0.25)',
+            border: '1px solid #E2E8F0',
+            overflow: 'hidden',
+            animation: 'scaleUp 0.25s cubic-bezier(0.16,1,0.3,1) both',
+          }}>
+            {/* Modal Header */}
+            <div style={{
+              padding: '20px 24px',
+              borderBottom: '1px solid #F1F5F9',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: '#FAFAFB',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 10,
+                  background: '#EFF6FF',
+                  color: '#2563EB',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <Calculator size={20} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#0F172A' }}>
+                    Incident Distribution & Risk Computation
+                  </h3>
+                  <p style={{ margin: '2px 0 0', fontSize: 12, color: '#64748B' }}>
+                    Mathematical breakdown of {computationAnalysis.total} total reports for {computationAnalysis.currentMonthLong}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowComputationModal(false)}
+                style={{
+                  background: '#F1F5F9',
+                  border: 'none',
+                  width: 32,
+                  height: 32,
+                  borderRadius: 8,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  color: '#64748B',
+                }}
+                aria-label="Close"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Body (Scrollable) */}
+            <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
+
+              {/* Total Reports Equation Card */}
+              <div style={{
+                background: 'linear-gradient(135deg, #0F2942 0%, #1E3A5F 100%)',
+                color: 'white',
+                borderRadius: 18,
+                padding: '20px 24px',
+                marginBottom: 20,
+                boxShadow: '0 8px 24px rgba(15,41,66,0.2)',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#93C5FD', fontWeight: 700 }}>
+                      Active Incident Pool (N)
+                    </div>
+                    <div style={{ fontSize: 32, fontWeight: 900, marginTop: 4, letterSpacing: '-0.5px' }}>
+                      {computationAnalysis.total} <span style={{ fontSize: 15, fontWeight: 600, color: 'rgba(255,255,255,0.7)' }}>Total Logged Reports</span>
+                    </div>
+                  </div>
+
+                  <div style={{
+                    background: 'rgba(255,255,255,0.1)',
+                    border: '1px solid rgba(255,255,255,0.18)',
+                    borderRadius: 12,
+                    padding: '8px 14px',
+                    textAlign: 'right',
+                  }}>
+                    <div style={{ fontSize: 11, color: '#FCD34D', fontWeight: 700 }}>Top Hazard Risk</div>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: 'white' }}>
+                      {computationAnalysis.topHazard} ({computationAnalysis.topHazardShare}%)
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{
+                  marginTop: 14,
+                  paddingTop: 12,
+                  borderTop: '1px solid rgba(255,255,255,0.15)',
+                  fontSize: 12,
+                  color: 'rgba(255,255,255,0.8)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                }}>
+                  <Sparkles size={14} color="#93C5FD" />
+                  <span>
+                    Formula: <strong>Category Share P(H) = (Category Count / {computationAnalysis.total}) × 100%</strong>
+                  </span>
+                </div>
+              </div>
+
+              {/* Category Breakdown List */}
+              <h4 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 700, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Hazard Category Distribution ({computationAnalysis.categories.length} Categories)
+              </h4>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+                {computationAnalysis.categories.map(cat => {
+                  const info = TYPE_ICON[cat.name] || { emoji: '⚠️', color: '#2563EB' };
+                  return (
+                    <div
+                      key={cat.name}
+                      style={{
+                        background: '#F8FAFC',
+                        borderRadius: 14,
+                        padding: '12px 16px',
+                        border: '1px solid #E2E8F0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 12,
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 140 }}>
+                        <span style={{ fontSize: 20 }}>{info.emoji}</span>
+                        <div>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>{cat.name}</div>
+                          <div style={{ fontSize: 11, color: '#64748B' }}>Unit: {cat.dept}</div>
+                        </div>
+                      </div>
+
+                      {/* Progress bar */}
+                      <div style={{ flex: 1, margin: '0 12px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, fontWeight: 600, color: '#475569', marginBottom: 4 }}>
+                          <span>{cat.count} of {computationAnalysis.total} reports</span>
+                          <span>{cat.percentage}%</span>
+                        </div>
+                        <div style={{ height: 6, background: '#E2E8F0', borderRadius: 3, overflow: 'hidden' }}>
+                          <div style={{
+                            width: `${cat.percentage}%`,
+                            height: '100%',
+                            background: info.color,
+                            borderRadius: 3,
+                            transition: 'width 0.3s ease',
+                          }} />
+                        </div>
+                      </div>
+
+                      {/* Filter link */}
+                      <button
+                        onClick={() => {
+                          setShowComputationModal(false);
+                          navigate(`/requests?type=${cat.name}`);
+                        }}
+                        style={{
+                          background: '#FFFFFF',
+                          border: '1px solid #CBD5E1',
+                          borderRadius: 8,
+                          padding: '6px 10px',
+                          fontSize: 11.5,
+                          fontWeight: 700,
+                          color: '#2563EB',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          flexShrink: 0,
+                        }}
+                      >
+                        View Reports <ArrowRight size={12} />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Monthly Forecast Rationale */}
+              <div style={{
+                background: '#F0FDF4',
+                border: '1px solid #BBF7D0',
+                borderRadius: 14,
+                padding: '14px 18px',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 12,
+              }}>
+                <Info size={20} color="#16A34A" style={{ flexShrink: 0, marginTop: 2 }} />
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: '#15803D' }}>
+                    {computationAnalysis.currentMonthLong} Forecast Methodology
+                  </div>
+                  <div style={{ fontSize: 12.5, color: '#166534', lineHeight: 1.5, marginTop: 3 }}>
+                    Calculated by combining historical MDRRMO disaster records with live seasonal weather indicators. {computationAnalysis.forecast?.desc || 'Trauma and Medical emergencies remain the highest volume.'}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{
+              padding: '16px 24px',
+              borderTop: '1px solid #F1F5F9',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: '#FAFAFB',
+            }}>
+              <button
+                onClick={() => {
+                  setShowComputationModal(false);
+                  navigate('/analytics');
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#2563EB',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  fontFamily: 'inherit',
+                }}
+              >
+                <ExternalLink size={14} /> Open Full Historical Analytics
+              </button>
+
+              <button
+                onClick={() => setShowComputationModal(false)}
+                style={{
+                  background: '#2563EB',
+                  color: 'white',
+                  border: 'none',
+                  padding: '9px 18px',
+                  borderRadius: 10,
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

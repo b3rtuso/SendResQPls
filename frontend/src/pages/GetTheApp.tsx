@@ -338,6 +338,9 @@ export default function GetTheApp() {
 
         /* ─── RESPONSIVE ─── */
         @media (max-width: 768px) {
+          .gta-nav-back {
+            display: none !important;
+          }
           .gta-steps-grid {
             grid-template-columns: 1fr;
           }

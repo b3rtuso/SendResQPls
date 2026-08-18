@@ -341,12 +341,13 @@ export default function LandingPage() {
           user-select: none;
           mask-image: linear-gradient(to right, transparent 0%, black 40px, black calc(100% - 40px), transparent 100%);
           -webkit-mask-image: linear-gradient(to right, transparent 0%, black 40px, black calc(100% - 40px), transparent 100%);
+          background: var(--bg);
         }
         .lp-ticker-track {
           display: flex;
           width: max-content;
           flex-shrink: 0;
-          animation: ticker 35s linear infinite;
+          animation: ticker 30s linear infinite;
           will-change: transform;
         }
         .lp-ticker:hover .lp-ticker-track {
@@ -355,9 +356,6 @@ export default function LandingPage() {
         @keyframes ticker {
           0% { transform: translate3d(0, 0, 0); }
           100% { transform: translate3d(-50%, 0, 0); }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .lp-ticker-track { animation: none; }
         }
         .lp-ticker-group {
           display: flex;

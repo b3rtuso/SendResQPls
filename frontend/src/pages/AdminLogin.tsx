@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { login as apiLogin } from '../api/client';
-import { Lock, Eye, EyeOff, AlertTriangle, ShieldCheck, Clock, Activity, MapPin, Radio } from 'lucide-react';
+import { Lock, Eye, EyeOff, AlertTriangle, ShieldCheck, Clock } from 'lucide-react';
 
 export default function AdminLogin() {
   const navigate = useNavigate();
@@ -113,12 +113,12 @@ export default function AdminLogin() {
         /* ─── Left Brand Showcase ─── */
         .al-showcase {
           background: linear-gradient(155deg, #0A1628 0%, #0F2347 45%, #1D4ED8 100%);
-          padding: clamp(36px, 4vw, 56px);
+          padding: clamp(36px, 4.5vw, 60px);
           position: relative;
           overflow: hidden;
           display: flex;
           flex-direction: column;
-          justify-content: space-between;
+          justify-content: center;
           color: #FFFFFF;
         }
         .al-showcase::after {
@@ -149,25 +149,6 @@ export default function AdminLogin() {
             padding: 40px 24px 32px;
             border-radius: 0 0 28px 28px;
           }
-          .al-showcase-desktop-only {
-            display: none !important;
-          }
-        }
-
-        /* ─── Feature Pill List ─── */
-        .al-feature-pill {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          background: rgba(255, 255, 255, 0.08);
-          backdrop-filter: blur(10px);
-          border: 1px solid rgba(255, 255, 255, 0.12);
-          padding: 12px 16px;
-          border-radius: 14px;
-          color: #E2E8F0;
-          font-size: 13px;
-          font-weight: 600;
-          line-height: 1.4;
         }
 
         /* ─── Right Form Side ─── */
@@ -297,55 +278,11 @@ export default function AdminLogin() {
                 color: 'rgba(255,255,255,0.78)',
                 lineHeight: 1.6,
                 maxWidth: 420,
-                margin: '0 0 24px',
+                margin: 0,
               }}
             >
               Official MDRRMO Balayan municipal incident management portal for live disaster response, triage, and multi-agency fleet coordination.
             </p>
-
-            {/* Desktop feature highlights */}
-            <div className="al-showcase-desktop-only" style={{ display: 'flex', flexDirection: 'column', gap: 10, margin: '24px 0 32px' }}>
-              <div className="al-feature-pill">
-                <Activity size={18} color="#93C5FD" style={{ flexShrink: 0 }} />
-                <span>Real-Time Disaster Triage & Severity AI Detection</span>
-              </div>
-              <div className="al-feature-pill">
-                <MapPin size={18} color="#93C5FD" style={{ flexShrink: 0 }} />
-                <span>Live GIS Incident Heatmaps & Grid Route Tracking</span>
-              </div>
-              <div className="al-feature-pill">
-                <Radio size={18} color="#93C5FD" style={{ flexShrink: 0 }} />
-                <span>Multi-Agency Dispatch (MDRRMO, BFP, PNP, EMS)</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom active status badge */}
-          <div
-            style={{
-              position: 'relative',
-              zIndex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              fontSize: 12,
-              color: 'rgba(255,255,255,0.85)',
-              fontWeight: 700,
-              paddingTop: 16,
-              borderTop: '1px solid rgba(255,255,255,0.12)',
-            }}
-          >
-            <span
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: '50%',
-                background: '#22C55E',
-                boxShadow: '0 0 10px #22C55E',
-                display: 'inline-block',
-              }}
-            />
-            <span>24/7 Balayan Command Grid Active</span>
           </div>
         </div>
 

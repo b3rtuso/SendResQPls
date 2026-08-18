@@ -13,34 +13,11 @@ import { useNavigate } from 'react-router-dom';
 export default function LandingPage() {
   const navigate = useNavigate();
   const heroRef = useRef<HTMLDivElement>(null);
-  const howCarouselRef = useRef<HTMLDivElement>(null);
   const [heroVisible, setHeroVisible] = useState(false);
   const [step1Visible, setStep1Visible] = useState(false);
   const [step2Visible, setStep2Visible] = useState(false);
   const [step3Visible, setStep3Visible] = useState(false);
   const [accessVisible, setAccessVisible] = useState(false);
-  const [activeHowStep, setActiveHowStep] = useState(0);
-
-  const scrollHowTo = (index: number) => {
-    if (!howCarouselRef.current) return;
-    const container = howCarouselRef.current;
-    const target = container.children[index] as HTMLElement;
-    if (target) {
-      target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
-      setActiveHowStep(index);
-    }
-  };
-
-  const handleHowScroll = () => {
-    if (!howCarouselRef.current) return;
-    const container = howCarouselRef.current;
-    const scrollLeft = container.scrollLeft;
-    const width = container.offsetWidth;
-    if (width > 0) {
-      const idx = Math.round(scrollLeft / width);
-      setActiveHowStep(Math.min(Math.max(idx, 0), 2));
-    }
-  };
 
   useEffect(() => {
     // Trigger hero entrance after mount
@@ -353,23 +330,28 @@ export default function LandingPage() {
           display: block;
         }
 
-        /* ─── TICKER ─── */
+        /* ─── TICKER (Infinite Seamless Loop) ─── */
         .lp-ticker {
           border-bottom: 1px solid var(--divider);
           overflow: hidden;
           height: 48px;
           display: flex;
           align-items: center;
+          position: relative;
+          background: #08111D;
+          user-select: none;
         }
         .lp-ticker-track {
-          display: flex;
-          gap: 0;
-          animation: ticker 22s linear infinite;
+          display: inline-flex;
+          align-items: center;
+          flex-shrink: 0;
           white-space: nowrap;
+          animation: tickerLoop 24s linear infinite;
+          will-change: transform;
         }
-        @keyframes ticker {
+        @keyframes tickerLoop {
           0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
+          100% { transform: translateX(-100%); }
         }
         @media (prefers-reduced-motion: reduce) {
           .lp-ticker-track { animation: none; }
@@ -380,7 +362,7 @@ export default function LandingPage() {
           letter-spacing: 0.22em;
           text-transform: uppercase;
           color: var(--text-muted);
-          padding: 0 clamp(16px, 3vw, 40px);
+          padding: 0 clamp(16px, 2.5vw, 36px);
         }
         .lp-ticker-dot {
           color: var(--yellow);
@@ -584,36 +566,14 @@ export default function LandingPage() {
             border-right: none;
           }
           .lp-how {
-            display: flex;
-            overflow-x: auto;
-            scroll-snap-type: x mandatory;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
-            grid-template-columns: unset;
-            border-bottom: none;
-          }
-          .lp-how::-webkit-scrollbar {
-            display: none;
+            grid-template-columns: 1fr;
           }
           .lp-how-cell {
-            flex: 0 0 100%;
-            width: 100%;
-            scroll-snap-align: start;
-            scroll-snap-stop: always;
             border-right: none;
-            border-bottom: none;
-            opacity: 1 !important;
-            transform: none !important;
-            padding: 36px 24px 20px;
-            box-sizing: border-box;
-          }
-          .lp-how-dots {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 0 24px;
             border-bottom: 1px solid var(--divider);
+          }
+          .lp-how-cell:last-child {
+            border-bottom: none;
           }
           .lp-how-body {
             max-width: 100%;
@@ -624,11 +584,6 @@ export default function LandingPage() {
           .lp-access-citizen {
             border-right: none;
             border-bottom: 2px solid rgba(255,255,255,0.18);
-          }
-        }
-        @media (min-width: 961px) {
-          .lp-how-dots {
-            display: none;
           }
         }
 
@@ -737,12 +692,27 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ─── TICKER ─── */}
+        {/* ─── TICKER (Infinite Seamless Loop) ─── */}
         <div className="lp-ticker" aria-hidden="true">
           <div className="lp-ticker-track">
-            {/* Duplicate for seamless loop */}
-            {[0, 1].map(n => (
-              <span key={n} style={{ display: 'flex', alignItems: 'center' }}>
+            {[0, 1, 2].map(n => (
+              <span key={n} style={{ display: 'inline-flex', alignItems: 'center' }}>
+                <span className="lp-ticker-item">Report</span>
+                <span className="lp-ticker-item lp-ticker-dot">·</span>
+                <span className="lp-ticker-item">Dispatch</span>
+                <span className="lp-ticker-item lp-ticker-dot">·</span>
+                <span className="lp-ticker-item">Respond</span>
+                <span className="lp-ticker-item lp-ticker-dot">·</span>
+                <span className="lp-ticker-item">Protect</span>
+                <span className="lp-ticker-item lp-ticker-dot">·</span>
+                <span className="lp-ticker-item">MDRRMO Balayan</span>
+                <span className="lp-ticker-item lp-ticker-dot">·</span>
+              </span>
+            ))}
+          </div>
+          <div className="lp-ticker-track" aria-hidden="true">
+            {[0, 1, 2].map(n => (
+              <span key={n} style={{ display: 'inline-flex', alignItems: 'center' }}>
                 <span className="lp-ticker-item">Report</span>
                 <span className="lp-ticker-item lp-ticker-dot">·</span>
                 <span className="lp-ticker-item">Dispatch</span>
@@ -759,12 +729,7 @@ export default function LandingPage() {
         </div>
 
         {/* ─── HOW IT WORKS ─── */}
-        <section
-          ref={howCarouselRef}
-          onScroll={handleHowScroll}
-          className="lp-how"
-          aria-label="How SendResQPls works"
-        >
+        <section className="lp-how">
           <div id="step-1" className={`lp-how-cell ${step1Visible ? 'visible' : ''}`}>
             <div className="lp-how-num red">01</div>
             <h2 className="lp-how-heading">Report</h2>
@@ -803,29 +768,6 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
-
-        {/* ─── HOW IT WORKS CAROUSEL DOTS (Mobile) ─── */}
-        <div className="lp-how-dots" aria-hidden="true">
-          {[0, 1, 2].map((idx) => (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => scrollHowTo(idx)}
-              aria-label={`Go to step ${idx + 1}`}
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: '50%',
-                background: activeHowStep === idx ? '#2563EB' : 'rgba(255, 255, 255, 0.25)',
-                border: 'none',
-                padding: 0,
-                cursor: 'pointer',
-                transition: 'all 0.25s ease',
-                transform: activeHowStep === idx ? 'scale(1.25)' : 'scale(1)',
-              }}
-            />
-          ))}
-        </div>
 
         {/* ─── ACCESS PORTAL ─── */}
         <section id="access-section" className={`lp-access ${accessVisible ? 'visible' : ''}`}>

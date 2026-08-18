@@ -1,38 +1,77 @@
-import { useState, useRef } from 'react';
-import { ArrowRight, LogIn } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Camera, AlertTriangle, ShieldCheck, MapPin, Navigation } from 'lucide-react';
 
 const ONBOARDING_KEY = 'srq_onboarding_done';
 
-const slides = [
+interface SlideData {
+  category: string;
+  badgeIcon: any;
+  accentColor: string;
+  badgeBg: string;
+  title: string;
+  subtitle: string;
+  type: 'camera' | 'map' | 'status';
+}
+
+const slides: SlideData[] = [
   {
-    image: '/onboarding_01.jpg',
-    alt: '01 REPORT — Photograph the emergency',
+    category: 'Report',
+    badgeIcon: Camera,
+    accentColor: '#2563EB',
+    badgeBg: '#EFF6FF',
+    title: 'Snap & Report Emergency',
+    subtitle: 'Photograph the scene. AI instantly detects disaster type and tags your exact GPS coordinates.',
+    type: 'camera',
   },
   {
-    image: '/onboarding_02.jpg',
-    alt: '02 DISPATCH — MDRRMO routes your report',
+    category: 'Dispatch',
+    badgeIcon: AlertTriangle,
+    accentColor: '#DC2626',
+    badgeBg: '#FEF2F2',
+    title: 'MDRRMO Balayan Triage',
+    subtitle: 'Command Center reviews priorities in real time and routes alerts to the nearest response team.',
+    type: 'map',
   },
   {
-    image: '/onboarding_03.jpg',
-    alt: '03 RESPOND — Trained responders arrive on-site',
+    category: 'Live Track',
+    badgeIcon: ShieldCheck,
+    accentColor: '#16A34A',
+    badgeBg: '#F0FDF4',
+    title: 'Real-Time Responder ETA',
+    subtitle: 'Track responder location on live GPS and receive instant status updates until help arrives.',
+    type: 'status',
   },
 ];
 
 export default function MobileOnboarding({ onDone }: { onDone: () => void }) {
   const [current, setCurrent] = useState(0);
+  const [slideDirection, setSlideDirection] = useState<'next' | 'prev'>('next');
   const navigate = useNavigate();
 
-  // Touch/swipe support
   const touchStartX = useRef<number | null>(null);
 
   const goTo = (index: number) => {
     if (index < 0 || index >= slides.length) return;
+    setSlideDirection(index > current ? 'next' : 'prev');
     setCurrent(index);
   };
 
-  const goNext = () => goTo(current + 1);
-  const goPrev = () => goTo(current - 1);
+  const goNext = () => {
+    if (current < slides.length - 1) {
+      setSlideDirection('next');
+      setCurrent(c => c + 1);
+    } else {
+      handleGetStarted();
+    }
+  };
+
+  const goPrev = () => {
+    if (current > 0) {
+      setSlideDirection('prev');
+      setCurrent(c => c - 1);
+    }
+  };
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
@@ -47,6 +86,16 @@ export default function MobileOnboarding({ onDone }: { onDone: () => void }) {
     }
     touchStartX.current = null;
   };
+
+  // Keyboard navigation support
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight' || e.key === 'Space') goNext();
+      else if (e.key === 'ArrowLeft') goPrev();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [current]);
 
   const skip = () => {
     localStorage.setItem(ONBOARDING_KEY, '1');
@@ -64,133 +113,447 @@ export default function MobileOnboarding({ onDone }: { onDone: () => void }) {
   };
 
   const isLast = current === slides.length - 1;
+  const slide = slides[current];
+  const BadgeIcon = slide.badgeIcon;
 
   return (
     <div
+      className="mobile-shell"
       style={{
-        width: '100%',
-        height: '100vh',
-        position: 'relative',
-        overflow: 'hidden',
-        fontFamily: "'Inter', system-ui, sans-serif",
-        background: '#0D1B2A',
+        background: '#F1F5F9',
+        minHeight: '100dvh',
+        display: 'flex',
+        flexDirection: 'column',
         userSelect: 'none',
+        fontFamily: "var(--font, 'Inter', system-ui, sans-serif)",
+        position: 'relative',
+        boxSizing: 'border-box',
       }}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
       <style>{`
-        @keyframes slideInFromRight {
-          from { opacity: 0; transform: translateX(40px); }
+        @keyframes onbFadeSlideNext {
+          from { opacity: 0; transform: translateX(24px); }
           to   { opacity: 1; transform: translateX(0); }
         }
-        @keyframes slideInFromLeft {
-          from { opacity: 0; transform: translateX(-40px); }
+        @keyframes onbFadeSlidePrev {
+          from { opacity: 0; transform: translateX(-24px); }
           to   { opacity: 1; transform: translateX(0); }
         }
-        .onb-slide-enter {
-          animation: slideInFromRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        .onb-content-animate {
+          animation: ${slideDirection === 'next' ? 'onbFadeSlideNext' : 'onbFadeSlidePrev'} 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
         .onb-dot {
-          transition: all 0.3s ease;
-          cursor: pointer;
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          transition: all 0.25s ease;
           border: none;
           padding: 0;
+          cursor: pointer;
+        }
+        .onb-action-btn {
+          width: 100%;
+          padding: 16px;
+          background: linear-gradient(135deg, #2563EB, #1D4ED8);
+          color: #FFFFFF;
+          border: none;
+          border-radius: 14px;
+          font-size: 15px;
+          font-weight: 700;
+          font-family: inherit;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 4px 16px rgba(37,99,235,0.35);
+          transition: transform 0.18s, box-shadow 0.18s;
+          letter-spacing: 0.01em;
+        }
+        .onb-action-btn:active {
+          transform: scale(0.98);
+        }
+        .onb-secondary-btn {
+          width: 100%;
+          padding: 15px;
+          background: #FFFFFF;
+          color: #0F172A;
+          border: 1.5px solid #E2E8F0;
+          border-radius: 14px;
+          font-size: 15px;
+          font-weight: 700;
+          font-family: inherit;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: background 0.18s, border-color 0.18s, transform 0.18s;
+        }
+        .onb-secondary-btn:active {
+          background: #F8FAFC;
+          transform: scale(0.98);
         }
       `}</style>
 
-      {/* Fullscreen Slide Image */}
+      {/* ── Top Bar ── */}
       <div
-        key={current}
-        className="onb-slide-enter"
         style={{
-          position: 'absolute',
-          inset: 0,
-          backgroundImage: `url(${slides[current].image})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'top center',
-          backgroundRepeat: 'no-repeat',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '24px 24px 8px',
+          zIndex: 10,
         }}
-        aria-label={slides[current].alt}
-      />
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <img
+            src="/logo.jpg"
+            alt="SRQ Logo"
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: 8,
+              objectFit: 'cover',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            }}
+          />
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#64748B', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+            SendResQPls
+          </span>
+        </div>
 
-      {/* Dark overlay gradient at bottom for UI legibility */}
-      <div style={{
-        position: 'absolute',
-        inset: 0,
-        background: 'linear-gradient(to top, rgba(13, 27, 42, 0.92) 0%, rgba(13, 27, 42, 0.0) 45%)',
-        pointerEvents: 'none',
-      }} />
-
-      {/* Top Bar: Skip button */}
-      <div style={{
-        position: 'absolute',
-        top: 0, left: 0, right: 0,
-        padding: '52px 24px 16px',
-        display: 'flex',
-        justifyContent: 'flex-end',
-      }}>
-        {!isLast && (
+        {!isLast ? (
           <button
             onClick={skip}
             style={{
-              background: 'rgba(255, 255, 255, 0.14)',
-              backdropFilter: 'blur(8px)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              color: 'rgba(255, 255, 255, 0.85)',
-              padding: '8px 20px',
+              background: '#FFFFFF',
+              border: '1px solid #E2E8F0',
+              color: '#64748B',
+              padding: '6px 14px',
               borderRadius: 999,
-              fontSize: 13,
+              fontSize: 12.5,
               fontWeight: 700,
               cursor: 'pointer',
               fontFamily: 'inherit',
-              letterSpacing: '0.02em',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+              transition: 'color 0.15s, border-color 0.15s',
             }}
           >
             Skip
           </button>
+        ) : (
+          <div style={{ width: 48 }} />
         )}
       </div>
 
-      {/* Tap zones: left half goes back, right half goes forward (non-last) */}
-      {!isLast && (
-        <>
-          <div
-            onClick={goPrev}
-            style={{
-              position: 'absolute',
-              top: '10%', bottom: '22%',
-              left: 0, width: '40%',
-              cursor: current > 0 ? 'w-resize' : 'default',
-              zIndex: 10,
-            }}
-          />
-          <div
-            onClick={goNext}
-            style={{
-              position: 'absolute',
-              top: '10%', bottom: '22%',
-              right: 0, width: '60%',
-              cursor: 'e-resize',
-              zIndex: 10,
-            }}
-          />
-        </>
-      )}
+      {/* ── Main Slide Card Body ── */}
+      <div
+        key={current}
+        className="onb-content-animate"
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          padding: '16px 20px 20px',
+        }}
+      >
+        {/* Category Header */}
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                background: slide.accentColor,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#FFFFFF',
+                boxShadow: `0 2px 10px ${slide.accentColor}33`,
+              }}
+            >
+              <BadgeIcon size={16} strokeWidth={2.2} />
+            </div>
+            <span
+              style={{
+                fontSize: 13,
+                fontWeight: 700,
+                color: '#64748B',
+                letterSpacing: '0.02em',
+              }}
+            >
+              {slide.category}
+            </span>
+          </div>
 
-      {/* Bottom UI: Dots + CTA */}
-      <div style={{
-        position: 'absolute',
-        bottom: 0, left: 0, right: 0,
-        padding: '0 28px 48px',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 20,
-        zIndex: 20,
-      }}>
-        {/* Dot Indicators */}
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {/* Bold 2-Line Headline */}
+          <h1
+            style={{
+              fontSize: 24,
+              fontWeight: 900,
+              color: '#0F172A',
+              letterSpacing: '-0.03em',
+              lineHeight: 1.2,
+              margin: '0 0 8px',
+            }}
+          >
+            {slide.title}
+          </h1>
+
+          {/* Underline Indicator Accent */}
+          <div
+            style={{
+              width: 36,
+              height: 3.5,
+              borderRadius: 4,
+              background: slide.accentColor,
+              marginBottom: 10,
+            }}
+          />
+
+          <p
+            style={{
+              fontSize: 13,
+              color: '#64748B',
+              lineHeight: 1.5,
+              margin: 0,
+            }}
+          >
+            {slide.subtitle}
+          </p>
+        </div>
+
+        {/* Center UI Preview Card */}
+        <div
+          style={{
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '10px 0',
+          }}
+        >
+          {slide.type === 'camera' && (
+            <div
+              style={{
+                width: '100%',
+                maxWidth: 290,
+                background: '#0F172A',
+                borderRadius: 22,
+                padding: '16px',
+                color: '#FFFFFF',
+                boxShadow: '0 12px 36px rgba(15,23,42,0.18), 0 2px 8px rgba(0,0,0,0.06)',
+                position: 'relative',
+                overflow: 'hidden',
+              }}
+            >
+              {/* Camera Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.7)', letterSpacing: '0.05em' }}>
+                  ⚡ SENDRESQPLS CAMERA
+                </span>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#EF4444' }} />
+              </div>
+
+              {/* Viewfinder Screen */}
+              <div
+                style={{
+                  height: 150,
+                  borderRadius: 14,
+                  background: 'linear-gradient(180deg, #1E293B 0%, #0F172A 100%)',
+                  position: 'relative',
+                  border: '1.5px dashed rgba(255,255,255,0.2)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 10,
+                }}
+              >
+                {/* Viewfinder crosshairs */}
+                <div style={{ position: 'absolute', top: 8, left: 8, width: 12, height: 12, borderTop: '2px solid #2563EB', borderLeft: '2px solid #2563EB' }} />
+                <div style={{ position: 'absolute', top: 8, right: 8, width: 12, height: 12, borderTop: '2px solid #2563EB', borderRight: '2px solid #2563EB' }} />
+                <div style={{ position: 'absolute', bottom: 8, left: 8, width: 12, height: 12, borderBottom: '2px solid #2563EB', borderLeft: '2px solid #2563EB' }} />
+                <div style={{ position: 'absolute', bottom: 8, right: 8, width: 12, height: 12, borderBottom: '2px solid #2563EB', borderRight: '2px solid #2563EB' }} />
+
+                {/* AI Detection Pill */}
+                <div
+                  style={{
+                    background: 'rgba(255,255,255,0.95)',
+                    color: '#0F172A',
+                    padding: '6px 14px',
+                    borderRadius: 999,
+                    fontSize: 12,
+                    fontWeight: 800,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    boxShadow: '0 4px 14px rgba(0,0,0,0.25)',
+                  }}
+                >
+                  <span style={{ fontSize: 13 }}>🌊</span> Flood Hazard Detected
+                </div>
+
+                <span style={{ fontSize: 10.5, color: '#94A3B8', fontWeight: 600 }}>
+                  GPS: 13.9372° N, 120.7345° E (Balayan)
+                </span>
+              </div>
+            </div>
+          )}
+
+          {slide.type === 'map' && (
+            <div
+              style={{
+                width: '100%',
+                maxWidth: 290,
+                background: '#FFFFFF',
+                borderRadius: 22,
+                padding: '16px',
+                boxShadow: '0 12px 36px rgba(30,58,95,0.12), 0 2px 8px rgba(0,0,0,0.06)',
+                border: '1.5px solid #E2E8F0',
+                position: 'relative',
+              }}
+            >
+              {/* Map mockup header */}
+              <div
+                style={{
+                  background: '#0F1F38',
+                  color: '#FFFFFF',
+                  borderRadius: 12,
+                  padding: '8px 12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: 12,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <MapPin size={13} color="#93C5FD" />
+                  <span style={{ fontSize: 11.5, fontWeight: 700 }}>MDRRMO Command Center</span>
+                </div>
+                <span style={{ fontSize: 10, background: '#DC2626', padding: '2px 6px', borderRadius: 4, fontWeight: 800 }}>LIVE</span>
+              </div>
+
+              {/* Map graphic container */}
+              <div
+                style={{
+                  height: 120,
+                  borderRadius: 14,
+                  background: '#E2E8F0',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                {/* Simulated map roads & route */}
+                <svg width="100%" height="100%" viewBox="0 0 260 120" style={{ position: 'absolute', inset: 0 }}>
+                  <path d="M 20 100 Q 80 40 140 70 T 240 30" fill="none" stroke="#2563EB" strokeWidth="4" strokeLinecap="round" />
+                  <circle cx="20" cy="100" r="6" fill="#DC2626" />
+                  <circle cx="140" cy="70" r="5" fill="#2563EB" />
+                  <circle cx="240" cy="30" r="7" fill="#16A34A" />
+                </svg>
+
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: 8,
+                    background: 'rgba(255,255,255,0.92)',
+                    backdropFilter: 'blur(4px)',
+                    padding: '4px 10px',
+                    borderRadius: 8,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: '#0F172A',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
+                  }}
+                >
+                  📍 Balayan Emergency Grid
+                </div>
+              </div>
+            </div>
+          )}
+
+          {slide.type === 'status' && (
+            <div
+              style={{
+                width: '100%',
+                maxWidth: 290,
+                background: '#FFFFFF',
+                borderRadius: 22,
+                padding: '18px 16px',
+                boxShadow: '0 12px 36px rgba(30,58,95,0.12), 0 2px 8px rgba(0,0,0,0.06)',
+                border: '1.5px solid #E2E8F0',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 12,
+              }}
+            >
+              {/* Active responder tracker */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 12,
+                    background: '#F0FDF4',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#16A34A',
+                    border: '1px solid #BBF7D0',
+                    flexShrink: 0,
+                  }}
+                >
+                  <Navigation size={18} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    Ambulance En Route
+                  </div>
+                  <div style={{ fontSize: 11.5, color: '#16A34A', fontWeight: 700 }}>
+                    Estimated Arrival: 3 mins
+                  </div>
+                </div>
+              </div>
+
+              {/* Progress bar */}
+              <div style={{ height: 6, background: '#F1F5F9', borderRadius: 999, overflow: 'hidden' }}>
+                <div style={{ width: '75%', height: '100%', background: '#16A34A', borderRadius: 999 }} />
+              </div>
+
+              {/* Hotline pill */}
+              <div
+                style={{
+                  background: '#F8FAFC',
+                  border: '1px solid #E2E8F0',
+                  borderRadius: 10,
+                  padding: '8px 12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <span style={{ fontSize: 11.5, fontWeight: 700, color: '#475569' }}>📞 MDRRMO Hotline</span>
+                <span style={{ fontSize: 11.5, fontWeight: 800, color: '#2563EB' }}>0917-123-4567</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ── Dot Indicators (Selected dot is circular dot and blue #2563EB) ── */}
+        <div
+          style={{
+            display: 'flex',
+            gap: 8,
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginBottom: 20,
+          }}
+        >
           {slides.map((_, i) => (
             <button
               key={i}
@@ -198,86 +561,38 @@ export default function MobileOnboarding({ onDone }: { onDone: () => void }) {
               onClick={() => goTo(i)}
               aria-label={`Go to slide ${i + 1}`}
               style={{
-                width: i === current ? 24 : 8,
-                height: 8,
-                borderRadius: 999,
-                background: i === current ? '#FFFFFF' : 'rgba(255, 255, 255, 0.35)',
+                background: i === current ? '#2563EB' : '#CBD5E1',
+                transform: i === current ? 'scale(1.2)' : 'scale(1)',
               }}
             />
           ))}
         </div>
 
-        {/* CTA Buttons */}
+        {/* ── Action Buttons (No Arrow Icons) ── */}
         {isLast ? (
-          <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%' }}>
             <button
+              type="button"
+              className="onb-action-btn"
               onClick={handleGetStarted}
-              style={{
-                width: '100%',
-                padding: '17px',
-                borderRadius: 16,
-                background: '#FFFFFF',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: 16,
-                fontWeight: 800,
-                color: '#0D1B2A',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                boxShadow: '0 4px 24px rgba(0,0,0,0.35)',
-                fontFamily: 'inherit',
-                letterSpacing: '-0.01em',
-              }}
             >
-              Get Started <ArrowRight size={18} />
+              Get Started
             </button>
             <button
+              type="button"
+              className="onb-secondary-btn"
               onClick={handleCreateAccount}
-              style={{
-                width: '100%',
-                padding: '16px',
-                borderRadius: 16,
-                background: 'rgba(255, 255, 255, 0.12)',
-                border: '1.5px solid rgba(255, 255, 255, 0.3)',
-                cursor: 'pointer',
-                fontSize: 16,
-                fontWeight: 700,
-                color: 'rgba(255, 255, 255, 0.92)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                fontFamily: 'inherit',
-              }}
             >
-              <LogIn size={18} /> Create an Account
+              Create an Account
             </button>
           </div>
         ) : (
           <button
+            type="button"
+            className="onb-action-btn"
             onClick={goNext}
-            style={{
-              width: '100%',
-              padding: '17px',
-              borderRadius: 16,
-              background: '#FFFFFF',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: 16,
-              fontWeight: 800,
-              color: '#0D1B2A',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              boxShadow: '0 4px 24px rgba(0,0,0,0.35)',
-              fontFamily: 'inherit',
-              letterSpacing: '-0.01em',
-            }}
           >
-            Next <ArrowRight size={18} />
+            Next
           </button>
         )}
       </div>

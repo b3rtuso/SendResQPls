@@ -62,13 +62,13 @@ export const monthlyDetails = [
   { month: 'Mar', type: 'Trauma',  typeClass: 'trauma',  desc: '36 total incidents. Lanatan and Caloocan remain hotspots for motorbike-related trauma. Medical cases include respiratory and cardiac emergencies.' },
   { month: 'Apr', type: 'Trauma',  typeClass: 'trauma',  desc: '33 incidents including 7 crime-related (assault and firearm). RTA motorbike crashes and fall injuries persist as dominant trauma types.' },
   { month: 'May', type: 'Trauma',  typeClass: 'trauma',  desc: '32 incidents. RTA motorbike accidents continue. Medical emergencies include hypertension, dizziness, and difficulty of breathing cases.' },
-  { month: 'Jun', type: 'Medical', typeClass: 'medical', desc: 'Predicted ~21 incidents. Rainy season onset historically brings respiratory issues and increased medical emergencies.' },
-  { month: 'Jul', type: 'Medical', typeClass: 'medical', desc: 'Predicted ~32 incidents. Peak monsoon period with historically elevated medical calls for DOB, seizures, and body weakness.' },
-  { month: 'Aug', type: 'Trauma',  typeClass: 'trauma',  desc: 'Predicted ~41 incidents — highest projected month. Historically the peak for RTA-related trauma across wet road conditions.' },
-  { month: 'Sep', type: 'Trauma',  typeClass: 'trauma',  desc: 'Predicted ~28 incidents. Late monsoon keeps roads hazardous. RTA motorbike and vehicle trauma cases typically remain elevated.' },
-  { month: 'Oct', type: 'Medical', typeClass: 'medical', desc: 'Predicted ~21 incidents. Post-typhoon season medical emergencies and conduction/transport assistance calls increase.' },
-  { month: 'Nov', type: 'Trauma',  typeClass: 'trauma',  desc: 'Predicted ~28 incidents. Holiday travel picks up leading to more vehicular trauma. Medical calls remain steady.' },
-  { month: 'Dec', type: 'Medical', typeClass: 'medical', desc: 'Predicted ~24 incidents. Holiday-related medical emergencies, patient conductions for dialysis, and transport assistance.' },
+  { month: 'Jun', type: 'Medical', typeClass: 'medical', desc: 'Predicted 21 incidents. Rainy season onset historically brings respiratory issues and increased medical emergencies.' },
+  { month: 'Jul', type: 'Medical', typeClass: 'medical', desc: 'Predicted 32 incidents. Peak monsoon period with historically elevated medical calls for DOB, seizures, and body weakness.' },
+  { month: 'Aug', type: 'Trauma',  typeClass: 'trauma',  desc: 'Predicted 41 incidents — highest projected month. Historically the peak for RTA-related trauma across wet road conditions.' },
+  { month: 'Sep', type: 'Trauma',  typeClass: 'trauma',  desc: 'Predicted 28 incidents. Late monsoon keeps roads hazardous. RTA motorbike and vehicle trauma cases typically remain elevated.' },
+  { month: 'Oct', type: 'Medical', typeClass: 'medical', desc: 'Predicted 21 incidents. Post-typhoon season medical emergencies and conduction/transport assistance calls increase.' },
+  { month: 'Nov', type: 'Trauma',  typeClass: 'trauma',  desc: 'Predicted 28 incidents. Holiday travel picks up leading to more vehicular trauma. Medical calls remain steady.' },
+  { month: 'Dec', type: 'Medical', typeClass: 'medical', desc: 'Predicted 24 incidents. Holiday-related medical emergencies, patient conductions for dialysis, and transport assistance.' },
 ];
 
 // ── Report table data ───────────────────────────────────────────────

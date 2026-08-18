@@ -1051,7 +1051,7 @@ export default function Dashboard() {
                       MDRRMO Projected Monthly Baseline
                     </div>
                     <div style={{ fontSize: 32, fontWeight: 900, marginTop: 4, letterSpacing: '-0.5px' }}>
-                      ~{computationAnalysis.predictedCount} <span style={{ fontSize: 15, fontWeight: 600, color: 'rgba(255,255,255,0.7)' }}>Projected Incidents for {computationAnalysis.currentMonthLong}</span>
+                      {computationAnalysis.predictedCount} <span style={{ fontSize: 15, fontWeight: 600, color: 'rgba(255,255,255,0.7)' }}>Projected Incidents for {computationAnalysis.currentMonthLong}</span>
                     </div>
                   </div>
 
@@ -1127,7 +1127,7 @@ export default function Dashboard() {
                     {/* Progress bar */}
                     <div style={{ flex: 1, margin: '0 12px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, fontWeight: 600, color: '#475569', marginBottom: 4 }}>
-                        <span>~{cat.count} of {computationAnalysis.predictedCount} projected</span>
+                        <span>{cat.count} of {computationAnalysis.predictedCount} projected</span>
                         <span>{cat.percentage}% share</span>
                       </div>
                       <div style={{ height: 6, background: '#E2E8F0', borderRadius: 3, overflow: 'hidden' }}>

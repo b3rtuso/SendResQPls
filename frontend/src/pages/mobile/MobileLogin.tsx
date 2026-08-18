@@ -1,11 +1,12 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { login as apiLogin } from '../../api/client';
 import { setupPushNotifications } from '../../utils/pushNotificationHelper';
 import { Lock, Eye, EyeOff, AlertTriangle, ArrowRight } from 'lucide-react';
 
 export default function MobileLogin() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
@@ -15,9 +16,17 @@ export default function MobileLogin() {
   const [emailError, setEmailError] = useState('');
   const [passError, setPassError] = useState('');
   const [globalError, setGlobalError] = useState('');
+  const [sessionExpired, setSessionExpired] = useState(false);
   const [focusField, setFocusField] = useState<'email'|'pass'|null>(null);
 
-  const handleLogin = async () => {
+  useEffect(() => {
+    if (new URLSearchParams(location.search).get('expired') === '1') {
+      setSessionExpired(true);
+    }
+  }, [location.search]);
+
+  const handleLogin = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     // Field-level validation
     let valid = true;
     setEmailError(''); setPassError(''); setGlobalError('');
@@ -130,10 +139,17 @@ export default function MobileLogin() {
       </div>
 
       {/* Floating form card */}
-      <div className="ml-form-card">
+      <form className="ml-form-card" onSubmit={handleLogin} noValidate>
         <p style={{ fontSize: 13, color: '#64748B', margin: '0 0 20px', lineHeight: 1.55 }}>
           I-login ang iyong account para makapag-report ng emergency.
         </p>
+
+        {sessionExpired && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 10, padding: '10px 12px', marginBottom: 16 }}>
+            <AlertTriangle size={14} color="#D97706" style={{ flexShrink: 0 }} />
+            <span style={{ fontSize: 13, color: '#92400E', fontWeight: 600 }}>Your session has expired for security. Please log in again.</span>
+          </div>
+        )}
 
         {globalError && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: 10, padding: '10px 12px', marginBottom: 16 }}>
@@ -241,7 +257,7 @@ export default function MobileLogin() {
         </div>
 
         {/* Login button */}
-        <button className="ml-auth-btn" onClick={handleLogin} disabled={loading}>
+        <button type="submit" className="ml-auth-btn" disabled={loading}>
           {loading
             ? <><span className="ml-spin" /> Please wait...</>
             : <>Log In <ArrowRight size={16} /></>
@@ -252,13 +268,14 @@ export default function MobileLogin() {
         <p style={{ textAlign: 'center', marginTop: 20, fontSize: 13.5, color: '#64748B' }}>
           Don't have an account?{' '}
           <button
+            type="button"
             onClick={() => navigate('/mobile/signup')}
             style={{ background: 'none', border: 'none', color: '#2563EB', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13.5, padding: 0 }}
           >
             Sign up now!
           </button>
         </p>
-      </div>
+      </form>
 
       {/* Bottom spacer */}
       <div style={{ flex: 1 }} />

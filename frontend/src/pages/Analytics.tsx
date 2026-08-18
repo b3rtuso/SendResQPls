@@ -704,8 +704,8 @@ export default function Analytics() {
               <div className="card">
                 <div className="card-header"><h3>2026 Incident Forecast</h3></div>
                 <div className="card-body">
-                  <div className="chart-container" style={{ height: 300 }}>
-                    <ResponsiveContainer width="100%" height="100%">
+                  <div className="chart-container" style={{ height: 300, minWidth: 0 }}>
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                       <AreaChart data={forecastData}>
                         <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                         <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
@@ -724,8 +724,8 @@ export default function Analytics() {
               <div className="card">
                 <div className="card-header"><h3>Requests Over Time</h3></div>
                 <div className="card-body">
-                  <div className="chart-container" style={{ height: 300 }}>
-                    <ResponsiveContainer width="100%" height="100%">
+                  <div className="chart-container" style={{ height: 300, minWidth: 0 }}>
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                       <BarChart data={distributionData}>
                         <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                         <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
@@ -755,8 +755,8 @@ export default function Analytics() {
                   </select>
                 </div>
                 <div className="card-body">
-                  <div className="chart-container" style={{ height: 300 }}>
-                    <ResponsiveContainer width="100%" height="100%">
+                  <div className="chart-container" style={{ height: 300, minWidth: 0 }}>
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                       <LineChart data={incidentTrendsData}>
                         <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                         <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
@@ -828,8 +828,8 @@ export default function Analytics() {
 
                     return (
                       <>
-                        <div className="chart-container" style={{ height: 260 }}>
-                          <ResponsiveContainer width="100%" height="100%">
+                        <div className="chart-container" style={{ height: 260, minWidth: 0 }}>
+                          <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                             <BarChart data={yearlyCategoryData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                               <XAxis dataKey="category" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />

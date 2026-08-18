@@ -19,14 +19,26 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// ── Retry once on network error or 5xx ──────────────────────────────────────
+// ── Retry on network/5xx & Handle 401 Unauthorized ──────────────────────────
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const config = error.config;
+    const status = error.response?.status;
+
+    // Handle session expiration (401 Unauthorized) on protected routes
+    if (status === 401 && config && !config.url?.includes('/auth/login') && !config.url?.includes('/auth/register')) {
+      ['token', 'userId', 'userName', 'userEmail', 'userRole'].forEach(k => localStorage.removeItem(k));
+      const isMobile = window.location.pathname.startsWith('/mobile');
+      const target = isMobile ? '/mobile/login?expired=1' : '/admin/login?expired=1';
+      if (!window.location.pathname.includes('/login')) {
+        window.location.href = target;
+      }
+      return Promise.reject(error);
+    }
+
     // Only retry once, only on network errors or server errors (5xx)
     if (!config || config._retried) return Promise.reject(error);
-    const status = error.response?.status;
     const isNetworkError = !error.response;
     const isServerError = status && status >= 500;
     if (isNetworkError || isServerError) {

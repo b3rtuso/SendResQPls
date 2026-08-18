@@ -308,6 +308,9 @@ export const updateIncidentStatus = async (req: AuthRequest, res: Response) => {
     // Sync department statuses dynamically in the database
     await syncDepartmentStatuses();
 
+    // Broadcast SSE update to all active admin dispatcher sessions
+    broadcastSseEvent('incident_updated', updated);
+
     const actions = [];
     if (status) actions.push(`status → ${status}`);
     if (assignedDepartment) actions.push(`dept → ${assignedDepartment}`);

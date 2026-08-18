@@ -1,16 +1,24 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { login as apiLogin } from '../api/client';
-import { Lock, Eye, EyeOff, AlertTriangle, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Lock, Eye, EyeOff, AlertTriangle, ArrowRight, ShieldCheck, Clock } from 'lucide-react';
 
 export default function AdminLogin() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [sessionExpired, setSessionExpired] = useState(false);
   const [focusField, setFocusField] = useState<'email' | 'pass' | null>(null);
+
+  useEffect(() => {
+    if (new URLSearchParams(location.search).get('expired') === '1') {
+      setSessionExpired(true);
+    }
+  }, [location.search]);
 
   const handleLogin = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -234,7 +242,7 @@ export default function AdminLogin() {
         </div>
 
         {/* Floating form card */}
-        <div className="al-form-card">
+        <form className="al-form-card" onSubmit={handleLogin} noValidate>
           <div className="al-badge">
             <ShieldCheck size={13} />
             Authorized Personnel Only
@@ -243,6 +251,26 @@ export default function AdminLogin() {
           <p style={{ fontSize: 13, color: '#64748B', margin: '0 0 20px', lineHeight: 1.55 }}>
             I-login ang iyong MDRRMO administrator account para ma-access ang command center dashboard.
           </p>
+
+          {sessionExpired && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                background: '#FFFBEB',
+                border: '1px solid #FDE68A',
+                borderRadius: 10,
+                padding: '10px 12px',
+                marginBottom: 16,
+              }}
+            >
+              <Clock size={15} color="#D97706" style={{ flexShrink: 0 }} />
+              <span style={{ fontSize: 13, color: '#92400E', fontWeight: 600 }}>
+                Your session has expired for security. Please sign in again.
+              </span>
+            </div>
+          )}
 
           {error && (
             <div
@@ -372,7 +400,7 @@ export default function AdminLogin() {
           </div>
 
           {/* Login button */}
-          <button className="al-auth-btn" onClick={handleLogin} disabled={loading}>
+          <button type="submit" className="al-auth-btn" disabled={loading}>
             {loading ? (
               <>
                 <span className="al-spin" /> Authenticating...
@@ -405,7 +433,7 @@ export default function AdminLogin() {
               ← Return to Main Page
             </button>
           </div>
-        </div>
+        </form>
 
         {/* Bottom footer */}
         <div

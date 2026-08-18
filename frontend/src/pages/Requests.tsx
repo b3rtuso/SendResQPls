@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { RequestsTableSkeleton } from '../components/PageLoader';
 import { Search, RefreshCw, ChevronLeft, ChevronRight, Image as ImageIcon, X, CheckCircle2, Filter, ArrowRight, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
-import type { Incident, Status } from '../types';
+import type { Incident, Status, Department } from '../types';
 import { getIncidents, updateIncidentStatus, invalidateCache } from '../api/client';
 import { getNearestBarangay } from '../data/balayan-data';
 import { normalizeIncidentType } from '../utils/normalizeIncidentType';
@@ -119,6 +119,10 @@ export default function Requests() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
+  // Multi-select batch operations state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [batchLoading, setBatchLoading] = useState(false);
+
   // Sorting state
   type SortKey = 'id' | 'type' | 'location' | 'unit' | 'status' | 'createdAt';
   const [sortKey, setSortKey] = useState<SortKey>('createdAt');
@@ -173,7 +177,67 @@ export default function Requests() {
 
   useEffect(() => {
     setPage(1);
+    setSelectedIds(new Set());
   }, [filterStatus, filterType, search]);
+
+  const toggleSelectAll = (currentPageItems: Incident[]) => {
+    if (currentPageItems.every(inc => selectedIds.has(inc.id))) {
+      setSelectedIds(new Set());
+    } else {
+      const next = new Set(selectedIds);
+      currentPageItems.forEach(inc => next.add(inc.id));
+      setSelectedIds(next);
+    }
+  };
+
+  const toggleSelectOne = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const next = new Set(selectedIds);
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
+    setSelectedIds(next);
+  };
+
+  const handleBatchAssign = async (dept: string) => {
+    if (selectedIds.size === 0) return;
+    setBatchLoading(true);
+    try {
+      await Promise.all(
+        Array.from(selectedIds).map(id => updateIncidentStatus(id, { assignedDepartment: dept }))
+      );
+      setIncidents(prev =>
+        prev.map(inc => (selectedIds.has(inc.id) ? { ...inc, assignedDepartment: dept as Department, aiRecommendedDept: dept as Department } : inc))
+      );
+      setSelectedIds(new Set());
+      invalidateCache('incidents');
+    } catch {
+      /* silent fallback */
+    } finally {
+      setBatchLoading(false);
+    }
+  };
+
+  const handleBatchStatus = async (status: Status) => {
+    if (selectedIds.size === 0) return;
+    setBatchLoading(true);
+    try {
+      await Promise.all(
+        Array.from(selectedIds).map(id => updateIncidentStatus(id, { status }))
+      );
+      setIncidents(prev =>
+        prev.map(inc => (selectedIds.has(inc.id) ? { ...inc, status } : inc))
+      );
+      setSelectedIds(new Set());
+      invalidateCache('incidents');
+    } catch {
+      /* silent fallback */
+    } finally {
+      setBatchLoading(false);
+    }
+  };
 
   const countsByStatus = incidents.reduce((acc, inc) => {
     acc[inc.status] = (acc[inc.status] || 0) + 1;
@@ -503,6 +567,15 @@ export default function Requests() {
                 <table className="rq-table">
                   <thead>
                     <tr>
+                      <th className="rq-th" style={{ width: 40, textAlign: 'center' }}>
+                        <input
+                          type="checkbox"
+                          checked={paged.length > 0 && paged.every(inc => selectedIds.has(inc.id))}
+                          onChange={() => toggleSelectAll(paged)}
+                          aria-label="Select all incidents on page"
+                          style={{ cursor: 'pointer', width: 16, height: 16, accentColor: '#2563EB' }}
+                        />
+                      </th>
                       <th className="rq-th sortable" onClick={() => handleSort('id')}>
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                           <span>Incident ID</span>
@@ -567,9 +640,21 @@ export default function Requests() {
                       return (
                         <tr
                           key={inc.id}
-                          className="rq-tr"
+                          className={`rq-tr ${selectedIds.has(inc.id) ? 'selected-row' : ''}`}
                           onClick={() => navigate(`/requests/${inc.id}`)}
+                          style={{ background: selectedIds.has(inc.id) ? 'rgba(37, 99, 235, 0.04)' : undefined }}
                         >
+                          {/* Selection Checkbox */}
+                          <td className="rq-td" style={{ textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.has(inc.id)}
+                              onChange={e => toggleSelectOne(inc.id, e as any)}
+                              aria-label={`Select incident ${inc.id}`}
+                              style={{ cursor: 'pointer', width: 16, height: 16, accentColor: '#2563EB' }}
+                            />
+                          </td>
+
                           {/* Incident ID */}
                           <td className="rq-td" style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: '#2563EB' }}>
                             #{inc.id.slice(0, 8).toUpperCase()}
@@ -759,7 +844,126 @@ export default function Requests() {
         </div>
       </div>
 
-      {/* ── Photo Lightbox Modal ── */}
+      {/* ── Floating Batch Action Bar ── */}
+      {selectedIds.size > 0 && (
+        <div style={{
+          position: 'fixed',
+          bottom: 24,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 1000,
+          background: '#0F172A',
+          color: 'white',
+          borderRadius: 18,
+          padding: '12px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 16,
+          boxShadow: '0 12px 40px rgba(15,23,42,0.35)',
+          border: '1px solid rgba(255,255,255,0.15)',
+          animation: 'slideUp 0.25s cubic-bezier(0.16,1,0.3,1) both',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{
+              background: '#2563EB',
+              padding: '2px 8px',
+              borderRadius: 8,
+              fontSize: 12,
+              fontWeight: 800,
+            }}>
+              {selectedIds.size}
+            </span>
+            <span style={{ fontSize: 13, fontWeight: 700 }}>
+              Incident{selectedIds.size > 1 ? 's' : ''} Selected
+            </span>
+          </div>
+
+          <div style={{ height: 20, width: 1, background: 'rgba(255,255,255,0.2)' }} />
+
+          {/* Quick Assign Unit Dropdown */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 12, color: '#94A3B8', fontWeight: 600 }}>Assign to:</span>
+            <select
+              onChange={e => { if (e.target.value) handleBatchAssign(e.target.value); }}
+              defaultValue=""
+              disabled={batchLoading}
+              style={{
+                background: '#1E293B',
+                color: 'white',
+                border: '1px solid #334155',
+                borderRadius: 8,
+                padding: '6px 12px',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                outline: 'none',
+              }}
+            >
+              <option value="" disabled>Choose Department…</option>
+              <option value="BFP">🚒 BFP Fire Rescue</option>
+              <option value="PNP">🚓 PNP Police</option>
+              <option value="MEDICAL">🚑 Medical EMS</option>
+              <option value="ENGINEERING">🚧 Engineering</option>
+              <option value="RESCUE">⚓ MDRRMO Rescue</option>
+            </select>
+          </div>
+
+          {/* Quick Status Advance */}
+          <button
+            onClick={() => handleBatchStatus('REVIEWING')}
+            disabled={batchLoading}
+            style={{
+              background: '#334155',
+              color: 'white',
+              border: 'none',
+              borderRadius: 8,
+              padding: '6px 12px',
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
+            }}
+          >
+            Mark Reviewing
+          </button>
+
+          <button
+            onClick={() => handleBatchStatus('DISPATCHED')}
+            disabled={batchLoading}
+            style={{
+              background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
+              color: 'white',
+              border: 'none',
+              borderRadius: 8,
+              padding: '6px 14px',
+              fontSize: 12,
+              fontWeight: 800,
+              cursor: 'pointer',
+            }}
+          >
+            {batchLoading ? 'Dispatching…' : 'Dispatch All'}
+          </button>
+
+          <button
+            onClick={() => setSelectedIds(new Set())}
+            style={{
+              background: 'transparent',
+              color: '#94A3B8',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: 12,
+              fontWeight: 600,
+              padding: '4px 8px',
+            }}
+          >
+            Deselect
+          </button>
+        </div>
+      )}
+
+      {/* ── Photo Preview Lightbox Modal ── */}
       {previewUrl && (
         <div
           onClick={() => setPreviewUrl(null)}

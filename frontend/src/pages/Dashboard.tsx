@@ -476,7 +476,8 @@ export default function Dashboard() {
         )}
 
         {/* ── Stat Cards Filter Section ─────────────────────── */}
-        <div className="fade-in" style={{ marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+        {/* ── Active Emergencies Banner ── */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }} aria-live="polite" role="status">
           <span style={{ fontSize: 13, fontWeight: 700, color: '#475569', letterSpacing: '0.01em' }}>
             Filter by:
           </span>
@@ -542,8 +543,8 @@ export default function Dashboard() {
               </select>
             </div>
             <div className="card-body">
-              <div className="chart-container" style={{ height: '300px' }}>
-                <ResponsiveContainer width="100%" height="100%">
+              <div className="chart-container" style={{ height: '300px', minWidth: 0 }}>
+                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                   <BarChart data={activeChartData} barCategoryGap="35%">
                     <defs>
                       <linearGradient id="medicalGrad" x1="0" y1="0" x2="0" y2="1">
@@ -589,8 +590,8 @@ export default function Dashboard() {
               <h3 style={{ fontWeight: 700, fontSize: 16, color: '#0F172A' }}>Incident Distribution</h3>
             </div>
             <div className="card-body" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 16, alignItems: 'center' }}>
-              <div style={{ height: '260px', width: '100%', position: 'relative' }}>
-                <ResponsiveContainer width="100%" height="100%">
+              <div style={{ height: '260px', width: '100%', position: 'relative', minWidth: 0 }}>
+                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                   <PieChart>
                     <Pie
                       data={donutData}

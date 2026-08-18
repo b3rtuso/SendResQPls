@@ -53,27 +53,27 @@ export default function MobileResetPassword() {
             </button>
           </div>
         ) : (
-          <>
+          <form onSubmit={handleReset} style={{ width: '100%' }}>
             {error && <p style={{ color: '#DC2626', fontSize: 13, marginBottom: 12, fontWeight: 600 }}>{error}</p>}
             <div className="input-group">
               <label>New Password</label>
               <div className="input-wrapper">
                 <Lock size={18} className="input-icon" />
-                <input type={showPass ? 'text' : 'password'} placeholder="At least 6 characters" value={newPass} onChange={(e) => setNewPass(e.target.value)} />
-                <button className="toggle-pass" onClick={() => setShowPass(!showPass)}>{showPass ? <Eye size={18} /> : <EyeOff size={18} />}</button>
+                <input type={showPass ? 'text' : 'password'} placeholder="At least 6 characters" value={newPass} onChange={(e) => setNewPass(e.target.value)} autoComplete="new-password" />
+                <button type="button" className="toggle-pass" onClick={() => setShowPass(!showPass)}>{showPass ? <Eye size={18} /> : <EyeOff size={18} />}</button>
               </div>
             </div>
             <div className="input-group">
               <label>Confirm Password</label>
               <div className="input-wrapper">
                 <Lock size={18} className="input-icon" />
-                <input type={showPass ? 'text' : 'password'} placeholder="Repeat new password" value={confirmPass} onChange={(e) => setConfirmPass(e.target.value)} />
+                <input type={showPass ? 'text' : 'password'} placeholder="Repeat new password" value={confirmPass} onChange={(e) => setConfirmPass(e.target.value)} autoComplete="new-password" />
               </div>
             </div>
-            <button className="auth-btn login" onClick={handleReset} disabled={loading || !token}>
+            <button type="submit" className="auth-btn login" disabled={loading || !token}>
               {loading ? 'Updating...' : 'Set New Password'} <CheckCircle size={18} />
             </button>
-          </>
+          </form>
         )}
       </div>
     </div>

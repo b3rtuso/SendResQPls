@@ -1,9 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, AlertTriangle, Camera, Loader, WifiOff, Clock, CheckCircle2, RotateCcw, MapPin, ArrowRight, ShieldCheck } from 'lucide-react';
+import {
+  ChevronLeft, AlertTriangle, Camera, Loader, WifiOff, Clock,
+  CheckCircle2, RotateCcw, MapPin, ArrowRight, ShieldCheck, Zap,
+  MessageSquare, ChevronDown
+} from 'lucide-react';
 import { reportIncident } from '../../api/client';
-import { isWithinBalayan, getNearestBarangay } from '../../data/balayan-data';
+import { isWithinBalayan, getNearestBarangay, BARANGAYS } from '../../data/balayan-data';
 import { useNetworkStatus } from '../../utils/useNetworkStatus';
+import { compressImage } from '../../utils/imageCompressor';
 import {
   enqueueReport,
   dequeueReport,
@@ -25,15 +30,31 @@ export default function MobileReport() {
 
   const [photo, setPhoto] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [compressing, setCompressing] = useState(false);
+  const [compressionStats, setCompressionStats] = useState<{ origKB: number; compKB: number; savings: number } | null>(null);
   const [sending, setSending] = useState(false);
   const [flushing, setFlushing] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
 
-  // Pre-flight review & success modal states
+  // Pre-flight review, fallback location & success modal states
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [detectedLocation, setDetectedLocation] = useState<{ lat: string; lng: string; barangay: string } | null>(null);
   const [resolvingLoc, setResolvingLoc] = useState(false);
+  const [showManualBarangayModal, setShowManualBarangayModal] = useState(false);
+  const [selectedManualBrgy, setSelectedManualBrgy] = useState(BARANGAYS[0]?.name || 'Poblacion 1');
   const [submittedIncident, setSubmittedIncident] = useState<any | null>(null);
+
+  // Emergency contacts from localStorage
+  const [emergencyContacts, setEmergencyContacts] = useState<any[]>([]);
+
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem('emergencyContacts') || '[]');
+      setEmergencyContacts(stored);
+    } catch {
+      setEmergencyContacts([]);
+    }
+  }, []);
 
   // Prune stale reports on mount and refresh pending count
   useEffect(() => {
@@ -90,11 +111,35 @@ export default function MobileReport() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOnline]);
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setPhoto(file);
-      setPreview(URL.createObjectURL(file));
+      setCompressing(true);
+      try {
+        // Automatically optimize high-res photo for fastest transmission
+        const { file: compressed, originalSize, compressedSize, savingsPercent } = await compressImage(file, {
+          maxWidth: 1600,
+          maxHeight: 1200,
+          quality: 0.82,
+        });
+
+        setPhoto(compressed);
+        setPreview(URL.createObjectURL(compressed));
+        if (savingsPercent > 10) {
+          setCompressionStats({
+            origKB: Math.round(originalSize / 1024),
+            compKB: Math.round(compressedSize / 1024),
+            savings: savingsPercent,
+          });
+        } else {
+          setCompressionStats(null);
+        }
+      } catch {
+        setPhoto(file);
+        setPreview(URL.createObjectURL(file));
+      } finally {
+        setCompressing(false);
+      }
     }
   };
 
@@ -105,10 +150,12 @@ export default function MobileReport() {
     }
 
     setResolvingLoc(true);
+
+    // Primary GPS resolution attempt (High Accuracy)
     try {
       const position = await new Promise<GeolocationPosition>((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, reject, {
-          timeout: 10000,
+          timeout: 8000,
           enableHighAccuracy: true,
         });
       });
@@ -124,11 +171,43 @@ export default function MobileReport() {
       const barangay = getNearestBarangay(parseFloat(lat), parseFloat(lng));
       setDetectedLocation({ lat, lng, barangay });
       setShowReviewModal(true);
+      setResolvingLoc(false);
+      return;
     } catch {
-      showToast({ type: 'error', priority: 'important', title: 'Location Required', message: 'Please enable GPS/location to submit a report. Reports are only accepted within Balayan, Batangas.' });
+      // Secondary GPS resolution attempt (Standard Network GPS Fallback)
+      try {
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            timeout: 5000,
+            enableHighAccuracy: false,
+          });
+        });
+        const lat = String(position.coords.latitude);
+        const lng = String(position.coords.longitude);
+
+        if (isWithinBalayan(parseFloat(lat), parseFloat(lng))) {
+          const barangay = getNearestBarangay(parseFloat(lat), parseFloat(lng));
+          setDetectedLocation({ lat, lng, barangay });
+          setShowReviewModal(true);
+          setResolvingLoc(false);
+          return;
+        }
+      } catch {
+        // Fallback: Indoor / GPS signal blocked -> prompt manual barangay confirmation
+        setShowManualBarangayModal(true);
+      }
     } finally {
       setResolvingLoc(false);
     }
+  };
+
+  const handleConfirmManualBarangay = () => {
+    setShowManualBarangayModal(false);
+    const targetBrgy = BARANGAYS.find(b => b.name === selectedManualBrgy) || BARANGAYS[0];
+    const lat = String(targetBrgy.lat);
+    const lng = String(targetBrgy.lng);
+    setDetectedLocation({ lat, lng, barangay: `${targetBrgy.name} (Manual)` });
+    setShowReviewModal(true);
   };
 
   const executeSubmit = async () => {
@@ -197,6 +276,14 @@ export default function MobileReport() {
     } finally {
       setSending(false);
     }
+  };
+
+  const handleShareSMS = () => {
+    if (!submittedIncident) return;
+    const phoneNumbers = emergencyContacts.map(c => c.phone).filter(Boolean).join(';');
+    const message = `EMERGENCY ALERT: I reported an incident at Barangay ${submittedIncident.barangay || 'Balayan'} via SendResQPls. MDRRMO is responding. Incident Ref: #${submittedIncident.id?.slice(0, 8)}.`;
+    const smsUrl = `sms:${phoneNumbers}?body=${encodeURIComponent(message)}`;
+    window.location.href = smsUrl;
   };
 
   return (
@@ -346,9 +433,15 @@ export default function MobileReport() {
             <div className="vf-corner vf-tr" />
             <div className="vf-corner vf-bl" />
             <div className="vf-corner vf-br" />
-            {!preview && <div className="vf-scan" />}
+            {!preview && !compressing && <div className="vf-scan" />}
 
-            {preview ? (
+            {compressing ? (
+              <div style={{ textAlign: 'center', padding: '36px 20px', zIndex: 1, color: 'white' }}>
+                <Loader size={32} className="spin" style={{ color: '#60A5FA', margin: '0 auto 12px' }} />
+                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>Optimizing Photo Clarity…</h3>
+                <p style={{ margin: '4px 0 0', fontSize: 12, color: '#94A3B8' }}>Compressing for instant emergency dispatch</p>
+              </div>
+            ) : preview ? (
               <img
                 src={preview}
                 alt="Captured emergency evidence"
@@ -374,8 +467,20 @@ export default function MobileReport() {
             )}
           </div>
 
+          {/* Photo actions & Optimization stats */}
           {preview && (
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+              {compressionStats ? (
+                <div style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 5,
+                  fontSize: 11.5, fontWeight: 700, color: '#16A34A',
+                  background: '#DCFCE7', padding: '4px 10px', borderRadius: 8,
+                }}>
+                  <Zap size={12} />
+                  <span>Optimized {compressionStats.origKB}KB → {compressionStats.compKB}KB ({compressionStats.savings}% faster)</span>
+                </div>
+              ) : <div />}
+
               <button
                 onClick={() => fileRef.current?.click()}
                 style={{
@@ -384,7 +489,7 @@ export default function MobileReport() {
                   cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
                 }}
               >
-                <RotateCcw size={13} /> Retake Photo
+                <RotateCcw size={13} /> Retake
               </button>
             </div>
           )}
@@ -425,7 +530,7 @@ export default function MobileReport() {
         {/* Submit Button */}
         <button
           onClick={handleOpenReview}
-          disabled={!photo || sending || flushing || resolvingLoc}
+          disabled={!photo || sending || flushing || resolvingLoc || compressing}
           style={{
             width: '100%',
             padding: '17px',
@@ -435,7 +540,7 @@ export default function MobileReport() {
             border: 'none',
             fontSize: 16,
             fontWeight: 800,
-            cursor: !photo || sending || flushing || resolvingLoc ? 'not-allowed' : 'pointer',
+            cursor: !photo || sending || flushing || resolvingLoc || compressing ? 'not-allowed' : 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -454,6 +559,97 @@ export default function MobileReport() {
           )}
         </button>
       </div>
+
+      {/* ── Manual Barangay Selection Modal (GPS Indoor Fallback) ── */}
+      {showManualBarangayModal && (
+        <>
+          <div
+            onClick={() => setShowManualBarangayModal(false)}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 10000,
+              background: 'rgba(15, 23, 42, 0.65)',
+              backdropFilter: 'blur(6px)',
+              WebkitBackdropFilter: 'blur(6px)',
+            }}
+          />
+          <div style={{
+            position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 10001,
+            background: 'white',
+            borderRadius: '24px 24px 0 0',
+            padding: '28px 24px 36px',
+            boxShadow: '0 -8px 40px rgba(0,0,0,0.22)',
+            animation: 'slideUp 0.28s cubic-bezier(0.16,1,0.3,1) both',
+          }}>
+            <div style={{ width: 40, height: 4, borderRadius: 4, background: '#E2E8F0', margin: '0 auto 20px' }} />
+
+            <div style={{ textAlign: 'center', marginBottom: 20 }}>
+              <div style={{
+                width: 48, height: 48, borderRadius: 16,
+                background: '#FEF3C7', border: '1px solid #FDE68A',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                margin: '0 auto 12px', color: '#D97706',
+              }}>
+                <MapPin size={24} />
+              </div>
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: '#0F172A' }}>
+                Select Your Barangay
+              </h3>
+              <p style={{ margin: '4px 0 0', fontSize: 13, color: '#64748B' }}>
+                GPS signal was slow indoors. Please confirm which Balayan barangay you are located in:
+              </p>
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#64748B', marginBottom: 6, textTransform: 'uppercase' }}>
+                Barangay in Balayan, Batangas
+              </label>
+              <div style={{ position: 'relative' }}>
+                <select
+                  value={selectedManualBrgy}
+                  onChange={e => setSelectedManualBrgy(e.target.value)}
+                  style={{
+                    width: '100%', padding: '14px 16px', borderRadius: 14,
+                    border: '1.5px solid #CBD5E1', background: '#F8FAFC',
+                    fontSize: 15, fontWeight: 600, color: '#0F172A',
+                    fontFamily: 'inherit', outline: 'none', appearance: 'none',
+                  }}
+                >
+                  {BARANGAYS.map(b => (
+                    <option key={b.name} value={b.name}>{b.name}</option>
+                  ))}
+                </select>
+                <ChevronDown size={18} color="#64748B" style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={() => setShowManualBarangayModal(false)}
+                style={{
+                  flex: 1, padding: '14px', borderRadius: 14,
+                  background: '#F1F5F9', border: '1.5px solid #E2E8F0',
+                  color: '#475569', fontSize: 14, fontWeight: 700, cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmManualBarangay}
+                style={{
+                  flex: 2, padding: '14px', borderRadius: 14,
+                  background: '#2563EB', color: 'white', border: 'none',
+                  fontSize: 14, fontWeight: 800, cursor: 'pointer',
+                  boxShadow: '0 4px 16px rgba(37,99,235,0.3)',
+                  fontFamily: 'inherit',
+                }}
+              >
+                Continue to Review
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* ── Pre-flight Review & Submit Modal ── */}
       {showReviewModal && detectedLocation && (
@@ -592,6 +788,22 @@ export default function MobileReport() {
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {/* Optional SMS trigger if emergency contacts exist */}
+              {emergencyContacts.length > 0 && (
+                <button
+                  onClick={handleShareSMS}
+                  style={{
+                    width: '100%', padding: '13px', borderRadius: 14,
+                    background: '#FEF3C7', border: '1.5px solid #FDE68A',
+                    color: '#92400E', fontSize: 14, fontWeight: 800, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  <MessageSquare size={16} color="#D97706" /> Notify {emergencyContacts.length} Emergency Contact{emergencyContacts.length > 1 ? 's' : ''} (SMS)
+                </button>
+              )}
+
               <button
                 onClick={() => navigate('/mobile/history')}
                 style={{

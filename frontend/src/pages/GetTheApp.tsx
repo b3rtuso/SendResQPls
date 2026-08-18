@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
    Zero border-radius. Zero gradient. Zero shadow. Zero em-dashes.
 ─────────────────────────────────────────────────────────────────────────── */
 
-const APK_DOWNLOAD_URL = 'https://github.com/b3rtuso/SendResQPls/releases/download/v1.0.0/SendResQPls.apk';
+const APK_DOWNLOAD_URL = 'https://github.com/b3rtuso/SendResQPls/releases/latest/download/SendResQPls.apk';
 
 export default function GetTheApp() {
   const navigate = useNavigate();

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { login as apiLogin } from '../api/client';
-import { Lock, Eye, EyeOff, AlertTriangle, ShieldCheck, Clock } from 'lucide-react';
+import { Lock, Eye, EyeOff, AlertTriangle, Clock } from 'lucide-react';
 
 export default function AdminLogin() {
   const navigate = useNavigate();
@@ -204,23 +204,6 @@ export default function AdminLogin() {
         @keyframes alspin {
           to { transform: rotate(360deg); }
         }
-
-        .al-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          background: #EFF6FF;
-          color: #2563EB;
-          border: 1px solid #DBEAFE;
-          padding: 5px 12px;
-          border-radius: 999px;
-          font-size: 11.5px;
-          font-weight: 700;
-          letter-spacing: 0.03em;
-          text-transform: uppercase;
-          margin-bottom: 14px;
-          align-self: flex-start;
-        }
       `}</style>
 
       <div className="al-container">
@@ -289,11 +272,6 @@ export default function AdminLogin() {
         {/* ── Right Column: Admin Login Form ── */}
         <div className="al-form-section">
           <form onSubmit={handleLogin} noValidate>
-            <div className="al-badge">
-              <ShieldCheck size={14} />
-              Authorized Personnel Only
-            </div>
-
             <h2
               style={{
                 fontSize: 'clamp(20px, 2vw, 26px)',

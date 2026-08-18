@@ -330,7 +330,7 @@ export default function LandingPage() {
           display: block;
         }
 
-        /* ─── TICKER (Infinite Seamless Loop) ─── */
+        /* ─── TICKER ─── */
         .lp-ticker {
           border-bottom: 1px solid var(--divider);
           overflow: hidden;
@@ -338,23 +338,31 @@ export default function LandingPage() {
           display: flex;
           align-items: center;
           position: relative;
-          background: #08111D;
           user-select: none;
+          mask-image: linear-gradient(to right, transparent 0%, black 40px, black calc(100% - 40px), transparent 100%);
+          -webkit-mask-image: linear-gradient(to right, transparent 0%, black 40px, black calc(100% - 40px), transparent 100%);
         }
         .lp-ticker-track {
-          display: inline-flex;
-          align-items: center;
+          display: flex;
+          width: max-content;
           flex-shrink: 0;
-          white-space: nowrap;
-          animation: tickerLoop 24s linear infinite;
+          animation: ticker 35s linear infinite;
           will-change: transform;
         }
-        @keyframes tickerLoop {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-100%); }
+        .lp-ticker:hover .lp-ticker-track {
+          animation-play-state: paused;
+        }
+        @keyframes ticker {
+          0% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(-50%, 0, 0); }
         }
         @media (prefers-reduced-motion: reduce) {
           .lp-ticker-track { animation: none; }
+        }
+        .lp-ticker-group {
+          display: flex;
+          align-items: center;
+          flex-shrink: 0;
         }
         .lp-ticker-item {
           font-size: 11px;
@@ -363,6 +371,7 @@ export default function LandingPage() {
           text-transform: uppercase;
           color: var(--text-muted);
           padding: 0 clamp(16px, 2.5vw, 36px);
+          white-space: nowrap;
         }
         .lp-ticker-dot {
           color: var(--yellow);
@@ -692,38 +701,27 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ─── TICKER (Infinite Seamless Loop) ─── */}
+        {/* ─── TICKER ─── */}
         <div className="lp-ticker" aria-hidden="true">
           <div className="lp-ticker-track">
-            {[0, 1, 2].map(n => (
-              <span key={n} style={{ display: 'inline-flex', alignItems: 'center' }}>
-                <span className="lp-ticker-item">Report</span>
-                <span className="lp-ticker-item lp-ticker-dot">·</span>
-                <span className="lp-ticker-item">Dispatch</span>
-                <span className="lp-ticker-item lp-ticker-dot">·</span>
-                <span className="lp-ticker-item">Respond</span>
-                <span className="lp-ticker-item lp-ticker-dot">·</span>
-                <span className="lp-ticker-item">Protect</span>
-                <span className="lp-ticker-item lp-ticker-dot">·</span>
-                <span className="lp-ticker-item">MDRRMO Balayan</span>
-                <span className="lp-ticker-item lp-ticker-dot">·</span>
-              </span>
-            ))}
-          </div>
-          <div className="lp-ticker-track" aria-hidden="true">
-            {[0, 1, 2].map(n => (
-              <span key={n} style={{ display: 'inline-flex', alignItems: 'center' }}>
-                <span className="lp-ticker-item">Report</span>
-                <span className="lp-ticker-item lp-ticker-dot">·</span>
-                <span className="lp-ticker-item">Dispatch</span>
-                <span className="lp-ticker-item lp-ticker-dot">·</span>
-                <span className="lp-ticker-item">Respond</span>
-                <span className="lp-ticker-item lp-ticker-dot">·</span>
-                <span className="lp-ticker-item">Protect</span>
-                <span className="lp-ticker-item lp-ticker-dot">·</span>
-                <span className="lp-ticker-item">MDRRMO Balayan</span>
-                <span className="lp-ticker-item lp-ticker-dot">·</span>
-              </span>
+            {/* Two identical groups for seamless -50% translation */}
+            {[0, 1].map(groupIdx => (
+              <div key={groupIdx} className="lp-ticker-group">
+                {[0, 1, 2, 3].map(seqIdx => (
+                  <span key={seqIdx} style={{ display: 'inline-flex', alignItems: 'center' }}>
+                    <span className="lp-ticker-item">Report</span>
+                    <span className="lp-ticker-item lp-ticker-dot">·</span>
+                    <span className="lp-ticker-item">Dispatch</span>
+                    <span className="lp-ticker-item lp-ticker-dot">·</span>
+                    <span className="lp-ticker-item">Respond</span>
+                    <span className="lp-ticker-item lp-ticker-dot">·</span>
+                    <span className="lp-ticker-item">Protect</span>
+                    <span className="lp-ticker-item lp-ticker-dot">·</span>
+                    <span className="lp-ticker-item">MDRRMO Balayan</span>
+                    <span className="lp-ticker-item lp-ticker-dot">·</span>
+                  </span>
+                ))}
+              </div>
             ))}
           </div>
         </div>

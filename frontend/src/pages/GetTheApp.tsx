@@ -487,7 +487,7 @@ export default function GetTheApp() {
         {/* ─── FOOTER ─── */}
         <footer className="gta-footer">
           <span className="gta-footer-copy">
-            &copy; 2025 MDRRMO Balayan, Batangas
+            &copy; 2026 MDRRMO Balayan, Batangas
           </span>
           <div className="gta-nav-shapes" aria-hidden="true">
             <div className="gta-shape-circle" />

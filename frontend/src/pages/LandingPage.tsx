@@ -19,6 +19,13 @@ export default function LandingPage() {
   const [step3Visible, setStep3Visible] = useState(false);
   const [accessVisible, setAccessVisible] = useState(false);
 
+  const scrollToAccess = () => {
+    const el = document.getElementById('access-section');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   useEffect(() => {
     // Trigger hero entrance after mount
     const t = setTimeout(() => setHeroVisible(true), 80);
@@ -216,7 +223,7 @@ export default function LandingPage() {
         .lp-hero-ctas {
           display: flex;
           align-items: center;
-          gap: 0;
+          gap: 16px;
           margin-top: clamp(24px, 3vw, 36px);
           opacity: 0;
           transform: translateY(20px);
@@ -226,12 +233,6 @@ export default function LandingPage() {
         .lp-hero-ctas.visible {
           opacity: 1;
           transform: translateY(0);
-        }
-        .lp-cta-divider {
-          width: 1px;
-          height: 48px;
-          background: var(--divider);
-          flex-shrink: 0;
         }
 
         /* ─── BUTTONS ─── */
@@ -673,16 +674,15 @@ export default function LandingPage() {
             <div className={`lp-hero-ctas ${heroVisible ? 'visible' : ''}`}>
               <button
                 className="btn-primary"
-                onClick={() => navigate('/get-the-app')}
-                aria-label="Get the SendResQPls mobile app"
+                onClick={scrollToAccess}
+                aria-label="Scroll to get the app section"
               >
                 Get the App
               </button>
-              <div className="lp-cta-divider" aria-hidden="true" />
               <button
                 className="btn-outline"
-                onClick={() => navigate('/admin/login')}
-                aria-label="Go to MDRRMO admin portal"
+                onClick={scrollToAccess}
+                aria-label="Scroll to admin portal section"
               >
                 Admin Portal
               </button>
@@ -813,7 +813,7 @@ export default function LandingPage() {
         {/* ─── FOOTER ─── */}
         <footer className="lp-footer">
           <span className="lp-footer-copy">
-            &copy; 2025 MDRRMO Balayan, Batangas
+            &copy; 2026 MDRRMO Balayan, Batangas
           </span>
           <div className="lp-footer-shapes" aria-hidden="true">
             <div className="lp-shape-circle" />

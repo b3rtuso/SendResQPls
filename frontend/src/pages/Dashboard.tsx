@@ -6,7 +6,7 @@ import {
   AlertTriangle, RefreshCw, ArrowRight, Phone, Flame,
   Stethoscope, HardHat, Anchor, ShieldCheck, Clock,
   TrendingUp, TrendingDown, Minus, Calculator, X, ExternalLink,
-  Info, Sparkles,
+  Info,
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
 import type { Incident, Status } from '../types';
@@ -265,50 +265,59 @@ export default function Dashboard() {
 
   // Dynamic Computation Analysis for 'See detail' modal & Donut Chart
   const computationAnalysis = useMemo(() => {
-    const total = incidents.length;
     const currentMonthShort = new Date().toLocaleDateString('en-PH', { month: 'short' });
     const currentMonthLong = new Date().toLocaleDateString('en-PH', { month: 'long' });
     const currentMonthIdx = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
 
-    const categoryMap: Record<string, { count: number; active: number; resolved: number }> = {};
-    incidents.forEach(inc => {
-      const type = normalizeIncidentType(inc.aiDetectedType);
-      if (!categoryMap[type]) {
-        categoryMap[type] = { count: 0, active: 0, resolved: 0 };
-      }
-      categoryMap[type].count += 1;
-      if (inc.status === 'RESOLVED') {
-        categoryMap[type].resolved += 1;
-      } else {
-        categoryMap[type].active += 1;
-      }
+    // 1. MDRRMO Historical Records for Current Month (2024 & 2025)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const hist2024: any = monthlyByType2024.find(m => m.month.toLowerCase() === currentMonthShort.toLowerCase()) || { month: currentMonthShort, Medical: 19, Trauma: 29 };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const hist2025: any = monthlyByType2025.find(m => m.month.toLowerCase() === currentMonthShort.toLowerCase()) || { month: currentMonthShort, Medical: 14, Trauma: 20 };
+    const hist2024Total = (hist2024.Medical || 0) + (hist2024.Trauma || 0) + (hist2024.Accident || 0) + (hist2024.Fire || 0) + (hist2024.Crime || 0);
+    const hist2025Total = (hist2025.Medical || 0) + (hist2025.Trauma || 0) + (hist2025.Accident || 0) + (hist2025.Fire || 0) + (hist2025.Crime || 0);
+
+    // Projected Monthly Volume (Average of 2024 & 2025)
+    const forecast = monthlyDetails.find(m => m.month.toLowerCase() === currentMonthShort.toLowerCase()) || monthlyDetails[currentMonthIdx];
+    const predictedCount = Math.round((hist2024Total + hist2025Total) / 2) || 41;
+
+    // Projected Categories
+    const avgMedical = Math.round(((hist2024.Medical || 0) + (hist2025.Medical || 0)) / 2);
+    const avgTrauma = Math.round(((hist2024.Trauma || 0) + (hist2025.Trauma || 0)) / 2);
+    const avgAccident = Math.round(((hist2024.Accident || 0) + (hist2025.Accident || 0)) / 2);
+    const avgCrime = Math.round(((hist2024.Crime || 0) + (hist2025.Crime || 0)) / 2);
+    const avgFire = Math.round(((hist2024.Fire || 0) + (hist2025.Fire || 0)) / 2);
+
+    const projectedCategories = [
+      { name: 'Trauma', count: avgTrauma, percentage: ((avgTrauma / predictedCount) * 100).toFixed(1), dept: 'Medical EMS / Trauma Unit', emoji: '🩹', color: '#F59E0B' },
+      { name: 'Medical', count: avgMedical, percentage: ((avgMedical / predictedCount) * 100).toFixed(1), dept: 'EMS / Health Services', emoji: '🏥', color: '#22C55E' },
+      ...(avgAccident > 0 ? [{ name: 'Accident', count: avgAccident, percentage: ((avgAccident / predictedCount) * 100).toFixed(1), dept: 'Traffic / PNP', emoji: '🚗', color: '#3B82F6' }] : []),
+      ...(avgCrime > 0 ? [{ name: 'Crime', count: avgCrime, percentage: ((avgCrime / predictedCount) * 100).toFixed(1), dept: 'PNP Police', emoji: '🚨', color: '#8B5CF6' }] : []),
+      ...(avgFire > 0 ? [{ name: 'Fire', count: avgFire, percentage: ((avgFire / predictedCount) * 100).toFixed(1), dept: 'BFP Fire Protection', emoji: '🔥', color: '#EF4444' }] : []),
+    ].sort((a, b) => b.count - a.count);
+
+    // 2. Current Month Live Incidents Logged to Date in Database
+    const currentMonthLiveIncidents = incidents.filter(inc => {
+      const d = new Date(inc.createdAt);
+      return d.getMonth() === currentMonthIdx && d.getFullYear() === currentYear;
     });
 
-    const categories = Object.entries(categoryMap)
-      .map(([name, data]) => ({
-        name,
-        count: data.count,
-        active: data.active,
-        resolved: data.resolved,
-        percentage: total > 0 ? ((data.count / total) * 100).toFixed(1) : '0.0',
-        dept: name === 'Fire' ? 'BFP Fire' : name === 'Crime' ? 'PNP Police' : name === 'Medical' || name === 'Trauma' ? 'Medical EMS' : name === 'Flood' ? 'MDRRMO Rescue' : 'Engineering',
-      }))
-      .sort((a, b) => b.count - a.count);
-
-    const forecast = monthlyDetails.find(m => m.month.toLowerCase() === currentMonthShort.toLowerCase()) || monthlyDetails[currentMonthIdx];
-    const topHazard = categories[0]?.name || forecast?.type || 'Medical';
-    const topHazardCount = categories[0]?.count || 0;
-    const topHazardShare = categories[0]?.percentage || '0.0';
+    // 3. All-Time Database Incidents
+    const allTimeTotal = incidents.length;
 
     return {
-      total,
       currentMonthLong,
       currentMonthShort,
-      categories,
+      hist2024,
+      hist2025,
+      hist2024Total,
+      hist2025Total,
+      predictedCount,
+      projectedCategories,
       forecast,
-      topHazard,
-      topHazardCount,
-      topHazardShare,
+      currentMonthLiveIncidents,
+      allTimeTotal,
     };
   }, [incidents]);
 
@@ -945,7 +954,7 @@ export default function Dashboard() {
 
       </div>
 
-      {/* ── Dynamic Incident Computation & Breakdown Modal ── */}
+      {/* ── MDRRMO Predictive Computation & Historical Breakdown Modal ── */}
       {showComputationModal && (
         <div style={{
           position: 'fixed',
@@ -963,7 +972,7 @@ export default function Dashboard() {
             background: '#FFFFFF',
             borderRadius: 24,
             width: '100%',
-            maxWidth: 680,
+            maxWidth: 720,
             maxHeight: '90vh',
             display: 'flex',
             flexDirection: 'column',
@@ -996,10 +1005,10 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#0F172A' }}>
-                    Incident Distribution & Risk Computation
+                    {computationAnalysis.currentMonthLong} Risk Forecast Computation
                   </h3>
                   <p style={{ margin: '2px 0 0', fontSize: 12, color: '#64748B' }}>
-                    Mathematical breakdown of {computationAnalysis.total} total reports for {computationAnalysis.currentMonthLong}
+                    Derived from 1,260 official MDRRMO Balayan historical incident records (2023–2025)
                   </p>
                 </div>
               </div>
@@ -1027,7 +1036,7 @@ export default function Dashboard() {
             {/* Modal Body (Scrollable) */}
             <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
 
-              {/* Total Reports Equation Card */}
+              {/* Total Forecast Projection Formula Card */}
               <div style={{
                 background: 'linear-gradient(135deg, #0F2942 0%, #1E3A5F 100%)',
                 color: 'white',
@@ -1039,10 +1048,10 @@ export default function Dashboard() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
                   <div>
                     <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#93C5FD', fontWeight: 700 }}>
-                      Active Incident Pool (N)
+                      MDRRMO Projected Monthly Baseline
                     </div>
                     <div style={{ fontSize: 32, fontWeight: 900, marginTop: 4, letterSpacing: '-0.5px' }}>
-                      {computationAnalysis.total} <span style={{ fontSize: 15, fontWeight: 600, color: 'rgba(255,255,255,0.7)' }}>Total Logged Reports</span>
+                      ~{computationAnalysis.predictedCount} <span style={{ fontSize: 15, fontWeight: 600, color: 'rgba(255,255,255,0.7)' }}>Projected Incidents for {computationAnalysis.currentMonthLong}</span>
                     </div>
                   </div>
 
@@ -1053,103 +1062,113 @@ export default function Dashboard() {
                     padding: '8px 14px',
                     textAlign: 'right',
                   }}>
-                    <div style={{ fontSize: 11, color: '#FCD34D', fontWeight: 700 }}>Top Hazard Risk</div>
+                    <div style={{ fontSize: 11, color: '#FCD34D', fontWeight: 700 }}>Peak Risk Category</div>
                     <div style={{ fontSize: 15, fontWeight: 800, color: 'white' }}>
-                      {computationAnalysis.topHazard} ({computationAnalysis.topHazardShare}%)
+                      {computationAnalysis.forecast?.type || 'Trauma'} Emergency
                     </div>
                   </div>
                 </div>
 
+                {/* Mathematical Equation Pill Grid */}
                 <div style={{
-                  marginTop: 14,
-                  paddingTop: 12,
-                  borderTop: '1px solid rgba(255,255,255,0.15)',
-                  fontSize: 12,
-                  color: 'rgba(255,255,255,0.8)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                  gap: 10,
+                  marginTop: 16,
                 }}>
-                  <Sparkles size={14} color="#93C5FD" />
-                  <span>
-                    Formula: <strong>Category Share P(H) = (Category Count / {computationAnalysis.total}) × 100%</strong>
-                  </span>
+                  <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: 10, padding: '10px 12px', border: '1px solid rgba(255,255,255,0.12)' }}>
+                    <div style={{ fontSize: 10.5, color: '#93C5FD', fontWeight: 700 }}>📅 {computationAnalysis.currentMonthLong} 2024 Actual</div>
+                    <div style={{ fontSize: 16, fontWeight: 800, marginTop: 2 }}>{computationAnalysis.hist2024Total} incidents</div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>{computationAnalysis.hist2024.Medical || 0} Med · {computationAnalysis.hist2024.Trauma || 0} Trauma</div>
+                  </div>
+
+                  <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: 10, padding: '10px 12px', border: '1px solid rgba(255,255,255,0.12)' }}>
+                    <div style={{ fontSize: 10.5, color: '#93C5FD', fontWeight: 700 }}>📅 {computationAnalysis.currentMonthLong} 2025 Actual</div>
+                    <div style={{ fontSize: 16, fontWeight: 800, marginTop: 2 }}>{computationAnalysis.hist2025Total} incidents</div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>{computationAnalysis.hist2025.Medical || 0} Med · {computationAnalysis.hist2025.Trauma || 0} Trauma</div>
+                  </div>
+
+                  <div style={{ background: 'rgba(37,99,235,0.25)', borderRadius: 10, padding: '10px 12px', border: '1px solid rgba(147,197,253,0.3)' }}>
+                    <div style={{ fontSize: 10.5, color: '#FCD34D', fontWeight: 700 }}>🎯 {computationAnalysis.currentMonthLong} 2026 Forecast</div>
+                    <div style={{ fontSize: 16, fontWeight: 800, marginTop: 2 }}>{computationAnalysis.predictedCount} projected</div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>Formula: ({computationAnalysis.hist2024Total} + {computationAnalysis.hist2025Total}) / 2</div>
+                  </div>
                 </div>
               </div>
 
-              {/* Category Breakdown List */}
-              <h4 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 700, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Hazard Category Distribution ({computationAnalysis.categories.length} Categories)
+              {/* Historical Category Distribution */}
+              <h4 style={{ margin: '0 0 12px', fontSize: 13.5, fontWeight: 700, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Historical Risk Distribution for {computationAnalysis.currentMonthLong}
               </h4>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
-                {computationAnalysis.categories.map(cat => {
-                  const info = TYPE_ICON[cat.name] || { emoji: '⚠️', color: '#2563EB' };
-                  return (
-                    <div
-                      key={cat.name}
-                      style={{
-                        background: '#F8FAFC',
-                        borderRadius: 14,
-                        padding: '12px 16px',
-                        border: '1px solid #E2E8F0',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: 12,
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 140 }}>
-                        <span style={{ fontSize: 20 }}>{info.emoji}</span>
-                        <div>
-                          <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>{cat.name}</div>
-                          <div style={{ fontSize: 11, color: '#64748B' }}>Unit: {cat.dept}</div>
-                        </div>
+                {computationAnalysis.projectedCategories.map(cat => (
+                  <div
+                    key={cat.name}
+                    style={{
+                      background: '#F8FAFC',
+                      borderRadius: 14,
+                      padding: '12px 16px',
+                      border: '1px solid #E2E8F0',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 12,
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 160 }}>
+                      <span style={{ fontSize: 20 }}>{cat.emoji}</span>
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>{cat.name} Emergency</div>
+                        <div style={{ fontSize: 11, color: '#64748B' }}>Primary Unit: {cat.dept}</div>
                       </div>
-
-                      {/* Progress bar */}
-                      <div style={{ flex: 1, margin: '0 12px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, fontWeight: 600, color: '#475569', marginBottom: 4 }}>
-                          <span>{cat.count} of {computationAnalysis.total} reports</span>
-                          <span>{cat.percentage}%</span>
-                        </div>
-                        <div style={{ height: 6, background: '#E2E8F0', borderRadius: 3, overflow: 'hidden' }}>
-                          <div style={{
-                            width: `${cat.percentage}%`,
-                            height: '100%',
-                            background: info.color,
-                            borderRadius: 3,
-                            transition: 'width 0.3s ease',
-                          }} />
-                        </div>
-                      </div>
-
-                      {/* Filter link */}
-                      <button
-                        onClick={() => {
-                          setShowComputationModal(false);
-                          navigate(`/requests?type=${cat.name}`);
-                        }}
-                        style={{
-                          background: '#FFFFFF',
-                          border: '1px solid #CBD5E1',
-                          borderRadius: 8,
-                          padding: '6px 10px',
-                          fontSize: 11.5,
-                          fontWeight: 700,
-                          color: '#2563EB',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 4,
-                          flexShrink: 0,
-                        }}
-                      >
-                        View Reports <ArrowRight size={12} />
-                      </button>
                     </div>
-                  );
-                })}
+
+                    {/* Progress bar */}
+                    <div style={{ flex: 1, margin: '0 12px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, fontWeight: 600, color: '#475569', marginBottom: 4 }}>
+                        <span>~{cat.count} of {computationAnalysis.predictedCount} projected</span>
+                        <span>{cat.percentage}% share</span>
+                      </div>
+                      <div style={{ height: 6, background: '#E2E8F0', borderRadius: 3, overflow: 'hidden' }}>
+                        <div style={{
+                          width: `${cat.percentage}%`,
+                          height: '100%',
+                          background: cat.color,
+                          borderRadius: 3,
+                          transition: 'width 0.3s ease',
+                        }} />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Live 2026 Actual Tracking Card */}
+              <div style={{
+                background: '#F8FAFC',
+                border: '1px solid #E2E8F0',
+                borderRadius: 14,
+                padding: '14px 18px',
+                marginBottom: 16,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: 12,
+              }}>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Live {computationAnalysis.currentMonthLong} 2026 Tracking to Date
+                  </div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: '#0F172A', marginTop: 2 }}>
+                    {computationAnalysis.currentMonthLiveIncidents.length} live report{computationAnalysis.currentMonthLiveIncidents.length !== 1 ? 's' : ''} logged this {computationAnalysis.currentMonthLong}
+                  </div>
+                </div>
+
+                <div style={{ fontSize: 12, color: '#64748B' }}>
+                  Total All-Time DB Pool: <strong>{computationAnalysis.allTimeTotal} reports</strong>
+                </div>
               </div>
 
               {/* Monthly Forecast Rationale */}
@@ -1165,10 +1184,10 @@ export default function Dashboard() {
                 <Info size={20} color="#16A34A" style={{ flexShrink: 0, marginTop: 2 }} />
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 800, color: '#15803D' }}>
-                    {computationAnalysis.currentMonthLong} Forecast Methodology
+                    MDRRMO Risk Rationale ({computationAnalysis.currentMonthLong})
                   </div>
                   <div style={{ fontSize: 12.5, color: '#166534', lineHeight: 1.5, marginTop: 3 }}>
-                    Calculated by combining historical MDRRMO disaster records with live seasonal weather indicators. {computationAnalysis.forecast?.desc || 'Trauma and Medical emergencies remain the highest volume.'}
+                    {computationAnalysis.forecast?.desc || 'Historical incident records indicate peak trauma volume due to wet road conditions and monsoon rainfall.'}
                   </div>
                 </div>
               </div>

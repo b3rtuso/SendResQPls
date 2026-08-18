@@ -13,11 +13,14 @@ export default function AdminLogin() {
   const [error, setError] = useState('');
   const [sessionExpired, setSessionExpired] = useState(false);
   const [focusField, setFocusField] = useState<'email' | 'pass' | null>(null);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    const t = setTimeout(() => setMounted(true), 40);
     if (new URLSearchParams(location.search).get('expired') === '1') {
       setSessionExpired(true);
     }
+    return () => clearTimeout(t);
   }, [location.search]);
 
   const handleLogin = async (e?: React.FormEvent) => {
@@ -75,42 +78,9 @@ export default function AdminLogin() {
       <style>{`
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        @keyframes alEntrance {
-          0% {
-            opacity: 0;
-            transform: translateY(28px) scale(0.98);
-          }
-          100% {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-        }
-
-        @keyframes alFadeSlideLeft {
-          0% {
-            opacity: 0;
-            transform: translateX(-20px);
-          }
-          100% {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-
-        @keyframes alFadeSlideUp {
-          0% {
-            opacity: 0;
-            transform: translateY(16px);
-          }
-          100% {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
         @keyframes alOrbPulse {
-          0%, 100% { transform: scale(1) translate(0, 0); opacity: 0.15; }
-          50% { transform: scale(1.12) translate(8px, -6px); opacity: 0.28; }
+          0%, 100% { transform: scale(1) translate(0, 0); opacity: 0.18; }
+          50% { transform: scale(1.15) translate(8px, -6px); opacity: 0.32; }
         }
 
         .al-page-wrapper {
@@ -134,8 +104,14 @@ export default function AdminLogin() {
           box-shadow: 0 20px 60px rgba(15, 23, 42, 0.09), 0 1px 3px rgba(0, 0, 0, 0.04);
           display: flex;
           flex-direction: column;
-          animation: alEntrance 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          opacity: 0;
+          transform: translateY(32px) scale(0.97);
+          transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1), transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
           will-change: transform, opacity;
+        }
+        .al-container.mounted {
+          opacity: 1;
+          transform: translateY(0) scale(1);
         }
 
         /* ─── Desktop Large Screen Layout (≥ 920px) ─── */
@@ -189,7 +165,14 @@ export default function AdminLogin() {
         .al-showcase-inner {
           position: relative;
           z-index: 1;
-          animation: alFadeSlideLeft 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+          opacity: 0;
+          transform: translateX(-24px);
+          transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.08s, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.08s;
+          will-change: transform, opacity;
+        }
+        .al-showcase-inner.mounted {
+          opacity: 1;
+          transform: translateX(0);
         }
 
         @media (max-width: 919px) {
@@ -209,14 +192,14 @@ export default function AdminLogin() {
         }
 
         .al-form-content {
-          animation: alFadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.18s both;
+          opacity: 0;
+          transform: translateY(20px);
+          transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s;
+          will-change: transform, opacity;
         }
-
-        @media (prefers-reduced-motion: reduce) {
-          .al-container, .al-showcase-inner, .al-form-content, .al-showcase::after, .al-showcase::before {
-            animation: none !important;
-            transform: none !important;
-          }
+        .al-form-content.mounted {
+          opacity: 1;
+          transform: translateY(0);
         }
 
         .al-auth-btn {
@@ -265,10 +248,10 @@ export default function AdminLogin() {
         }
       `}</style>
 
-      <div className="al-container">
+      <div className={`al-container ${mounted ? 'mounted' : ''}`}>
         {/* ── Left Column: Brand & Command Center Showcase ── */}
         <div className="al-showcase">
-          <div className="al-showcase-inner">
+          <div className={`al-showcase-inner ${mounted ? 'mounted' : ''}`}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
               <img
                 src="/logo.jpg"
@@ -330,7 +313,7 @@ export default function AdminLogin() {
 
         {/* ── Right Column: Admin Login Form ── */}
         <div className="al-form-section">
-          <form className="al-form-content" onSubmit={handleLogin} noValidate>
+          <form className={`al-form-content ${mounted ? 'mounted' : ''}`} onSubmit={handleLogin} noValidate>
             <h2
               style={{
                 fontSize: 'clamp(20px, 2vw, 26px)',

@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { login as apiLogin } from '../api/client';
+import { Lock, Eye, EyeOff, Download, AlertTriangle, X } from 'lucide-react';
 
 /* ─── Bauhaus Geometric Design System ───────────────────────────────────────
    DESIGN_VARIANCE: 8 | MOTION_INTENSITY: 6 | VISUAL_DENSITY: 4
@@ -10,6 +12,8 @@ import { useNavigate } from 'react-router-dom';
    All motion: CSS transform/opacity only, honors prefers-reduced-motion.
 ─────────────────────────────────────────────────────────────────────────── */
 
+const APK_URL = 'https://github.com/b3rtuso/SendResQPls/releases/latest/download/SendResQPls.apk';
+
 export default function LandingPage() {
   const navigate = useNavigate();
   const heroRef = useRef<HTMLDivElement>(null);
@@ -19,10 +23,56 @@ export default function LandingPage() {
   const [step3Visible, setStep3Visible] = useState(false);
   const [accessVisible, setAccessVisible] = useState(false);
 
-  const scrollToAccess = () => {
-    const el = document.getElementById('access-section');
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // Modal Popups State
+  const [activeModal, setActiveModal] = useState<'app' | 'admin' | null>(null);
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [showAdminPass, setShowAdminPass] = useState(false);
+  const [adminLoading, setAdminLoading] = useState(false);
+  const [adminError, setAdminError] = useState('');
+
+  // Close modal on Escape key & lock scroll when open
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setActiveModal(null);
+    };
+    if (activeModal) {
+      document.body.style.overflow = 'hidden';
+      window.addEventListener('keydown', handleKeyDown);
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [activeModal]);
+
+  const handleAdminLoginModal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!adminEmail.trim() || !adminPassword) {
+      setAdminError('Please enter your email and password.');
+      return;
+    }
+    setAdminLoading(true);
+    setAdminError('');
+    try {
+      const res = await apiLogin(adminEmail.trim(), adminPassword);
+      const { token, role, user } = res.data;
+      if (role !== 'ADMIN') {
+        setAdminError('Access denied. This portal is for MDRRMO administrators only.');
+        return;
+      }
+      localStorage.setItem('token', token);
+      localStorage.setItem('userId', user?.id || '');
+      localStorage.setItem('userName', user?.name || 'Admin');
+      localStorage.setItem('userEmail', user?.email || '');
+      localStorage.setItem('userRole', role);
+      navigate('/dashboard');
+    } catch (err: any) {
+      setAdminError(err.response?.data?.error || 'Incorrect credentials. Please try again.');
+    } finally {
+      setAdminLoading(false);
     }
   };
 
@@ -626,18 +676,75 @@ export default function LandingPage() {
           }
         }
 
-        @media (max-width: 420px) {
-          .lp-nav-shapes {
-            display: none;
-          }
-          .lp-hero-headline {
-            font-size: 32px;
-          }
-          .lp-hero-circle {
-            width: 44px;
-            height: 44px;
-            margin-bottom: 14px;
-          }
+        /* ─── MODAL POPUPS ─── */
+        .lp-modal-backdrop {
+          position: fixed;
+          inset: 0;
+          background: rgba(7, 17, 29, 0.88);
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+          z-index: 1000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 20px;
+        }
+        .lp-modal-card {
+          background: #0F2035;
+          border: 1.5px solid rgba(255, 255, 255, 0.18);
+          width: 100%;
+          max-width: 500px;
+          padding: clamp(24px, 4vw, 36px);
+          position: relative;
+          color: var(--white);
+          box-shadow: 0 24px 80px rgba(0, 0, 0, 0.7);
+          animation: lpModalPop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          font-family: var(--font);
+        }
+        @keyframes lpModalPop {
+          0% { opacity: 0; transform: scale(0.95) translateY(16px); }
+          100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .lp-modal-close-btn {
+          position: absolute;
+          top: 16px;
+          right: 16px;
+          width: 36px;
+          height: 36px;
+          background: transparent;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          color: var(--white);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: background 0.15s, border-color 0.15s;
+        }
+        .lp-modal-close-btn:hover {
+          background: rgba(255, 255, 255, 0.12);
+          border-color: rgba(255, 255, 255, 0.5);
+        }
+        .lp-modal-input-wrap {
+          display: flex;
+          align-items: center;
+          position: relative;
+          background: #07111D;
+          border: 1px solid rgba(255, 255, 255, 0.18);
+          transition: border-color 0.18s;
+          margin-bottom: 14px;
+        }
+        .lp-modal-input-wrap:focus-within {
+          border-color: var(--blue);
+        }
+        .lp-modal-input {
+          width: 100%;
+          background: transparent;
+          border: none;
+          outline: none;
+          color: var(--white);
+          font-family: inherit;
+          font-size: 14.5px;
+          padding: 14px 14px 14px 44px;
         }
       `}</style>
 
@@ -674,15 +781,15 @@ export default function LandingPage() {
             <div className={`lp-hero-ctas ${heroVisible ? 'visible' : ''}`}>
               <button
                 className="btn-primary"
-                onClick={scrollToAccess}
-                aria-label="Scroll to get the app section"
+                onClick={() => setActiveModal('app')}
+                aria-label="Open Get the App modal popup"
               >
                 Get the App
               </button>
               <button
                 className="btn-outline"
-                onClick={scrollToAccess}
-                aria-label="Scroll to admin portal section"
+                onClick={() => setActiveModal('admin')}
+                aria-label="Open Admin Portal modal popup"
               >
                 Admin Portal
               </button>
@@ -823,6 +930,202 @@ export default function LandingPage() {
         </footer>
 
       </div>
+
+      {/* ─── GET THE APP MODAL POPUP ─── */}
+      {activeModal === 'app' && (
+        <div
+          className="lp-modal-backdrop"
+          onClick={(e) => { if (e.target === e.currentTarget) setActiveModal(null); }}
+        >
+          <div className="lp-modal-card" role="dialog" aria-modal="true">
+            <button
+              className="lp-modal-close-btn"
+              onClick={() => setActiveModal(null)}
+              aria-label="Close modal"
+            >
+              <X size={18} />
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+              <div style={{ width: 12, height: 12, background: 'var(--blue)' }} />
+              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                Citizen Mobile App
+              </span>
+            </div>
+
+            <h2 style={{ fontSize: 26, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.02em', margin: '0 0 10px', color: 'var(--white)' }}>
+              Get SendResQPls
+            </h2>
+
+            <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.6, margin: '0 0 24px' }}>
+              Download the official emergency reporting app for Balayan, Batangas. Report fires, medical emergencies, trauma, and disasters directly to MDRRMO.
+            </p>
+
+            {/* Direct APK Download Link */}
+            <a
+              href={APK_URL}
+              className="btn-primary"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 10,
+                width: '100%',
+                padding: '16px',
+                fontSize: 15,
+                fontWeight: 800,
+                marginBottom: 20,
+              }}
+            >
+              <Download size={18} /> Download APK (Direct)
+            </a>
+
+            {/* Quick Steps */}
+            <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', padding: '16px', marginBottom: 20 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--yellow)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 10 }}>
+                Quick Installation Steps
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13, color: 'rgba(255,255,255,0.85)', lineHeight: 1.4 }}>
+                <div><strong>1.</strong> Download the SendResQPls APK above.</div>
+                <div><strong>2.</strong> Tap to open and allow "Install from unknown sources" if prompted.</div>
+                <div><strong>3.</strong> Open the app and log in or report an emergency immediately.</div>
+              </div>
+            </div>
+
+            <div style={{ textAlign: 'center' }}>
+              <button
+                type="button"
+                onClick={() => { setActiveModal(null); navigate('/get-the-app'); }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--blue)',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                }}
+              >
+                View Full Step-by-Step Guide
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── ADMIN LOGIN MODAL POPUP ─── */}
+      {activeModal === 'admin' && (
+        <div
+          className="lp-modal-backdrop"
+          onClick={(e) => { if (e.target === e.currentTarget) setActiveModal(null); }}
+        >
+          <div className="lp-modal-card" role="dialog" aria-modal="true">
+            <button
+              className="lp-modal-close-btn"
+              onClick={() => setActiveModal(null)}
+              aria-label="Close modal"
+            >
+              <X size={18} />
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+              <div style={{ width: 12, height: 12, background: 'var(--red)' }} />
+              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                Command Center Access
+              </span>
+            </div>
+
+            <h2 style={{ fontSize: 26, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.02em', margin: '0 0 10px', color: 'var(--white)' }}>
+              MDRRMO Admin Portal
+            </h2>
+
+            <p style={{ fontSize: 13.5, color: 'var(--text-muted)', lineHeight: 1.55, margin: '0 0 20px' }}>
+              Authorized MDRRMO personnel only. Enter credentials to manage live incidents, triage, and responder dispatch.
+            </p>
+
+            {adminError && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(230,57,70,0.15)', border: '1px solid var(--red)', padding: '10px 14px', marginBottom: 16 }}>
+                <AlertTriangle size={15} color="var(--red)" style={{ flexShrink: 0 }} />
+                <span style={{ fontSize: 12.5, color: '#FFA8B0', fontWeight: 600 }}>{adminError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleAdminLoginModal} noValidate>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+                Email Address
+              </label>
+              <div className="lp-modal-input-wrap">
+                <span style={{ position: 'absolute', left: 14, color: 'rgba(255,255,255,0.4)', display: 'flex' }}>
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                </span>
+                <input
+                  type="email"
+                  placeholder="admin@mdrrmo.gov.ph"
+                  value={adminEmail}
+                  onChange={(e) => { setAdminEmail(e.target.value); if (adminError) setAdminError(''); }}
+                  className="lp-modal-input"
+                  autoComplete="email"
+                />
+              </div>
+
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+                Password
+              </label>
+              <div className="lp-modal-input-wrap">
+                <span style={{ position: 'absolute', left: 14, color: 'rgba(255,255,255,0.4)', display: 'flex' }}>
+                  <Lock size={17} />
+                </span>
+                <input
+                  type={showAdminPass ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={adminPassword}
+                  onChange={(e) => { setAdminPassword(e.target.value); if (adminError) setAdminError(''); }}
+                  className="lp-modal-input"
+                  style={{ paddingRight: 44 }}
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowAdminPass(!showAdminPass)}
+                  style={{ position: 'absolute', right: 10, background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', display: 'flex', padding: 4 }}
+                  aria-label={showAdminPass ? 'Hide password' : 'Show password'}
+                >
+                  {showAdminPass ? <Eye size={17} /> : <EyeOff size={17} />}
+                </button>
+              </div>
+
+              <button
+                type="submit"
+                className="btn-primary"
+                disabled={adminLoading}
+                style={{ width: '100%', padding: '16px', marginTop: 10, fontSize: 14.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}
+              >
+                {adminLoading ? 'Authenticating...' : 'Access Command Center'}
+              </button>
+
+              <div style={{ textAlign: 'center', marginTop: 18 }}>
+                <button
+                  type="button"
+                  onClick={() => { setActiveModal(null); navigate('/admin/login'); }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'rgba(255,255,255,0.6)',
+                    fontSize: 12.5,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  Open Fullscreen Admin Portal
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </>
   );
 }

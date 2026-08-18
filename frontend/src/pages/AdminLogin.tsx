@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { login as apiLogin } from '../api/client';
-import { Lock, Eye, EyeOff, AlertTriangle, ShieldCheck, Clock } from 'lucide-react';
+import { Lock, Eye, EyeOff, AlertTriangle, ShieldCheck, Clock, Activity, MapPin, Radio } from 'lucide-react';
 
 export default function AdminLogin() {
   const navigate = useNavigate();
@@ -22,14 +22,14 @@ export default function AdminLogin() {
 
   const handleLogin = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!email || !password) {
-      setError('Please fill in your email and password.');
+    if (!email.trim() || !password) {
+      setError('Please enter your email and password.');
       return;
     }
     setLoading(true);
     setError('');
     try {
-      const res = await apiLogin(email, password);
+      const res = await apiLogin(email.trim(), password);
       const { token, role, user } = res.data;
       if (role !== 'ADMIN') {
         setError('Access denied. This portal is for MDRRMO administrators only.');
@@ -63,7 +63,7 @@ export default function AdminLogin() {
     display: 'flex',
     alignItems: 'center',
     position: 'relative',
-    background: focusField === field ? '#fff' : '#F8FAFC',
+    background: focusField === field ? '#FFFFFF' : '#F8FAFC',
     border: `1.5px solid ${focusField === field ? '#2563EB' : '#E2E8F0'}`,
     borderRadius: 14,
     transition: 'all 0.18s',
@@ -82,64 +82,108 @@ export default function AdminLogin() {
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 24px 16px;
-          font-family: 'Inter', system-ui, -apple-system, sans-serif;
+          padding: clamp(16px, 3vw, 48px);
+          font-family: var(--font, 'Inter', system-ui, -apple-system, sans-serif);
         }
 
         .al-container {
           width: 100%;
-          max-width: 440px;
-          background: #F1F5F9;
-          border-radius: 32px;
+          max-width: 460px;
+          background: #FFFFFF;
+          border-radius: 28px;
           overflow: hidden;
-          box-shadow: 0 20px 60px rgba(15, 23, 42, 0.12), 0 1px 3px rgba(0, 0, 0, 0.05);
+          box-shadow: 0 20px 60px rgba(15, 23, 42, 0.09), 0 1px 3px rgba(0, 0, 0, 0.04);
           display: flex;
           flex-direction: column;
+          transition: all 0.3s ease;
         }
 
-        .al-login-header {
-          background: linear-gradient(160deg, #0F1F38 0%, #1D4ED8 60%, #2563EB 100%);
-          padding: 48px 28px 40px;
+        /* ─── Desktop Large Screen Layout (≥ 920px) ─── */
+        @media (min-width: 920px) {
+          .al-container {
+            max-width: 1060px;
+            display: grid;
+            grid-template-columns: 1.15fr 1fr;
+            min-height: 620px;
+            border-radius: 32px;
+            box-shadow: 0 24px 80px rgba(15, 23, 42, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04);
+          }
+        }
+
+        /* ─── Left Brand Showcase ─── */
+        .al-showcase {
+          background: linear-gradient(155deg, #0A1628 0%, #0F2347 45%, #1D4ED8 100%);
+          padding: clamp(36px, 4vw, 56px);
           position: relative;
           overflow: hidden;
-          border-radius: 0 0 32px 32px;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          color: #FFFFFF;
         }
-        .al-login-header::after {
+        .al-showcase::after {
           content: '';
           position: absolute;
-          top: -40px;
-          right: -40px;
-          width: 160px;
-          height: 160px;
-          background: rgba(255,255,255,0.05);
+          top: -60px;
+          right: -60px;
+          width: 220px;
+          height: 220px;
+          background: radial-gradient(circle, rgba(147,197,253,0.15) 0%, rgba(255,255,255,0) 70%);
           border-radius: 50%;
+          pointer-events: none;
         }
-        .al-login-header::before {
+        .al-showcase::before {
           content: '';
           position: absolute;
-          bottom: 20px;
-          left: -30px;
-          width: 100px;
-          height: 100px;
-          background: rgba(255,255,255,0.04);
+          bottom: -40px;
+          left: -40px;
+          width: 180px;
+          height: 180px;
+          background: radial-gradient(circle, rgba(37,99,235,0.2) 0%, rgba(255,255,255,0) 70%);
           border-radius: 50%;
+          pointer-events: none;
         }
 
-        .al-form-card {
-          margin: 16px 20px 24px;
-          background: #fff;
-          border-radius: 22px;
-          padding: 28px 24px;
-          box-shadow: 0 8px 40px rgba(30,58,95,0.12), 0 2px 8px rgba(0,0,0,0.06);
-          position: relative;
-          z-index: 2;
+        @media (max-width: 919px) {
+          .al-showcase {
+            padding: 40px 24px 32px;
+            border-radius: 0 0 28px 28px;
+          }
+          .al-showcase-desktop-only {
+            display: none !important;
+          }
+        }
+
+        /* ─── Feature Pill List ─── */
+        .al-feature-pill {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          background: rgba(255, 255, 255, 0.08);
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          padding: 12px 16px;
+          border-radius: 14px;
+          color: #E2E8F0;
+          font-size: 13px;
+          font-weight: 600;
+          line-height: 1.4;
+        }
+
+        /* ─── Right Form Side ─── */
+        .al-form-section {
+          padding: clamp(28px, 4vw, 48px);
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          background: #FFFFFF;
         }
 
         .al-auth-btn {
           width: 100%;
           padding: 16px;
           background: linear-gradient(135deg, #2563EB, #1D4ED8);
-          color: white;
+          color: #FFFFFF;
           border: none;
           border-radius: 14px;
           font-size: 15px;
@@ -150,14 +194,14 @@ export default function AdminLogin() {
           align-items: center;
           justify-content: center;
           gap: 10px;
-          box-shadow: 0 4px 16px rgba(37,99,235,0.38);
+          box-shadow: 0 4px 18px rgba(37,99,235,0.35);
           transition: transform 0.18s, box-shadow 0.18s;
           margin-top: 8px;
           letter-spacing: 0.01em;
         }
         .al-auth-btn:hover:not(:disabled) {
           transform: translateY(-1px);
-          box-shadow: 0 6px 22px rgba(37,99,235,0.46);
+          box-shadow: 0 6px 24px rgba(37,99,235,0.45);
         }
         .al-auth-btn:active:not(:disabled) {
           transform: translateY(0) scale(0.98);
@@ -184,266 +228,344 @@ export default function AdminLogin() {
           display: inline-flex;
           align-items: center;
           gap: 6px;
-          background: rgba(37, 99, 235, 0.08);
+          background: #EFF6FF;
           color: #2563EB;
-          padding: 4px 10px;
-          border-radius: 8px;
-          font-size: 11px;
+          border: 1px solid #DBEAFE;
+          padding: 5px 12px;
+          border-radius: 999px;
+          font-size: 11.5px;
           font-weight: 700;
-          letter-spacing: 0.04em;
+          letter-spacing: 0.03em;
           text-transform: uppercase;
-          margin-bottom: 12px;
+          margin-bottom: 14px;
+          align-self: flex-start;
         }
       `}</style>
 
       <div className="al-container">
-        {/* Branded header */}
-        <div className="al-login-header">
+        {/* ── Left Column: Brand & Command Center Showcase ── */}
+        <div className="al-showcase">
           <div style={{ position: 'relative', zIndex: 1 }}>
-            <img
-              src="/logo.jpg"
-              alt="SRQ Logo"
-              style={{
-                width: 56,
-                height: 56,
-                borderRadius: 16,
-                objectFit: 'cover',
-                marginBottom: 16,
-                border: '2px solid rgba(255,255,255,0.2)',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
-              }}
-            />
-            <div
-              style={{
-                fontSize: 11,
-                color: 'rgba(255,255,255,0.6)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.12em',
-                marginBottom: 6,
-                fontWeight: 700,
-              }}
-            >
-              MDRRMO Balayan, Batangas
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
+              <img
+                src="/logo.jpg"
+                alt="MDRRMO Balayan Logo"
+                style={{
+                  width: 58,
+                  height: 58,
+                  borderRadius: 16,
+                  objectFit: 'cover',
+                  border: '2px solid rgba(255,255,255,0.25)',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+                }}
+              />
+              <div>
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: 'rgba(255,255,255,0.65)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.12em',
+                    fontWeight: 800,
+                  }}
+                >
+                  MDRRMO Balayan
+                </div>
+                <div style={{ fontSize: 13, color: '#93C5FD', fontWeight: 700 }}>
+                  Batangas Province
+                </div>
+              </div>
             </div>
+
             <h1
               style={{
-                color: 'white',
-                fontSize: 26,
+                color: '#FFFFFF',
+                fontSize: 'clamp(26px, 2.8vw, 36px)',
                 fontWeight: 900,
-                letterSpacing: '-0.5px',
+                letterSpacing: '-0.03em',
                 lineHeight: 1.15,
-                margin: 0,
+                margin: '0 0 12px',
               }}
             >
               Command Center<br />
-              <span style={{ color: '#93C5FD' }}>Admin Portal</span>
+              <span style={{ color: '#93C5FD' }}>Admin & Dispatch</span>
             </h1>
+
+            <p
+              style={{
+                fontSize: 14,
+                color: 'rgba(255,255,255,0.78)',
+                lineHeight: 1.6,
+                maxWidth: 420,
+                margin: '0 0 24px',
+              }}
+            >
+              Official MDRRMO Balayan municipal incident management portal for live disaster response, triage, and multi-agency fleet coordination.
+            </p>
+
+            {/* Desktop feature highlights */}
+            <div className="al-showcase-desktop-only" style={{ display: 'flex', flexDirection: 'column', gap: 10, margin: '24px 0 32px' }}>
+              <div className="al-feature-pill">
+                <Activity size={18} color="#93C5FD" style={{ flexShrink: 0 }} />
+                <span>Real-Time Disaster Triage & Severity AI Detection</span>
+              </div>
+              <div className="al-feature-pill">
+                <MapPin size={18} color="#93C5FD" style={{ flexShrink: 0 }} />
+                <span>Live GIS Incident Heatmaps & Grid Route Tracking</span>
+              </div>
+              <div className="al-feature-pill">
+                <Radio size={18} color="#93C5FD" style={{ flexShrink: 0 }} />
+                <span>Multi-Agency Dispatch (MDRRMO, BFP, PNP, EMS)</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom active status badge */}
+          <div
+            style={{
+              position: 'relative',
+              zIndex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              fontSize: 12,
+              color: 'rgba(255,255,255,0.85)',
+              fontWeight: 700,
+              paddingTop: 16,
+              borderTop: '1px solid rgba(255,255,255,0.12)',
+            }}
+          >
+            <span
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                background: '#22C55E',
+                boxShadow: '0 0 10px #22C55E',
+                display: 'inline-block',
+              }}
+            />
+            <span>24/7 Balayan Command Grid Active</span>
           </div>
         </div>
 
-        {/* Floating form card */}
-        <form className="al-form-card" onSubmit={handleLogin} noValidate>
-          <div className="al-badge">
-            <ShieldCheck size={13} />
-            Authorized Personnel Only
-          </div>
-
-          <p style={{ fontSize: 13, color: '#64748B', margin: '0 0 20px', lineHeight: 1.55 }}>
-            I-login ang iyong MDRRMO administrator account para ma-access ang command center dashboard.
-          </p>
-
-          {sessionExpired && (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                background: '#FFFBEB',
-                border: '1px solid #FDE68A',
-                borderRadius: 10,
-                padding: '10px 12px',
-                marginBottom: 16,
-              }}
-            >
-              <Clock size={15} color="#D97706" style={{ flexShrink: 0 }} />
-              <span style={{ fontSize: 13, color: '#92400E', fontWeight: 600 }}>
-                Your session has expired for security. Please sign in again.
-              </span>
+        {/* ── Right Column: Admin Login Form ── */}
+        <div className="al-form-section">
+          <form onSubmit={handleLogin} noValidate>
+            <div className="al-badge">
+              <ShieldCheck size={14} />
+              Authorized Personnel Only
             </div>
-          )}
 
-          {error && (
-            <div
+            <h2
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                background: '#FEF2F2',
-                border: '1px solid #FCA5A5',
-                borderRadius: 10,
-                padding: '10px 12px',
-                marginBottom: 16,
-              }}
-            >
-              <AlertTriangle size={14} color="#EF4444" style={{ flexShrink: 0 }} />
-              <span style={{ fontSize: 13, color: '#B91C1C', fontWeight: 500 }}>{error}</span>
-            </div>
-          )}
-
-          {/* Email field */}
-          <div style={{ marginBottom: 14 }}>
-            <label
-              style={{
-                display: 'block',
-                fontSize: 12.5,
-                fontWeight: 700,
-                color: '#374151',
+                fontSize: 'clamp(20px, 2vw, 26px)',
+                fontWeight: 900,
+                color: '#0F172A',
+                letterSpacing: '-0.02em',
                 marginBottom: 6,
-                letterSpacing: '0.01em',
               }}
             >
-              Admin Email Address
-            </label>
-            <div style={wrapStyle('email')}>
-              <span
+              Sign In to Portal
+            </h2>
+
+            <p style={{ fontSize: 13.5, color: '#64748B', margin: '0 0 24px', lineHeight: 1.55 }}>
+              Enter your official administrative credentials to access the live command center dashboard.
+            </p>
+
+            {sessionExpired && (
+              <div
                 style={{
-                  position: 'absolute',
-                  left: 14,
-                  color: focusField === 'email' ? '#2563EB' : '#94A3B8',
                   display: 'flex',
-                  transition: 'color 0.18s',
+                  alignItems: 'center',
+                  gap: 8,
+                  background: '#FFFBEB',
+                  border: '1px solid #FDE68A',
+                  borderRadius: 12,
+                  padding: '12px 14px',
+                  marginBottom: 16,
                 }}
               >
-                <svg
-                  width="17"
-                  height="17"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+                <Clock size={16} color="#D97706" style={{ flexShrink: 0 }} />
+                <span style={{ fontSize: 13, color: '#92400E', fontWeight: 600 }}>
+                  Your session has expired for security. Please sign in again.
+                </span>
+              </div>
+            )}
+
+            {error && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  background: '#FEF2F2',
+                  border: '1px solid #FCA5A5',
+                  borderRadius: 12,
+                  padding: '12px 14px',
+                  marginBottom: 16,
+                }}
+              >
+                <AlertTriangle size={16} color="#EF4444" style={{ flexShrink: 0 }} />
+                <span style={{ fontSize: 13, color: '#B91C1C', fontWeight: 600 }}>{error}</span>
+              </div>
+            )}
+
+            {/* Email field */}
+            <div style={{ marginBottom: 16 }}>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: 12.5,
+                  fontWeight: 700,
+                  color: '#374151',
+                  marginBottom: 6,
+                  letterSpacing: '0.01em',
+                }}
+              >
+                Admin Email Address
+              </label>
+              <div style={wrapStyle('email')}>
+                <span
+                  style={{
+                    position: 'absolute',
+                    left: 14,
+                    color: focusField === 'email' ? '#2563EB' : '#94A3B8',
+                    display: 'flex',
+                    transition: 'color 0.18s',
+                  }}
                 >
-                  <rect x="2" y="4" width="20" height="16" rx="2" />
-                  <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-                </svg>
-              </span>
-              <input
-                type="email"
-                placeholder="admin@mdrrmo.gov.ph"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                onFocus={() => setFocusField('email')}
-                onBlur={() => setFocusField(null)}
-                onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-                style={inputStyle()}
-                autoComplete="email"
-              />
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <rect x="2" y="4" width="20" height="16" rx="2" />
+                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                  </svg>
+                </span>
+                <input
+                  type="email"
+                  placeholder="admin@mdrrmo.gov.ph"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  onFocus={() => setFocusField('email')}
+                  onBlur={() => setFocusField(null)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+                  style={inputStyle()}
+                  autoComplete="email"
+                />
+              </div>
             </div>
-          </div>
 
-          {/* Password field */}
-          <div style={{ marginBottom: 20 }}>
-            <label
-              style={{
-                display: 'block',
-                fontSize: 12.5,
-                fontWeight: 700,
-                color: '#374151',
-                marginBottom: 6,
-                letterSpacing: '0.01em',
-              }}
-            >
-              Password
-            </label>
-            <div style={wrapStyle('pass')}>
-              <span
+            {/* Password field */}
+            <div style={{ marginBottom: 24 }}>
+              <label
                 style={{
-                  position: 'absolute',
-                  left: 14,
-                  color: focusField === 'pass' ? '#2563EB' : '#94A3B8',
-                  display: 'flex',
-                  transition: 'color 0.18s',
+                  display: 'block',
+                  fontSize: 12.5,
+                  fontWeight: 700,
+                  color: '#374151',
+                  marginBottom: 6,
+                  letterSpacing: '0.01em',
                 }}
               >
-                <Lock size={17} />
-              </span>
-              <input
-                type={showPass ? 'text' : 'password'}
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onFocus={() => setFocusField('pass')}
-                onBlur={() => setFocusField(null)}
-                onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-                style={{ ...inputStyle(), paddingRight: 44 }}
-                autoComplete="current-password"
-              />
+                Password
+              </label>
+              <div style={wrapStyle('pass')}>
+                <span
+                  style={{
+                    position: 'absolute',
+                    left: 14,
+                    color: focusField === 'pass' ? '#2563EB' : '#94A3B8',
+                    display: 'flex',
+                    transition: 'color 0.18s',
+                  }}
+                >
+                  <Lock size={18} />
+                </span>
+                <input
+                  type={showPass ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onFocus={() => setFocusField('pass')}
+                  onBlur={() => setFocusField(null)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+                  style={{ ...inputStyle(), paddingRight: 48 }}
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPass(!showPass)}
+                  style={{
+                    position: 'absolute',
+                    right: 12,
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#94A3B8',
+                    display: 'flex',
+                    padding: 4,
+                  }}
+                  aria-label={showPass ? 'Hide password' : 'Show password'}
+                >
+                  {showPass ? <Eye size={18} /> : <EyeOff size={18} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Login button */}
+            <button type="submit" className="al-auth-btn" disabled={loading}>
+              {loading ? (
+                <>
+                  <span className="al-spin" /> Authenticating...
+                </>
+              ) : (
+                'Access Command Center'
+              )}
+            </button>
+
+            {/* Return to landing page */}
+            <div style={{ textAlign: 'center', marginTop: 20 }}>
               <button
                 type="button"
-                onClick={() => setShowPass(!showPass)}
+                onClick={() => navigate('/')}
                 style={{
-                  position: 'absolute',
-                  right: 12,
                   background: 'none',
                   border: 'none',
+                  color: '#64748B',
+                  fontSize: 13,
+                  fontWeight: 600,
                   cursor: 'pointer',
-                  color: '#94A3B8',
-                  display: 'flex',
-                  padding: 4,
+                  fontFamily: 'inherit',
+                  transition: 'color 0.15s',
                 }}
-                aria-label={showPass ? 'Hide password' : 'Show password'}
+                onMouseEnter={(e) => (e.currentTarget.style.color = '#2563EB')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = '#64748B')}
               >
-                {showPass ? <Eye size={17} /> : <EyeOff size={17} />}
+                Return to Main Page
               </button>
             </div>
+          </form>
+
+          {/* Bottom security footer */}
+          <div
+            style={{
+              textAlign: 'center',
+              marginTop: 24,
+              fontSize: 11,
+              color: '#94A3B8',
+              fontWeight: 500,
+            }}
+          >
+            MDRRMO Balayan Command Center · SendResQPls Admin v2
           </div>
-
-          {/* Login button */}
-          <button type="submit" className="al-auth-btn" disabled={loading}>
-            {loading ? (
-              <>
-                <span className="al-spin" /> Authenticating...
-              </>
-            ) : (
-              'Access Command Center'
-            )}
-          </button>
-
-          {/* Return to landing page */}
-          <div style={{ textAlign: 'center', marginTop: 20 }}>
-            <button
-              type="button"
-              onClick={() => navigate('/')}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#64748B',
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                transition: 'color 0.15s',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = '#2563EB')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = '#64748B')}
-            >
-              ← Return to Main Page
-            </button>
-          </div>
-        </form>
-
-        {/* Bottom footer */}
-        <div
-          style={{
-            textAlign: 'center',
-            padding: '8px 24px 20px',
-            fontSize: 11,
-            color: '#94A3B8',
-            fontWeight: 500,
-          }}
-        >
-          MDRRMO Balayan Command Center · SendResQPls Admin
         </div>
       </div>
     </div>

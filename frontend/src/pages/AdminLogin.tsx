@@ -75,6 +75,44 @@ export default function AdminLogin() {
       <style>{`
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+        @keyframes alEntrance {
+          0% {
+            opacity: 0;
+            transform: translateY(28px) scale(0.98);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+
+        @keyframes alFadeSlideLeft {
+          0% {
+            opacity: 0;
+            transform: translateX(-20px);
+          }
+          100% {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+
+        @keyframes alFadeSlideUp {
+          0% {
+            opacity: 0;
+            transform: translateY(16px);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes alOrbPulse {
+          0%, 100% { transform: scale(1) translate(0, 0); opacity: 0.15; }
+          50% { transform: scale(1.12) translate(8px, -6px); opacity: 0.28; }
+        }
+
         .al-page-wrapper {
           min-height: 100dvh;
           width: 100%;
@@ -84,6 +122,7 @@ export default function AdminLogin() {
           justify-content: center;
           padding: clamp(16px, 3vw, 48px);
           font-family: var(--font, 'Inter', system-ui, -apple-system, sans-serif);
+          overflow-x: hidden;
         }
 
         .al-container {
@@ -95,7 +134,8 @@ export default function AdminLogin() {
           box-shadow: 0 20px 60px rgba(15, 23, 42, 0.09), 0 1px 3px rgba(0, 0, 0, 0.04);
           display: flex;
           flex-direction: column;
-          transition: all 0.3s ease;
+          animation: alEntrance 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          will-change: transform, opacity;
         }
 
         /* ─── Desktop Large Screen Layout (≥ 920px) ─── */
@@ -126,22 +166,30 @@ export default function AdminLogin() {
           position: absolute;
           top: -60px;
           right: -60px;
-          width: 220px;
-          height: 220px;
-          background: radial-gradient(circle, rgba(147,197,253,0.15) 0%, rgba(255,255,255,0) 70%);
+          width: 240px;
+          height: 240px;
+          background: radial-gradient(circle, rgba(147,197,253,0.2) 0%, rgba(255,255,255,0) 70%);
           border-radius: 50%;
           pointer-events: none;
+          animation: alOrbPulse 8s ease-in-out infinite;
         }
         .al-showcase::before {
           content: '';
           position: absolute;
           bottom: -40px;
           left: -40px;
-          width: 180px;
-          height: 180px;
-          background: radial-gradient(circle, rgba(37,99,235,0.2) 0%, rgba(255,255,255,0) 70%);
+          width: 200px;
+          height: 200px;
+          background: radial-gradient(circle, rgba(37,99,235,0.25) 0%, rgba(255,255,255,0) 70%);
           border-radius: 50%;
           pointer-events: none;
+          animation: alOrbPulse 10s ease-in-out infinite reverse;
+        }
+
+        .al-showcase-inner {
+          position: relative;
+          z-index: 1;
+          animation: alFadeSlideLeft 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
         }
 
         @media (max-width: 919px) {
@@ -158,6 +206,17 @@ export default function AdminLogin() {
           flex-direction: column;
           justify-content: center;
           background: #FFFFFF;
+        }
+
+        .al-form-content {
+          animation: alFadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.18s both;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .al-container, .al-showcase-inner, .al-form-content, .al-showcase::after, .al-showcase::before {
+            animation: none !important;
+            transform: none !important;
+          }
         }
 
         .al-auth-btn {
@@ -209,7 +268,7 @@ export default function AdminLogin() {
       <div className="al-container">
         {/* ── Left Column: Brand & Command Center Showcase ── */}
         <div className="al-showcase">
-          <div style={{ position: 'relative', zIndex: 1 }}>
+          <div className="al-showcase-inner">
             <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
               <img
                 src="/logo.jpg"
@@ -271,7 +330,7 @@ export default function AdminLogin() {
 
         {/* ── Right Column: Admin Login Form ── */}
         <div className="al-form-section">
-          <form onSubmit={handleLogin} noValidate>
+          <form className="al-form-content" onSubmit={handleLogin} noValidate>
             <h2
               style={{
                 fontSize: 'clamp(20px, 2vw, 26px)',

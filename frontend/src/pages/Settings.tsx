@@ -325,6 +325,13 @@ export default function SettingsPage() {
           margin-bottom: 24px;
         }
 
+        @media (max-width: 1024px) {
+          .st-layout-grid {
+            grid-template-columns: 1fr;
+            gap: 16px;
+          }
+        }
+
         .st-card {
           background: #FFFFFF;
           border-radius: 16px;

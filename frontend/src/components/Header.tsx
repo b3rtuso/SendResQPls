@@ -1,7 +1,8 @@
-import { Search, Bell, X, AlertCircle, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { Search, Bell, X, AlertCircle, AlertTriangle, CheckCircle, XCircle, Menu } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { getIncidents, updateIncidentStatus } from '../api/client';
 import { fetchEventSource } from '@microsoft/fetch-event-source';
+import { useAdminNav } from '../context/AdminNavContext';
 
 interface HeaderProps {
   title: string;
@@ -32,6 +33,7 @@ const SEEN_KEY = 'admin_seen_incident_ids';
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 export default function Header({ title, subtitle }: HeaderProps) {
+  const { toggleSidebar } = useAdminNav();
   const [notifications, setNotifications] = useState<NotifItem[]>([]);
   const [showPanel, setShowPanel] = useState(false);
   const [unseenCount, setUnseenCount] = useState(0);
@@ -298,12 +300,55 @@ export default function Header({ title, subtitle }: HeaderProps) {
           color: #475569;
           position: relative;
           transition: all 0.15s ease;
+          flex-shrink: 0;
         }
 
         .header-icon-btn:hover {
           background: #F8FAFC;
           color: #0F172A;
           border-color: #CBD5E1;
+        }
+
+        .header-hamburger-btn {
+          display: none;
+          width: 38px;
+          height: 38px;
+          border-radius: 10px;
+          background: #FFFFFF;
+          border: 1px solid #E2E8F0;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          color: #0F172A;
+          margin-right: 12px;
+          flex-shrink: 0;
+          transition: all 0.15s ease;
+        }
+
+        .header-hamburger-btn:hover {
+          background: #F8FAFC;
+          border-color: #CBD5E1;
+        }
+
+        @media (max-width: 1024px) {
+          .header-hamburger-btn {
+            display: flex;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .top-header {
+            padding: 14px 16px;
+          }
+          .header-title-box h2 {
+            font-size: 17px;
+          }
+          .header-title-box p {
+            font-size: 11.5px;
+          }
+          .header-search-wrap {
+            display: none;
+          }
         }
       `}</style>
 
@@ -442,9 +487,18 @@ export default function Header({ title, subtitle }: HeaderProps) {
 
       {/* Top Header Bar */}
       <header className="top-header">
-        <div className="header-title-box">
-          <h2>{title}</h2>
-          {subtitle && <p>{subtitle}</p>}
+        <div style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
+          <button
+            className="header-hamburger-btn"
+            onClick={toggleSidebar}
+            aria-label="Toggle navigation drawer"
+          >
+            <Menu size={19} />
+          </button>
+          <div className="header-title-box">
+            <h2>{title}</h2>
+            {subtitle && <p>{subtitle}</p>}
+          </div>
         </div>
 
         <div className="header-actions">

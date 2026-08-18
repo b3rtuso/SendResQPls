@@ -357,11 +357,13 @@ export default function Requests() {
           border-radius: 16px;
           border: 1px solid #E2E8F0;
           box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 6px 18px rgba(15, 23, 42, 0.03);
-          overflow: hidden;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
         }
 
         .rq-table {
           width: 100%;
+          min-width: 680px;
           border-collapse: collapse;
           font-size: 13px;
           text-align: left;
@@ -848,18 +850,22 @@ export default function Requests() {
       {selectedIds.size > 0 && (
         <div style={{
           position: 'fixed',
-          bottom: 24,
+          bottom: 20,
           left: '50%',
           transform: 'translateX(-50%)',
+          width: 'calc(100% - 28px)',
+          maxWidth: 640,
           zIndex: 1000,
           background: '#0F172A',
           color: 'white',
           borderRadius: 18,
-          padding: '12px 20px',
+          padding: '12px 18px',
           display: 'flex',
           alignItems: 'center',
-          gap: 16,
-          boxShadow: '0 12px 40px rgba(15,23,42,0.35)',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 12,
+          boxShadow: '0 12px 40px rgba(15,23,42,0.4)',
           border: '1px solid rgba(255,255,255,0.15)',
           animation: 'slideUp 0.25s cubic-bezier(0.16,1,0.3,1) both',
         }}>

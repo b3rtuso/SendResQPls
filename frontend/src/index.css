@@ -123,7 +123,13 @@ body {
     margin-left: 0;
   }
   .page-content {
-    padding: 16px 20px;
+    padding: 16px 18px;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-content {
+    padding: 12px 14px;
   }
 }
 
@@ -1118,6 +1124,24 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: 24px;
+}
+
+@media (max-width: 1024px) {
+  .grid-3-1 {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+}
+
+@media (max-width: 768px) {
+  .grid-2 {
+    grid-template-columns: 1fr !important;
+    gap: 16px;
+  }
+  .grid-3-1 {
+    grid-template-columns: 1fr !important;
+    gap: 16px;
+  }
 }
 
 /* ===== QUICK ACTION BUTTONS ===== */

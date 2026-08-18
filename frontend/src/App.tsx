@@ -20,6 +20,7 @@ import MobileOnboarding, { shouldShowOnboarding } from './pages/mobile/MobileOnb
 import MobileForgotPassword from './pages/mobile/MobileForgotPassword';
 import MobileResetPassword from './pages/mobile/MobileResetPassword';
 import { MobileToastProvider } from './components/MobileToastProvider';
+import { AdminNavProvider } from './context/AdminNavContext';
 import LandingPage from './pages/LandingPage';
 import GetTheApp from './pages/GetTheApp';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -92,22 +93,24 @@ function App() {
             path="*"
             element={
               <AdminRoute>
-                <div className="app-layout">
-                  <Sidebar />
-                  <main className="main-content">
-                    <Routes>
-                      <Route path="/dashboard" element={<Dashboard />} />
-                      <Route path="/requests" element={<Requests />} />
-                      <Route path="/requests/:id" element={<RequestDetails />} />
-                      <Route path="/call-logs" element={<CallLogs />} />
-                      <Route path="/analytics" element={<Analytics />} />
-                      <Route path="/departments" element={<Departments />} />
-                      <Route path="/settings" element={<SettingsPage />} />
-                      {/* Fallback inside admin: go to dashboard */}
-                      <Route path="*" element={<Navigate to="/dashboard" replace />} />
-                    </Routes>
-                  </main>
-                </div>
+                <AdminNavProvider>
+                  <div className="app-layout">
+                    <Sidebar />
+                    <main className="main-content">
+                      <Routes>
+                        <Route path="/dashboard" element={<Dashboard />} />
+                        <Route path="/requests" element={<Requests />} />
+                        <Route path="/requests/:id" element={<RequestDetails />} />
+                        <Route path="/call-logs" element={<CallLogs />} />
+                        <Route path="/analytics" element={<Analytics />} />
+                        <Route path="/departments" element={<Departments />} />
+                        <Route path="/settings" element={<SettingsPage />} />
+                        {/* Fallback inside admin: go to dashboard */}
+                        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                      </Routes>
+                    </main>
+                  </div>
+                </AdminNavProvider>
               </AdminRoute>
             }
           />

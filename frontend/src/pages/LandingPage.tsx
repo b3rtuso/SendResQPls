@@ -13,11 +13,34 @@ import { useNavigate } from 'react-router-dom';
 export default function LandingPage() {
   const navigate = useNavigate();
   const heroRef = useRef<HTMLDivElement>(null);
+  const howCarouselRef = useRef<HTMLDivElement>(null);
   const [heroVisible, setHeroVisible] = useState(false);
   const [step1Visible, setStep1Visible] = useState(false);
   const [step2Visible, setStep2Visible] = useState(false);
   const [step3Visible, setStep3Visible] = useState(false);
   const [accessVisible, setAccessVisible] = useState(false);
+  const [activeHowStep, setActiveHowStep] = useState(0);
+
+  const scrollHowTo = (index: number) => {
+    if (!howCarouselRef.current) return;
+    const container = howCarouselRef.current;
+    const target = container.children[index] as HTMLElement;
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+      setActiveHowStep(index);
+    }
+  };
+
+  const handleHowScroll = () => {
+    if (!howCarouselRef.current) return;
+    const container = howCarouselRef.current;
+    const scrollLeft = container.scrollLeft;
+    const width = container.offsetWidth;
+    if (width > 0) {
+      const idx = Math.round(scrollLeft / width);
+      setActiveHowStep(Math.min(Math.max(idx, 0), 2));
+    }
+  };
 
   useEffect(() => {
     // Trigger hero entrance after mount
@@ -561,14 +584,36 @@ export default function LandingPage() {
             border-right: none;
           }
           .lp-how {
-            grid-template-columns: 1fr;
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            grid-template-columns: unset;
+            border-bottom: none;
+          }
+          .lp-how::-webkit-scrollbar {
+            display: none;
           }
           .lp-how-cell {
+            flex: 0 0 100%;
+            width: 100%;
+            scroll-snap-align: start;
+            scroll-snap-stop: always;
             border-right: none;
-            border-bottom: 1px solid var(--divider);
-          }
-          .lp-how-cell:last-child {
             border-bottom: none;
+            opacity: 1 !important;
+            transform: none !important;
+            padding: 36px 24px 20px;
+            box-sizing: border-box;
+          }
+          .lp-how-dots {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 0 24px;
+            border-bottom: 1px solid var(--divider);
           }
           .lp-how-body {
             max-width: 100%;
@@ -579,6 +624,11 @@ export default function LandingPage() {
           .lp-access-citizen {
             border-right: none;
             border-bottom: 2px solid rgba(255,255,255,0.18);
+          }
+        }
+        @media (min-width: 961px) {
+          .lp-how-dots {
+            display: none;
           }
         }
 
@@ -709,7 +759,12 @@ export default function LandingPage() {
         </div>
 
         {/* ─── HOW IT WORKS ─── */}
-        <section className="lp-how">
+        <section
+          ref={howCarouselRef}
+          onScroll={handleHowScroll}
+          className="lp-how"
+          aria-label="How SendResQPls works"
+        >
           <div id="step-1" className={`lp-how-cell ${step1Visible ? 'visible' : ''}`}>
             <div className="lp-how-num red">01</div>
             <h2 className="lp-how-heading">Report</h2>
@@ -748,6 +803,29 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
+
+        {/* ─── HOW IT WORKS CAROUSEL DOTS (Mobile) ─── */}
+        <div className="lp-how-dots" aria-hidden="true">
+          {[0, 1, 2].map((idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => scrollHowTo(idx)}
+              aria-label={`Go to step ${idx + 1}`}
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                background: activeHowStep === idx ? '#2563EB' : 'rgba(255, 255, 255, 0.25)',
+                border: 'none',
+                padding: 0,
+                cursor: 'pointer',
+                transition: 'all 0.25s ease',
+                transform: activeHowStep === idx ? 'scale(1.25)' : 'scale(1)',
+              }}
+            />
+          ))}
+        </div>
 
         {/* ─── ACCESS PORTAL ─── */}
         <section id="access-section" className={`lp-access ${accessVisible ? 'visible' : ''}`}>

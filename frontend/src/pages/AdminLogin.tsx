@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { login as apiLogin } from '../api/client';
-import { Lock, Eye, EyeOff, AlertTriangle, ArrowRight, ShieldCheck, Clock } from 'lucide-react';
+import { Lock, Eye, EyeOff, AlertTriangle, ShieldCheck, Clock } from 'lucide-react';
 
 export default function AdminLogin() {
   const navigate = useNavigate();
@@ -406,9 +406,7 @@ export default function AdminLogin() {
                 <span className="al-spin" /> Authenticating...
               </>
             ) : (
-              <>
-                Access Command Center <ArrowRight size={16} />
-              </>
+              'Access Command Center'
             )}
           </button>
 

@@ -408,7 +408,7 @@ export default function GetTheApp() {
               download="SendResQPls.apk"
               aria-label="Download SendResQPls Android APK file"
             >
-              Download APK (v1.0.0) &nbsp;↓
+              Download APK
             </a>
             <span className="gta-meta-text">
               Android 8.0+ · Direct Package Download
@@ -480,7 +480,7 @@ export default function GetTheApp() {
             onClick={() => navigate('/admin/login')}
             aria-label="Go to Admin Portal"
           >
-            Admin Portal &nbsp;→
+            Admin Portal
           </button>
         </section>
 

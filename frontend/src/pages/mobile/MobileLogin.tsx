@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { login as apiLogin } from '../../api/client';
 import { setupPushNotifications } from '../../utils/pushNotificationHelper';
-import { Lock, Eye, EyeOff, AlertTriangle, ArrowRight } from 'lucide-react';
+import { Lock, Eye, EyeOff, AlertTriangle } from 'lucide-react';
 
 export default function MobileLogin() {
   const navigate = useNavigate();
@@ -260,7 +260,7 @@ export default function MobileLogin() {
         <button type="submit" className="ml-auth-btn" disabled={loading}>
           {loading
             ? <><span className="ml-spin" /> Please wait...</>
-            : <>Log In <ArrowRight size={16} /></>
+            : 'Log In'
           }
         </button>
 

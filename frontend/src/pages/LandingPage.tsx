@@ -664,7 +664,7 @@ export default function LandingPage() {
                 onClick={() => navigate('/get-the-app')}
                 aria-label="Get the SendResQPls mobile app"
               >
-                Get the App &nbsp;→
+                Get the App
               </button>
               <div className="lp-cta-divider" aria-hidden="true" />
               <button
@@ -766,7 +766,7 @@ export default function LandingPage() {
               onClick={() => navigate('/get-the-app')}
               aria-label="Get the SendResQPls mobile app"
             >
-              Get the App &nbsp;→
+              Get the App
             </button>
             <p className="lp-access-sub">Available for Android devices (APK)</p>
           </div>
@@ -786,7 +786,7 @@ export default function LandingPage() {
               onClick={() => navigate('/admin/login')}
               aria-label="Go to MDRRMO admin command center login"
             >
-              Admin Login &nbsp;→
+              Admin Login
             </button>
             <div>
               <span className="lp-restricted-badge">Restricted</span>

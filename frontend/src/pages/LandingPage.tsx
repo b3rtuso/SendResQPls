@@ -18,21 +18,6 @@ export default function LandingPage() {
   const [step2Visible, setStep2Visible] = useState(false);
   const [step3Visible, setStep3Visible] = useState(false);
   const [accessVisible, setAccessVisible] = useState(false);
-  const [highlightedSide, setHighlightedSide] = useState<'citizen' | 'admin' | null>(null);
-  const highlightTimerRef = useRef<any>(null);
-
-  const scrollToAccess = (side: 'citizen' | 'admin') => {
-    const el = document.getElementById(side === 'citizen' ? 'access-citizen' : 'access-admin') || document.getElementById('access-section');
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-    setAccessVisible(true);
-    setHighlightedSide(side);
-    if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
-    highlightTimerRef.current = setTimeout(() => {
-      setHighlightedSide(null);
-    }, 3200);
-  };
 
   useEffect(() => {
     // Trigger hero entrance after mount
@@ -447,86 +432,7 @@ export default function LandingPage() {
         }
 
         /* ─── ACCESS PORTAL ─── */
-        @keyframes spotlightCitizen {
-          0% {
-            box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.8), inset 0 0 40px rgba(37, 99, 235, 0.2);
-            transform: scale(1);
-          }
-          20% {
-            box-shadow: 0 0 0 8px rgba(37, 99, 235, 0.9), 0 20px 60px rgba(37, 99, 235, 0.45), inset 0 0 50px rgba(37, 99, 235, 0.35);
-            transform: scale(1.02);
-            background: #112948;
-          }
-          50% {
-            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.6), 0 12px 40px rgba(37, 99, 235, 0.3), inset 0 0 35px rgba(37, 99, 235, 0.25);
-            transform: scale(1.01);
-            background: #0f2440;
-          }
-          100% {
-            box-shadow: 0 0 0 0 rgba(37, 99, 235, 0), inset 0 0 0 transparent;
-            transform: scale(1);
-          }
-        }
-
-        @keyframes spotlightAdmin {
-          0% {
-            box-shadow: 0 0 0 0 rgba(230, 57, 70, 0.8);
-            transform: scale(1);
-          }
-          20% {
-            box-shadow: 0 0 0 8px rgba(230, 57, 70, 0.9), 0 20px 60px rgba(230, 57, 70, 0.4), inset 0 0 30px rgba(230, 57, 70, 0.12);
-            transform: scale(1.02);
-            background: #FFF0F1;
-          }
-          50% {
-            box-shadow: 0 0 0 4px rgba(230, 57, 70, 0.6), 0 12px 40px rgba(230, 57, 70, 0.25), inset 0 0 20px rgba(230, 57, 70, 0.08);
-            transform: scale(1.01);
-            background: #FFF7F7;
-          }
-          100% {
-            box-shadow: 0 0 0 0 rgba(230, 57, 70, 0);
-            transform: scale(1);
-            background: #FFFFFF;
-          }
-        }
-
-        @keyframes pulseBtnFocus {
-          0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(37,99,235,0.7); }
-          50% { transform: scale(1.04); box-shadow: 0 0 0 10px rgba(37,99,235,0); }
-        }
-
-        @keyframes pulseAdminBtnFocus {
-          0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(230,57,70,0.7); }
-          50% { transform: scale(1.04); box-shadow: 0 0 0 10px rgba(230,57,70,0); }
-        }
-
-        .lp-spotlight-pill {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 6px 14px;
-          border-radius: 999px;
-          font-size: 11px;
-          font-weight: 800;
-          letter-spacing: 0.04em;
-          text-transform: uppercase;
-          margin-bottom: 16px;
-          animation: alFadeSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .lp-spotlight-pill.blue {
-          background: #2563EB;
-          color: #FFFFFF;
-          box-shadow: 0 4px 14px rgba(37,99,235,0.5);
-        }
-        .lp-spotlight-pill.red {
-          background: #E63946;
-          color: #FFFFFF;
-          box-shadow: 0 4px 14px rgba(230,57,70,0.5);
-        }
-
         .lp-access {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
           border-bottom: 1px solid var(--divider);
           opacity: 0;
           transform: translateY(40px);
@@ -537,19 +443,8 @@ export default function LandingPage() {
         /* Citizen side */
         .lp-access-citizen {
           padding: clamp(40px, 6vw, 88px) clamp(20px, 5vw, 72px);
-          border-right: 2px solid rgba(255,255,255,0.18);
           min-width: 0;
-          transition: all 0.35s ease;
-          position: relative;
         }
-        .lp-access-citizen.highlighted {
-          z-index: 5;
-          animation: spotlightCitizen 3.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-        .lp-access-citizen.highlighted .btn-primary {
-          animation: pulseBtnFocus 1s ease-in-out 3;
-        }
-
         .lp-access-label {
           display: flex;
           align-items: center;
@@ -580,7 +475,7 @@ export default function LandingPage() {
           font-weight: 400;
           line-height: 1.65;
           color: var(--text-muted);
-          max-width: 460px;
+          max-width: 560px;
           width: 100%;
           margin-bottom: 32px;
         }
@@ -589,67 +484,6 @@ export default function LandingPage() {
           color: var(--text-muted);
           margin-top: 14px;
           letter-spacing: 0.03em;
-        }
-
-        /* Admin side */
-        .lp-access-admin {
-          padding: clamp(40px, 6vw, 88px) clamp(20px, 5vw, 72px);
-          background: #FFFFFF;
-          min-width: 0;
-          transition: all 0.35s ease;
-          position: relative;
-        }
-        .lp-access-admin.highlighted {
-          z-index: 5;
-          animation: spotlightAdmin 3.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-        .lp-access-admin.highlighted .btn-admin {
-          animation: pulseAdminBtnFocus 1s ease-in-out 3;
-        }
-        .lp-access-label-red {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          font-size: 11px;
-          font-weight: 700;
-          letter-spacing: 0.2em;
-          text-transform: uppercase;
-          color: var(--red);
-          margin-bottom: 20px;
-        }
-        .lp-access-label-red-sq {
-          width: 10px; height: 10px;
-          background: var(--red);
-          flex-shrink: 0;
-        }
-        .lp-access-heading-dark {
-          font-size: clamp(26px, 3.2vw, 44px);
-          font-weight: 900;
-          text-transform: uppercase;
-          letter-spacing: -0.02em;
-          line-height: 1.08;
-          color: #0D1B2A;
-          margin-bottom: 16px;
-        }
-        .lp-access-body-dark {
-          font-size: 15px;
-          font-weight: 400;
-          line-height: 1.65;
-          color: #4B5563;
-          max-width: 460px;
-          width: 100%;
-          margin-bottom: 32px;
-        }
-        .lp-restricted-badge {
-          display: inline-block;
-          margin-top: 14px;
-          padding: 4px 10px;
-          background: var(--red);
-          color: #FFFFFF;
-          font-size: 10px;
-          font-weight: 800;
-          letter-spacing: 0.18em;
-          text-transform: uppercase;
         }
 
         /* ─── FOOTER ─── */
@@ -793,17 +627,10 @@ export default function LandingPage() {
             <div className={`lp-hero-ctas ${heroVisible ? 'visible' : ''}`}>
               <button
                 className="btn-primary"
-                onClick={() => scrollToAccess('citizen')}
-                aria-label="Scroll to get the app section"
+                onClick={() => navigate('/get-the-app')}
+                aria-label="Get the SendResQPls mobile app"
               >
                 Get the App
-              </button>
-              <button
-                className="btn-outline"
-                onClick={() => scrollToAccess('admin')}
-                aria-label="Scroll to admin portal section"
-              >
-                Admin Portal
               </button>
             </div>
           </div>
@@ -887,12 +714,7 @@ export default function LandingPage() {
         {/* ─── ACCESS PORTAL ─── */}
         <section id="access-section" className={`lp-access ${accessVisible ? 'visible' : ''}`}>
           {/* Citizen */}
-          <div id="access-citizen" className={`lp-access-citizen ${highlightedSide === 'citizen' ? 'highlighted' : ''}`}>
-            {highlightedSide === 'citizen' && (
-              <div className="lp-spotlight-pill blue">
-                👉 Tap below to download APK
-              </div>
-            )}
+          <div id="access-citizen" className="lp-access-citizen">
             <div className="lp-access-label">
               <div className="lp-access-label-square" aria-hidden="true" />
               Citizen Access
@@ -909,33 +731,6 @@ export default function LandingPage() {
               Get the App
             </button>
             <p className="lp-access-sub">Available for Android devices (APK)</p>
-          </div>
-
-          {/* Admin */}
-          <div id="access-admin" className={`lp-access-admin ${highlightedSide === 'admin' ? 'highlighted' : ''}`}>
-            {highlightedSide === 'admin' && (
-              <div className="lp-spotlight-pill red">
-                🔒 Authorized Admin Portal
-              </div>
-            )}
-            <div className="lp-access-label-red">
-              <div className="lp-access-label-red-sq" aria-hidden="true" />
-              Admin Access
-            </div>
-            <h2 className="lp-access-heading-dark">Command Center</h2>
-            <p className="lp-access-body-dark">
-              Authorized MDRRMO personnel only. Full incident management, team dispatch, analytics, and reporting tools.
-            </p>
-            <button
-              className="btn-admin"
-              onClick={() => navigate('/admin/login')}
-              aria-label="Go to MDRRMO admin command center login"
-            >
-              Admin Login
-            </button>
-            <div>
-              <span className="lp-restricted-badge">Restricted</span>
-            </div>
           </div>
         </section>
 

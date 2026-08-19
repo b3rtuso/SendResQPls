@@ -408,7 +408,6 @@ export default function AdminLogin() {
                 </span>
                 <input
                   type="email"
-                  placeholder="admin@mdrrmo.gov.ph"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   onFocus={() => setFocusField('email')}
@@ -448,7 +447,6 @@ export default function AdminLogin() {
                 </span>
                 <input
                   type={showPass ? 'text' : 'password'}
-                  placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   onFocus={() => setFocusField('pass')}

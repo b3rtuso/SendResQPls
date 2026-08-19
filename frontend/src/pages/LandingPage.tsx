@@ -114,6 +114,18 @@ export default function LandingPage() {
           color: var(--white);
           text-decoration: none;
           white-space: nowrap;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+        .lp-nav-logo-img {
+          width: 32px;
+          height: 32px;
+          border-radius: 8px;
+          object-fit: cover;
+          border: 1.5px solid rgba(255, 255, 255, 0.25);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+          flex-shrink: 0;
         }
         .lp-nav-shapes {
           display: flex;
@@ -749,7 +761,10 @@ export default function LandingPage() {
 
         {/* ─── NAV ─── */}
         <nav className="lp-nav">
-          <a href="/" className="lp-nav-logo">SendResQPls</a>
+          <a href="/" className="lp-nav-logo">
+            <img src="/logo.jpg" alt="SendResQPls Logo" className="lp-nav-logo-img" />
+            <span>SendResQPls</span>
+          </a>
           <div className="lp-nav-shapes">
             <div className="lp-shape-circle" aria-hidden="true" />
             <div className="lp-shape-square" aria-hidden="true" />

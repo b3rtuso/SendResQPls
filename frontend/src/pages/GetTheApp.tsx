@@ -368,6 +368,19 @@ export default function GetTheApp() {
         {/* ─── NAV ─── */}
         <nav className="gta-nav">
           <a href="/" className="gta-nav-logo">
+            <img
+              src="/logo.jpg"
+              alt="SendResQPls Logo"
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 8,
+                objectFit: 'cover',
+                border: '1.5px solid rgba(255, 255, 255, 0.25)',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+                flexShrink: 0,
+              }}
+            />
             <span>SendResQPls</span>
             <div className="gta-nav-shapes" aria-hidden="true">
               <div className="gta-shape-circle" />

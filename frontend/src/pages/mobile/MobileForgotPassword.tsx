@@ -10,6 +10,26 @@ export default function MobileForgotPassword() {
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
 
+  const friendlyForgotError = (err: any): string => {
+    const raw = err.response?.data?.error || err.message || '';
+    const status = err.response?.status;
+    const code = err.code;
+
+    if (code === 'ECONNABORTED' || raw.toLowerCase().includes('timeout')) {
+      return 'Taking longer than expected — the server may be warming up. Please wait 30 seconds and try again.';
+    }
+    if (!err.response && (code === 'ERR_NETWORK' || raw.toLowerCase().includes('network'))) {
+      return 'No internet connection. Please check your Wi-Fi or mobile data and try again.';
+    }
+    if (status === 429) {
+      return 'Too many requests. Please wait a minute before trying again.';
+    }
+    if (status && status >= 500) {
+      return 'Our server encountered an issue. Please try again shortly.';
+    }
+    return 'Could not send the reset link. Please try again.';
+  };
+
   const handleSubmit = async () => {
     if (!email || !email.includes('@')) {
       setError('Please enter a valid email address.');
@@ -20,8 +40,8 @@ export default function MobileForgotPassword() {
     try {
       await forgotPassword(email);
       setSent(true);
-    } catch {
-      setError('An error occurred. Please try again.');
+    } catch (err: any) {
+      setError(friendlyForgotError(err));
     } finally {
       setLoading(false);
     }
@@ -72,8 +92,13 @@ export default function MobileForgotPassword() {
               </div>
             </div>
             <button className="auth-btn login" onClick={handleSubmit} disabled={loading}>
-              {loading ? 'Sending...' : 'Send Reset Link'}
+              {loading ? 'Sending… (up to 30s)' : 'Send Reset Link'}
             </button>
+            {loading && (
+              <p style={{ fontSize: 12, color: '#64748B', textAlign: 'center', marginTop: 10, lineHeight: 1.5 }}>
+                This may take a moment if the server is starting up. Please don't close this screen.
+              </p>
+            )}
           </>
         )}
       </div>

@@ -27,6 +27,38 @@ export default function MobileSignup() {
 
   const update = (key: string, val: string) => setForm({ ...form, [key]: val });
 
+  // ── Friendly error message mapper ──────────────────────────────────────────
+  const friendlySendCodeError = (err: any): string => {
+    const raw = err.response?.data?.error || err.response?.data?.details || err.message || '';
+    const status = err.response?.status;
+    const code = err.code;
+
+    // Network / timeout
+    if (code === 'ECONNABORTED' || raw.toLowerCase().includes('timeout')) {
+      return 'Taking longer than expected — the server may be warming up. Please wait 30 seconds and try again.';
+    }
+    if (!err.response && (code === 'ERR_NETWORK' || raw.toLowerCase().includes('network'))) {
+      return 'No internet connection. Please check your Wi-Fi or mobile data and try again.';
+    }
+
+    // Known backend errors
+    if (raw.toLowerCase().includes('already registered')) {
+      return 'This email is already registered. Try logging in instead.';
+    }
+    if (raw.toLowerCase().includes('brevo') || raw.toLowerCase().includes('api_key') || status === 503) {
+      return 'Email service is temporarily unavailable. Please try again in a few minutes.';
+    }
+    if (status === 429) {
+      return 'Too many requests. Please wait a minute before trying again.';
+    }
+    if (status && status >= 500) {
+      return 'Our server encountered an issue. Please try again shortly.';
+    }
+
+    // Fallback
+    return raw || 'Could not send the verification code. Please try again.';
+  };
+
   const handleSendCode = async () => {
     if (!form.email || !form.email.includes('@')) {
       setError('Please enter a valid email address.');
@@ -38,11 +70,10 @@ export default function MobileSignup() {
       await sendVerificationCode(form.email);
       setCodeSent(true);
       setCooldown(600);
-      toast({ type: 'success', priority: 'normal', title: 'Code sent! 📩', message: `The code might be in your Spam folder. Sent to ${form.email}` });
+      toast({ type: 'success', priority: 'normal', title: 'Code sent! 📩', message: `Check your inbox or spam folder for ${form.email}` });
     } catch (err: any) {
       console.error('[SendCode] Error:', err.response?.data || err.message);
-      const msg = err.response?.data?.error || err.response?.data?.details || err.message || 'Verification code failed to send';
-      setError(msg);
+      setError(friendlySendCodeError(err));
     } finally {
       setSendingCode(false);
     }
@@ -215,7 +246,7 @@ export default function MobileSignup() {
                 {verified ? (
                   <><CheckCircle size={14} /> ✓</>
                 ) : sendingCode ? (
-                  '...'
+                  'Sending…'
                 ) : cooldown > 0 ? (
                   `${Math.floor(cooldown / 60)}:${String(cooldown % 60).padStart(2, '0')}`
                 ) : codeSent ? (
@@ -225,6 +256,16 @@ export default function MobileSignup() {
                 )}
               </button>
             </div>
+            {sendingCode && (
+              <p style={{ fontSize: 11, color: '#64748B', marginTop: 6, lineHeight: 1.4 }}>
+                Sending… this may take up to 30 seconds if the server is warming up.
+              </p>
+            )}
+            {codeSent && !verified && !sendingCode && (
+              <p style={{ fontSize: 11, color: '#64748B', marginTop: 6, lineHeight: 1.4 }}>
+                💡 Didn't get it? Check your <strong>Spam</strong> or <strong>Junk</strong> folder.
+              </p>
+            )}
           </div>
 
           {/* Verification Code Input */}

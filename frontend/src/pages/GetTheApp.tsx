@@ -281,43 +281,6 @@ export default function GetTheApp() {
           margin-top: 36px;
         }
 
-        /* ─── NOTICE / ADMIN BAR ─── */
-        .gta-notice-bar {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: clamp(28px, 4vw, 40px) clamp(20px, 5vw, 72px);
-          border-bottom: 1px solid var(--divider);
-          background: var(--surface);
-          gap: 20px;
-        }
-        .gta-notice-text {
-          font-size: 14px;
-          font-weight: 500;
-          color: var(--text-muted);
-          line-height: 1.5;
-        }
-        .gta-notice-text strong {
-          color: var(--white);
-          font-weight: 700;
-        }
-        .gta-admin-link {
-          font-size: 13px;
-          font-weight: 700;
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-          color: var(--white);
-          background: transparent;
-          border: 1px solid rgba(255,255,255,0.3);
-          padding: 10px 20px;
-          cursor: pointer;
-          white-space: nowrap;
-          transition: background 0.15s linear;
-        }
-        .gta-admin-link:hover {
-          background: rgba(255,255,255,0.1);
-        }
-
         /* ─── FOOTER ─── */
         .gta-footer {
           margin-top: auto;
@@ -481,20 +444,6 @@ export default function GetTheApp() {
               }} aria-hidden="true" />
             </div>
           </div>
-        </section>
-
-        {/* ─── NOTICE BAR ─── */}
-        <section className="gta-notice-bar">
-          <div className="gta-notice-text">
-            <strong>MDRRMO Command Center Personnel:</strong> If you are an authorized dispatcher or administrator, access the Command Center web portal.
-          </div>
-          <button
-            className="gta-admin-link"
-            onClick={() => navigate('/admin/login')}
-            aria-label="Go to Admin Portal"
-          >
-            Admin Portal
-          </button>
         </section>
 
         {/* ─── FOOTER ─── */}

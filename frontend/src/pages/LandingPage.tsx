@@ -18,12 +18,20 @@ export default function LandingPage() {
   const [step2Visible, setStep2Visible] = useState(false);
   const [step3Visible, setStep3Visible] = useState(false);
   const [accessVisible, setAccessVisible] = useState(false);
+  const [highlighted, setHighlighted] = useState(false);
+  const highlightTimerRef = useRef<any>(null);
 
   const scrollToAccess = () => {
     const el = document.getElementById('access-section');
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
+    setAccessVisible(true);
+    setHighlighted(true);
+    if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
+    highlightTimerRef.current = setTimeout(() => {
+      setHighlighted(false);
+    }, 3500);
   };
 
   useEffect(() => {
@@ -439,6 +447,50 @@ export default function LandingPage() {
         }
 
         /* ─── ACCESS PORTAL ─── */
+        @keyframes spotlightCitizen {
+          0% {
+            box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.8), inset 0 0 40px rgba(37, 99, 235, 0.2);
+            transform: scale(1);
+          }
+          20% {
+            box-shadow: 0 0 0 8px rgba(37, 99, 235, 0.9), 0 20px 60px rgba(37, 99, 235, 0.45), inset 0 0 50px rgba(37, 99, 235, 0.35);
+            transform: scale(1.012);
+            background: #112948;
+          }
+          50% {
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.6), 0 12px 40px rgba(37, 99, 235, 0.3), inset 0 0 35px rgba(37, 99, 235, 0.25);
+            transform: scale(1.006);
+            background: #0f2440;
+          }
+          100% {
+            box-shadow: 0 0 0 0 rgba(37, 99, 235, 0), inset 0 0 0 transparent;
+            transform: scale(1);
+            background: transparent;
+          }
+        }
+
+        @keyframes pulseBtnFocus {
+          0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(37,99,235,0.7); }
+          50% { transform: scale(1.05); box-shadow: 0 0 0 12px rgba(37,99,235,0); }
+        }
+
+        .lp-spotlight-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 14px;
+          border-radius: 999px;
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+          margin-bottom: 16px;
+          background: #2563EB;
+          color: #FFFFFF;
+          box-shadow: 0 4px 14px rgba(37,99,235,0.5);
+          animation: alFadeSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
         .lp-access {
           border-bottom: 1px solid var(--divider);
           opacity: 0;
@@ -451,6 +503,15 @@ export default function LandingPage() {
         .lp-access-citizen {
           padding: clamp(40px, 6vw, 88px) clamp(20px, 5vw, 72px);
           min-width: 0;
+          transition: all 0.35s ease;
+          position: relative;
+        }
+        .lp-access-citizen.highlighted {
+          z-index: 5;
+          animation: spotlightCitizen 3.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .lp-access-citizen.highlighted .btn-primary {
+          animation: pulseBtnFocus 1s ease-in-out 3;
         }
         .lp-access-label {
           display: flex;
@@ -721,7 +782,12 @@ export default function LandingPage() {
         {/* ─── ACCESS PORTAL ─── */}
         <section id="access-section" className={`lp-access ${accessVisible ? 'visible' : ''}`}>
           {/* Citizen */}
-          <div id="access-citizen" className="lp-access-citizen">
+          <div id="access-citizen" className={`lp-access-citizen ${highlighted ? 'highlighted' : ''}`}>
+            {highlighted && (
+              <div className="lp-spotlight-pill">
+                👉 Tap below to download the app
+              </div>
+            )}
             <div className="lp-access-label">
               <div className="lp-access-label-square" aria-hidden="true" />
               Citizen Access

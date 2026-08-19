@@ -19,6 +19,13 @@ export default function LandingPage() {
   const [step3Visible, setStep3Visible] = useState(false);
   const [accessVisible, setAccessVisible] = useState(false);
 
+  const scrollToAccess = () => {
+    const el = document.getElementById('access-section');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
+
   useEffect(() => {
     // Trigger hero entrance after mount
     const t = setTimeout(() => setHeroVisible(true), 80);
@@ -627,8 +634,8 @@ export default function LandingPage() {
             <div className={`lp-hero-ctas ${heroVisible ? 'visible' : ''}`}>
               <button
                 className="btn-primary"
-                onClick={() => navigate('/get-the-app')}
-                aria-label="Get the SendResQPls mobile app"
+                onClick={scrollToAccess}
+                aria-label="Scroll down to get the app section"
               >
                 Get the App
               </button>
@@ -728,7 +735,7 @@ export default function LandingPage() {
               onClick={() => navigate('/get-the-app')}
               aria-label="Get the SendResQPls mobile app"
             >
-              Get the App
+              Get It Here
             </button>
             <p className="lp-access-sub">Available for Android devices (APK)</p>
           </div>

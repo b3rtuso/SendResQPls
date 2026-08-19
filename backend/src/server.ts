@@ -83,12 +83,15 @@ const reportLimiter = rateLimit({
   message: { error: 'You are submitting reports too quickly. Please wait a moment.' },
 });
 
-app.use(globalLimiter);
+// ── Health check — ping this with Better Stack / UptimeRobot to prevent cold starts ──
+// Placed BEFORE rate limiters so monitoring pings never get throttled or counted against users
+const healthHandler = (_req: express.Request, res: express.Response) => {
+  res.status(200).json({ status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() });
+};
+app.get('/health', healthHandler);
+app.get('/api/health', healthHandler);
 
-// ── Health check — ping this with UptimeRobot every 5 min to prevent cold starts ──
-app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
+app.use(globalLimiter);
 
 // Routes
 app.use('/api/auth', authLimiter, authRoutes);

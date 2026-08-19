@@ -24,7 +24,7 @@ import { AdminNavProvider } from './context/AdminNavContext';
 import LandingPage from './pages/LandingPage';
 import GetTheApp from './pages/GetTheApp';
 import ErrorBoundary from './components/ErrorBoundary';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './App.css';
 
 // ── Mobile auth guard: redirects to /mobile/login if no token ───────────────
@@ -36,8 +36,6 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
   }
   return <>{children}</>;
 }
-
-
 
 // ── Admin auth guard: must have token AND ADMIN role ────────────────────────
 function AdminRoute({ children }: { children: React.ReactNode }) {
@@ -63,6 +61,17 @@ function MobileHomeWithOnboarding() {
 }
 
 function App() {
+  // Silently wake up the backend on initial app load if sleeping
+  useEffect(() => {
+    try {
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const healthUrl = apiBase.replace(/\/api\/?$/, '') + '/health';
+      fetch(healthUrl, { method: 'GET', mode: 'cors' }).catch(() => {});
+    } catch {
+      // Ignore background warmup errors
+    }
+  }, []);
+
   return (
     <ErrorBoundary>
       <BrowserRouter>

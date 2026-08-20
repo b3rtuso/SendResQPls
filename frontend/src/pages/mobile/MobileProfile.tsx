@@ -180,7 +180,7 @@ export default function MobileProfile() {
   /* ── MAIN VIEW ─────────────────────────────────────────── */
   if (section === 'main') return (
     <div className="mobile-shell">
-      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }}>
+      <div style={{ flex: 1, paddingBottom: 80 }}>
 
         {/* Hero Header — uses percentage width, no 100vw hack */}
         <div style={{
@@ -264,7 +264,7 @@ export default function MobileProfile() {
   /* ── ACCOUNT DETAILS ───────────────────────────────────── */
   if (section === 'account') return (
     <div className="mobile-shell">
-      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }}>
+      <div style={{ flex: 1, paddingBottom: 80 }}>
 
         <SectionHeader title="Account Details" onBack={() => setSection('main')} />
 
@@ -345,7 +345,7 @@ export default function MobileProfile() {
   /* ── EMERGENCY CONTACTS ────────────────────────────────── */
   if (section === 'contacts') return (
     <div className="mobile-shell">
-      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }}>
+      <div style={{ flex: 1, paddingBottom: 80 }}>
 
         <SectionHeader title="Emergency Contacts" onBack={() => setSection('main')} />
 
@@ -427,7 +427,7 @@ export default function MobileProfile() {
   /* ── NOTIFICATION SETTINGS ─────────────────────────────── */
   if (section === 'notifications') return (
     <div className="mobile-shell">
-      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }}>
+      <div style={{ flex: 1, paddingBottom: 80 }}>
 
         <SectionHeader title="Notification Settings" onBack={() => setSection('main')} />
         <div style={{ padding: 'clamp(14px, 4vw, 20px)' }}>
@@ -467,7 +467,7 @@ export default function MobileProfile() {
 
     return (
       <div className="mobile-shell">
-        <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }}>
+        <div style={{ flex: 1, paddingBottom: 80 }}>
           <SectionHeader title="Help & Support" onBack={() => setSection('main')} />
           <div style={{ padding: 'clamp(14px, 4vw, 20px)' }}>
             {/* Contact card */}

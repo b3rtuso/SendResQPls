@@ -78,11 +78,19 @@ button:active:not(:disabled) {
   background: transparent !important;
 }
 
-/* Lock viewport scroll when mobile app is mounted — eliminates page-level scrollbar */
+/* Hide scrollbars on html/body when mobile app is mounted, without blocking scroll */
 html:has(.mobile-shell),
 body:has(.mobile-shell) {
-  overflow: hidden !important;
-  height: 100%;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+  overflow-x: hidden;
+}
+
+html:has(.mobile-shell)::-webkit-scrollbar,
+body:has(.mobile-shell)::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 /* Mobile Layout Shell */
@@ -97,17 +105,15 @@ body:has(.mobile-shell) {
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
-  overflow-y: auto;
   -webkit-font-smoothing: antialiased;
-  /* Ensure scrollbar never appears on the shell itself */
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
 }
 
 .mobile-shell::-webkit-scrollbar {
-  display: none;
-  width: 0;
-  height: 0;
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 @media (max-width: 480px) {

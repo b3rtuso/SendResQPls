@@ -178,7 +178,7 @@ export default function MobileHome() {
       `}</style>
       {/* FCM event bridge — renders null, routes push events to toast context */}
       <FcmBannerOverlay />
-      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }}>
+      <div style={{ flex: 1, paddingBottom: 80 }}>
 
         {/* ── Header ─────────────────────────────────── */}
         <div className="mobile-home-header" style={{ marginBottom: 24 }}>

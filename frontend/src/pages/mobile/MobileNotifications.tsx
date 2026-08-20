@@ -68,7 +68,7 @@ export default function MobileNotifications() {
 
   return (
     <div className="mobile-shell" style={{ background: '#F8FAFC' }}>
-      <div className="mobile-page" style={{ flex: 1, overflowY: 'auto', paddingBottom: 85 }}>
+      <div className="mobile-page" style={{ flex: 1, paddingBottom: 85 }}>
         {/* Header (flush top, matching Home header gradient) */}
         <div style={{
           background: 'linear-gradient(155deg, #0F1F38 0%, #1E3A5F 40%, #2563EB 100%)',

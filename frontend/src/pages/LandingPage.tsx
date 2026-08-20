@@ -17,8 +17,10 @@ export default function LandingPage() {
   const [step1Visible, setStep1Visible] = useState(false);
   const [step2Visible, setStep2Visible] = useState(false);
   const [step3Visible, setStep3Visible] = useState(false);
+  const [faqVisible, setFaqVisible] = useState(false);
   const [accessVisible, setAccessVisible] = useState(false);
   const [highlighted, setHighlighted] = useState(false);
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
   const highlightTimerRef = useRef<any>(null);
 
   const scrollToAccess = () => {
@@ -46,6 +48,7 @@ export default function LandingPage() {
       { id: 'step-1', setter: setStep1Visible },
       { id: 'step-2', setter: setStep2Visible },
       { id: 'step-3', setter: setStep3Visible },
+      { id: 'faq-section', setter: setFaqVisible },
       { id: 'access-section', setter: setAccessVisible },
     ];
 
@@ -62,6 +65,77 @@ export default function LandingPage() {
 
     return () => observers.forEach(obs => obs?.disconnect());
   }, []);
+
+  const faqs = [
+    {
+      num: '01',
+      color: 'red',
+      q: 'Why was SendResQPls developed for Balayan?',
+      answers: [
+        'Traditional emergency hotlines often suffer from busy queues, misheard street names, and a lack of visual context. During critical emergencies, every second counts.',
+        'SendResQPls was created in partnership with MDRRMO Balayan to give citizens a direct digital lifeline: 1-tap incident reporting, automated GPS location pinpointing, and instant photo verification so responders arrive at the exact location faster.',
+      ],
+      pills: ['📍 Pinpoint GPS', '⚡ Direct Dispatch', '📸 Photo Verification'],
+    },
+    {
+      num: '02',
+      color: 'yellow',
+      q: "Doesn't this system require internet? What happens during a disaster blackout?",
+      answers: [
+        'We engineered SendResQPls with multi-layer disaster resilience to ensure continuous emergency communication:',
+        '1. Everyday Critical Incidents: The vast majority of emergencies (road accidents, residential fires, medical trauma, localized flash floods) happen when 4G/5G/Wi-Fi is fully operational.',
+        '2. Offline GPS Caching & Auto-Sync: If your cellular data or Wi-Fi drops, the app automatically caches your report and hardware GPS coordinates locally, then silently transmits the moment connectivity returns.',
+        '3. Built-In 1-Tap Cellular Hotlines: If there is zero internet connectivity, the app provides direct 1-tap phone call shortcuts to MDRRMO Balayan, BFP, and PNP that work over standard voice networks without data.',
+        '4. Pre-Disaster Early Warnings: Used before catastrophic typhoons make landfall to report rising river levels, request preemptive evacuations, and receive official MDRRMO advisories.',
+      ],
+      pills: ['💾 Offline GPS Caching', '📞 1-Tap Cellular Hotlines', '🔄 Auto-Sync Queue'],
+    },
+    {
+      num: '03',
+      color: 'blue',
+      q: 'How does the system prevent false reports and AI-generated photos?',
+      answers: [
+        'To protect emergency resources and prevent pranks or fabricated reports, SendResQPls uses a 4-tier verification framework:',
+        '1. AI Synthetic Image Detection: Our AI vision model analyzes uploaded photos for synthetic artifacts, unnatural lighting, and hallmarks of AI generation or web downloads.',
+        '2. Live Camera & GPS Binding: Reports require direct in-app camera capture and cross-reference device hardware GPS with the incident scene in Balayan.',
+        '3. Verified User Accounts: Anonymous reporting is prohibited. Every account requires phone and email OTP (One-Time Password) verification, creating strict legal accountability.',
+        '4. Human Dispatcher Confirmation: AI assists with fast triage, but certified MDRRMO command center officers verify every report before dispatching emergency teams. False reporting is punishable under Philippine law.',
+      ],
+      pills: ['🤖 AI Image Integrity', '📍 GPS Binding', '👤 Verified Accounts (OTP)', '👨‍🚒 Human Review'],
+    },
+    {
+      num: '04',
+      color: 'red',
+      q: 'Is SendResQPls 100% free for all citizens?',
+      answers: [
+        'Yes, 100% free. There are no fees, subscriptions, or premium tiers. It is an official public safety service funded and maintained for the residents and visitors of Balayan, Batangas.',
+      ],
+      pills: ['🛡️ Official Municipal Service', '🆓 100% Free Public App'],
+    },
+    {
+      num: '05',
+      color: 'yellow',
+      q: 'How does AI Photo Triage help in an emergency?',
+      answers: [
+        'When you snap a photo of an incident (fire, flood, or accident), our AI vision system analyzes the image in under 2 seconds to classify the hazard type and estimate the severity score.',
+        'This provides dispatchers with an immediate visual summary, ensuring the right specialized equipment (fire engines, rescue boats, or life-support ambulances) is deployed immediately.',
+      ],
+      pills: ['⚡ 2-Second AI Triage', '🚒 Specialized Equipment Dispatch'],
+    },
+    {
+      num: '06',
+      color: 'blue',
+      q: 'Who responds when I submit an emergency report?',
+      answers: [
+        'Reports go directly to the 24/7 MDRRMO Balayan Command Center. Depending on the emergency type, dispatchers coordinate with:',
+        '• MDRRMO Rescue Units (flood, storm, structural rescue)',
+        '• Bureau of Fire Protection — BFP Balayan (fires, hazmat)',
+        '• Philippine National Police — PNP Balayan (traffic accidents, safety)',
+        '• Rural Health Unit (RHU) Ambulance Services (medical trauma)',
+      ],
+      pills: ['🚨 MDRRMO Balayan', '🚒 BFP Fire', '🚓 PNP Police', '🚑 RHU Ambulance'],
+    },
+  ];
 
   return (
     <>
@@ -446,6 +520,165 @@ export default function LandingPage() {
           margin-top: 32px;
         }
 
+        /* ─── FAQ SECTION ─── */
+        .lp-faq {
+          border-bottom: 1px solid var(--divider);
+          opacity: 0;
+          transform: translateY(40px);
+          transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.16,1,0.3,1);
+          padding: clamp(48px, 6vw, 96px) clamp(20px, 5vw, 72px);
+          position: relative;
+        }
+        .lp-faq.visible { opacity: 1; transform: translateY(0); }
+
+        .lp-faq-header {
+          margin-bottom: clamp(32px, 4vw, 56px);
+        }
+        .lp-faq-eyebrow {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          color: var(--text-muted);
+          margin-bottom: 16px;
+        }
+        .lp-faq-shapes {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .lp-faq-shape-sq {
+          width: 10px; height: 10px;
+          background: var(--red);
+          flex-shrink: 0;
+        }
+        .lp-faq-shape-circle {
+          width: 10px; height: 10px;
+          border-radius: 50%;
+          background: var(--yellow);
+          flex-shrink: 0;
+        }
+        .lp-faq-title {
+          font-size: clamp(28px, 4vw, 52px);
+          font-weight: 900;
+          text-transform: uppercase;
+          letter-spacing: -0.03em;
+          line-height: 1.05;
+          color: var(--white);
+        }
+
+        .lp-faq-list {
+          display: flex;
+          flex-direction: column;
+          border-top: 1px solid var(--divider);
+        }
+        .lp-faq-item {
+          border-bottom: 1px solid var(--divider);
+          transition: background 0.2s ease;
+        }
+        .lp-faq-item.open {
+          background: rgba(255, 255, 255, 0.02);
+        }
+        .lp-faq-trigger {
+          width: 100%;
+          text-align: left;
+          background: transparent;
+          border: none;
+          padding: clamp(20px, 3vw, 32px) 0;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 20px;
+          font-family: var(--font);
+          color: var(--white);
+          transition: opacity 0.15s ease;
+        }
+        .lp-faq-trigger:hover {
+          opacity: 0.9;
+        }
+        .lp-faq-trigger-left {
+          display: flex;
+          align-items: baseline;
+          gap: clamp(14px, 2.5vw, 28px);
+          min-width: 0;
+        }
+        .lp-faq-num {
+          font-size: clamp(16px, 2vw, 22px);
+          font-weight: 900;
+          font-family: var(--font);
+          letter-spacing: -0.02em;
+          flex-shrink: 0;
+        }
+        .lp-faq-num.red { color: var(--red); }
+        .lp-faq-num.yellow { color: var(--yellow); }
+        .lp-faq-num.blue { color: var(--blue); }
+
+        .lp-faq-q {
+          font-size: clamp(16px, 2.2vw, 22px);
+          font-weight: 800;
+          letter-spacing: -0.01em;
+          line-height: 1.25;
+          color: var(--white);
+        }
+        .lp-faq-icon {
+          width: 36px;
+          height: 36px;
+          border-radius: 8px;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          font-size: 18px;
+          font-weight: 600;
+          color: var(--white);
+          transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .lp-faq-item.open .lp-faq-icon {
+          background: var(--blue);
+          border-color: var(--blue);
+          color: #FFFFFF;
+          transform: rotate(45deg);
+        }
+        .lp-faq-body {
+          padding-left: clamp(30px, 4.5vw, 56px);
+          padding-bottom: clamp(24px, 3.5vw, 36px);
+          padding-right: clamp(16px, 2vw, 40px);
+          animation: alFadeSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .lp-faq-text {
+          font-size: clamp(14px, 1.4vw, 15.5px);
+          font-weight: 400;
+          line-height: 1.7;
+          color: var(--text-muted);
+          max-width: 860px;
+        }
+        .lp-faq-text p + p {
+          margin-top: 10px;
+        }
+        .lp-faq-pill-list {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          margin-top: 14px;
+        }
+        .lp-faq-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 4px 10px;
+          border-radius: 6px;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          font-size: 12px;
+          font-weight: 600;
+          color: rgba(255, 255, 255, 0.85);
+        }
+
         /* ─── ACCESS PORTAL ─── */
         @keyframes spotlightCitizen {
           0% {
@@ -776,6 +1009,63 @@ export default function LandingPage() {
                 borderBottom: '18px solid var(--blue)'
               }} aria-hidden="true" />
             </div>
+          </div>
+        </section>
+
+        {/* ─── FAQ SECTION ─── */}
+        <section id="faq-section" className={`lp-faq ${faqVisible ? 'visible' : ''}`}>
+          <div className="lp-faq-header">
+            <div className="lp-faq-eyebrow">
+              <div className="lp-faq-shapes" aria-hidden="true">
+                <div className="lp-faq-shape-sq" />
+                <div className="lp-faq-shape-circle" />
+              </div>
+              <span>Common Inquiries</span>
+            </div>
+            <h2 className="lp-faq-title">Frequently Asked Questions</h2>
+          </div>
+
+          <div className="lp-faq-list">
+            {faqs.map((faq, idx) => {
+              const isOpen = openFaq === idx;
+              return (
+                <div key={faq.num} className={`lp-faq-item ${isOpen ? 'open' : ''}`}>
+                  <button
+                    className="lp-faq-trigger"
+                    onClick={() => setOpenFaq(isOpen ? null : idx)}
+                    aria-expanded={isOpen}
+                    aria-controls={`faq-answer-${idx}`}
+                  >
+                    <div className="lp-faq-trigger-left">
+                      <span className={`lp-faq-num ${faq.color}`}>{faq.num} /</span>
+                      <span className="lp-faq-q">{faq.q}</span>
+                    </div>
+                    <div className="lp-faq-icon" aria-hidden="true">
+                      +
+                    </div>
+                  </button>
+
+                  {isOpen && (
+                    <div id={`faq-answer-${idx}`} className="lp-faq-body">
+                      <div className="lp-faq-text">
+                        {faq.answers.map((p, pIdx) => (
+                          <p key={pIdx}>{p}</p>
+                        ))}
+                      </div>
+                      {faq.pills && (
+                        <div className="lp-faq-pill-list">
+                          {faq.pills.map((pill, pillIdx) => (
+                            <span key={pillIdx} className="lp-faq-pill">
+                              {pill}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </section>
 

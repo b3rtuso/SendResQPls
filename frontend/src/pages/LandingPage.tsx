@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Phone, AlertTriangle, ChevronDown, Home, PlusCircle, Bell, Clock, User, Wifi, Battery } from 'lucide-react';
 
 /* ─── Bauhaus Geometric Design System ───────────────────────────────────────
    DESIGN_VARIANCE: 8 | MOTION_INTENSITY: 6 | VISUAL_DENSITY: 4
@@ -405,7 +406,7 @@ export default function LandingPage() {
         .btn-admin:hover { background: #1a2f45; }
         .btn-admin:active { transform: translateY(1px); }
 
-        /* Hero right */
+        /* ─── HERO RIGHT: REAL APP MOCKUP ─── */
         .lp-hero-right {
           position: relative;
           display: flex;
@@ -414,15 +415,275 @@ export default function LandingPage() {
           overflow: hidden;
           opacity: 0;
           transition: opacity 0.8s ease 0.3s;
-          background: #07111D;
+          background: radial-gradient(circle at 50% 50%, #132438 0%, #07111D 100%);
+          padding: clamp(24px, 4vw, 48px);
         }
         .lp-hero-right.visible { opacity: 1; }
-        .lp-hero-right img {
+
+        @keyframes radarPing {
+          0% { transform: scale(1); opacity: 0.8; }
+          100% { transform: scale(2.2); opacity: 0; }
+        }
+
+        .lp-phone-wrapper {
+          position: relative;
           width: 100%;
-          height: 100%;
+          max-width: 360px;
+          filter: drop-shadow(0 25px 50px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 40px rgba(37, 99, 235, 0.2));
+          animation: alFadeSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .lp-phone-frame {
+          background: #0B1521;
+          border-radius: 44px;
+          padding: 11px;
+          border: 3px solid #334155;
+          box-shadow: inset 0 0 0 2px #1E293B, 0 0 0 1px #0F172A;
+          position: relative;
+        }
+
+        /* Screen inside phone */
+        .lp-phone-screen {
+          background: #0D1B2A;
+          border-radius: 34px;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          font-family: var(--font);
+          color: #FFFFFF;
+          position: relative;
+          user-select: none;
+        }
+
+        /* Status bar */
+        .lp-phone-status {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 12px 20px 6px;
+          font-size: 11px;
+          font-weight: 700;
+          color: rgba(255,255,255,0.9);
+          z-index: 10;
+        }
+        .lp-phone-notch {
+          width: 90px;
+          height: 20px;
+          background: #000000;
+          border-radius: 20px;
+        }
+        .lp-phone-status-icons {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        /* App Body inside Mockup */
+        .lp-phone-content {
+          padding: 12px 16px 18px;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .lp-phone-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+        .lp-phone-brand {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .lp-phone-logo {
+          width: 32px;
+          height: 32px;
+          border-radius: 8px;
           object-fit: cover;
-          object-position: center;
-          display: block;
+          border: 1px solid rgba(255,255,255,0.25);
+        }
+        .lp-phone-brand-title {
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: rgba(255,255,255,0.6);
+          line-height: 1;
+        }
+        .lp-phone-brand-sub {
+          font-size: 11px;
+          font-weight: 700;
+          color: #FFFFFF;
+          margin-top: 2px;
+          line-height: 1.2;
+        }
+        .lp-phone-avatar {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          background: rgba(37, 99, 235, 0.25);
+          border: 1.5px solid rgba(255, 255, 255, 0.3);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 11px;
+          font-weight: 800;
+          color: #FFFFFF;
+        }
+
+        .lp-phone-greeting {
+          margin-top: 2px;
+        }
+        .lp-phone-greeting-sm {
+          font-size: 11px;
+          color: rgba(255,255,255,0.6);
+          font-weight: 500;
+        }
+        .lp-phone-greeting-lg {
+          font-size: 16px;
+          font-weight: 900;
+          color: #FFFFFF;
+          line-height: 1.1;
+          margin-top: 1px;
+        }
+
+        /* Mockup SOS Card */
+        .lp-phone-sos-card {
+          background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
+          border-radius: 16px;
+          padding: 14px 12px;
+          text-align: center;
+          box-shadow: 0 8px 24px rgba(220, 38, 38, 0.4);
+          position: relative;
+          overflow: hidden;
+        }
+        .lp-phone-radar-box {
+          position: relative;
+          width: 44px;
+          height: 44px;
+          margin: 0 auto 6px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .lp-phone-radar-ring {
+          position: absolute;
+          inset: -4px;
+          border-radius: 50%;
+          border: 2px solid rgba(255,255,255,0.5);
+          animation: radarPing 2.2s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+          pointer-events: none;
+        }
+        .lp-phone-radar-ring.stagger {
+          animation-delay: 1.1s;
+        }
+        .lp-phone-sos-icon {
+          width: 38px;
+          height: 38px;
+          border-radius: 50%;
+          background: rgba(255,255,255,0.25);
+          border: 1.5px solid rgba(255,255,255,0.6);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+          z-index: 2;
+        }
+        .lp-phone-sos-title {
+          font-size: 12px;
+          font-weight: 900;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: #FFFFFF;
+        }
+        .lp-phone-sos-sub {
+          font-size: 9.5px;
+          color: rgba(255,255,255,0.85);
+          margin-top: 3px;
+          line-height: 1.3;
+        }
+        .lp-phone-sos-hint {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          font-size: 8.5px;
+          font-weight: 800;
+          letter-spacing: 0.06em;
+          color: #FFFFFF;
+          margin-top: 6px;
+          background: rgba(0,0,0,0.2);
+          padding: 3px 8px;
+          border-radius: 12px;
+        }
+
+        /* Mockup Hotlines */
+        .lp-phone-section-label {
+          font-size: 9px;
+          font-weight: 800;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          color: rgba(255,255,255,0.5);
+          margin-bottom: 6px;
+        }
+        .lp-phone-hotlines {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 8px;
+        }
+        .lp-phone-hotline-card {
+          background: rgba(255,255,255,0.05);
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 12px;
+          padding: 8px 10px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .lp-phone-hotline-icon {
+          width: 24px;
+          height: 24px;
+          border-radius: 6px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+        .lp-phone-hotline-num {
+          font-size: 11px;
+          font-weight: 800;
+          color: #FFFFFF;
+          line-height: 1.1;
+        }
+        .lp-phone-hotline-name {
+          font-size: 9px;
+          color: rgba(255,255,255,0.55);
+          line-height: 1;
+          margin-top: 2px;
+        }
+
+        /* Mockup Bottom Nav */
+        .lp-phone-nav {
+          background: rgba(13, 27, 42, 0.95);
+          border-top: 1px solid rgba(255,255,255,0.12);
+          padding: 8px 12px 10px;
+          display: flex;
+          align-items: center;
+          justify-content: space-around;
+        }
+        .lp-phone-nav-item {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 2px;
+          font-size: 8px;
+          font-weight: 700;
+          color: rgba(255,255,255,0.45);
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+        }
+        .lp-phone-nav-item.active {
+          color: var(--blue);
         }
 
         /* ─── TICKER ─── */
@@ -936,13 +1197,130 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Right — generated Bauhaus hero image */}
-          <div className={`lp-hero-right ${heroVisible ? 'visible' : ''}`} aria-hidden="true">
-            <img
-              src="/bauhaus-hero.jpg"
-              alt="SendResQPls mobile app — Bauhaus geometric composition"
-              loading="eager"
-            />
+          {/* Right — Real Logged-In Mobile App Home Screen Mockup */}
+          <div className={`lp-hero-right ${heroVisible ? 'visible' : ''}`} aria-label="SendResQPls citizen home screen preview">
+            <div className="lp-phone-wrapper">
+              <div className="lp-phone-frame">
+                <div className="lp-phone-screen">
+                  {/* Phone Status Bar */}
+                  <div className="lp-phone-status">
+                    <span>9:41</span>
+                    <div className="lp-phone-notch" />
+                    <div className="lp-phone-status-icons">
+                      <Wifi size={11} />
+                      <span style={{ fontSize: 9, fontWeight: 900 }}>5G</span>
+                      <Battery size={13} />
+                    </div>
+                  </div>
+
+                  {/* App Content */}
+                  <div className="lp-phone-content">
+                    {/* Header */}
+                    <div className="lp-phone-header">
+                      <div className="lp-phone-brand">
+                        <img src="/logo.jpg" alt="SRQ" className="lp-phone-logo" />
+                        <div>
+                          <div className="lp-phone-brand-title">SendResQPls</div>
+                          <div className="lp-phone-brand-sub">MDRRMO Balayan</div>
+                        </div>
+                      </div>
+                      <div className="lp-phone-avatar">JD</div>
+                    </div>
+
+                    {/* Greeting */}
+                    <div className="lp-phone-greeting">
+                      <div className="lp-phone-greeting-sm">Hello,</div>
+                      <div className="lp-phone-greeting-lg">Juan Dela Cruz</div>
+                    </div>
+
+                    {/* SOS Alert Card */}
+                    <div className="lp-phone-sos-card">
+                      <div className="lp-phone-radar-box">
+                        <div className="lp-phone-radar-ring" />
+                        <div className="lp-phone-radar-ring stagger" />
+                        <div className="lp-phone-sos-icon">
+                          <AlertTriangle size={20} color="#FFFFFF" strokeWidth={2.4} />
+                        </div>
+                      </div>
+                      <div className="lp-phone-sos-title">SEND EMERGENCY ALERT</div>
+                      <div className="lp-phone-sos-sub">Tap to instantly report an incident to MDRRMO Balayan</div>
+                      <div className="lp-phone-sos-hint">
+                        <ChevronDown size={10} />
+                        <span>TAP TO REPORT NOW</span>
+                        <ChevronDown size={10} />
+                      </div>
+                    </div>
+
+                    {/* Hotlines */}
+                    <div>
+                      <div className="lp-phone-section-label">Emergency Hotlines</div>
+                      <div className="lp-phone-hotlines">
+                        <div className="lp-phone-hotline-card">
+                          <div className="lp-phone-hotline-icon" style={{ background: 'rgba(220, 38, 38, 0.25)', color: '#EF4444' }}>
+                            <Phone size={12} strokeWidth={2.5} />
+                          </div>
+                          <div>
+                            <div className="lp-phone-hotline-num">911</div>
+                            <div className="lp-phone-hotline-name">National</div>
+                          </div>
+                        </div>
+                        <div className="lp-phone-hotline-card">
+                          <div className="lp-phone-hotline-icon" style={{ background: 'rgba(37, 99, 235, 0.25)', color: '#60A5FA' }}>
+                            <Phone size={12} strokeWidth={2.5} />
+                          </div>
+                          <div>
+                            <div className="lp-phone-hotline-num">09171234567</div>
+                            <div className="lp-phone-hotline-name">MDRRMO Balayan</div>
+                          </div>
+                        </div>
+                        <div className="lp-phone-hotline-card">
+                          <div className="lp-phone-hotline-icon" style={{ background: 'rgba(239, 68, 68, 0.25)', color: '#F87171' }}>
+                            <Phone size={12} strokeWidth={2.5} />
+                          </div>
+                          <div>
+                            <div className="lp-phone-hotline-num">143</div>
+                            <div className="lp-phone-hotline-name">Red Cross</div>
+                          </div>
+                        </div>
+                        <div className="lp-phone-hotline-card">
+                          <div className="lp-phone-hotline-icon" style={{ background: 'rgba(245, 158, 11, 0.25)', color: '#FBBF24' }}>
+                            <Phone size={12} strokeWidth={2.5} />
+                          </div>
+                          <div>
+                            <div className="lp-phone-hotline-num">160</div>
+                            <div className="lp-phone-hotline-name">BFP Fire</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Bottom Navigation */}
+                  <div className="lp-phone-nav">
+                    <div className="lp-phone-nav-item active">
+                      <Home size={13} />
+                      <span>Home</span>
+                    </div>
+                    <div className="lp-phone-nav-item">
+                      <PlusCircle size={13} />
+                      <span>Report</span>
+                    </div>
+                    <div className="lp-phone-nav-item">
+                      <Bell size={13} />
+                      <span>Alerts</span>
+                    </div>
+                    <div className="lp-phone-nav-item">
+                      <Clock size={13} />
+                      <span>History</span>
+                    </div>
+                    <div className="lp-phone-nav-item">
+                      <User size={13} />
+                      <span>Profile</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 

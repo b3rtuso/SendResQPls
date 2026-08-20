@@ -75,7 +75,7 @@ export default function LandingPage() {
         'Traditional emergency hotlines often suffer from busy queues, misheard street names, and a lack of visual context. During critical emergencies, every second counts.',
         'SendResQPls was created in partnership with MDRRMO Balayan to give citizens a direct digital lifeline: 1-tap incident reporting, automated GPS location pinpointing, and instant photo verification so responders arrive at the exact location faster.',
       ],
-      pills: ['📍 Pinpoint GPS', '⚡ Direct Dispatch', '📸 Photo Verification'],
+      pills: ['Pinpoint GPS', 'Direct Dispatch', 'Photo Verification'],
     },
     {
       num: '02',
@@ -88,7 +88,7 @@ export default function LandingPage() {
         '3. Built-In 1-Tap Cellular Hotlines: If there is zero internet connectivity, the app provides direct 1-tap phone call shortcuts to MDRRMO Balayan, BFP, and PNP that work over standard voice networks without data.',
         '4. Pre-Disaster Early Warnings: Used before catastrophic typhoons make landfall to report rising river levels, request preemptive evacuations, and receive official MDRRMO advisories.',
       ],
-      pills: ['💾 Offline GPS Caching', '📞 1-Tap Cellular Hotlines', '🔄 Auto-Sync Queue'],
+      pills: ['Offline GPS Caching', '1-Tap Cellular Hotlines', 'Auto-Sync Queue'],
     },
     {
       num: '03',
@@ -101,7 +101,7 @@ export default function LandingPage() {
         '3. Verified User Accounts: Anonymous reporting is prohibited. Every account requires phone and email OTP (One-Time Password) verification, creating strict legal accountability.',
         '4. Human Dispatcher Confirmation: AI assists with fast triage, but certified MDRRMO command center officers verify every report before dispatching emergency teams. False reporting is punishable under Philippine law.',
       ],
-      pills: ['🤖 AI Image Integrity', '📍 GPS Binding', '👤 Verified Accounts (OTP)', '👨‍🚒 Human Review'],
+      pills: ['AI Image Integrity', 'GPS Binding', 'Verified Accounts (OTP)', 'Human Review'],
     },
     {
       num: '04',
@@ -110,7 +110,7 @@ export default function LandingPage() {
       answers: [
         'Yes, 100% free. There are no fees, subscriptions, or premium tiers. It is an official public safety service funded and maintained for the residents and visitors of Balayan, Batangas.',
       ],
-      pills: ['🛡️ Official Municipal Service', '🆓 100% Free Public App'],
+      pills: ['Official Municipal Service', '100% Free Public App'],
     },
     {
       num: '05',
@@ -120,7 +120,7 @@ export default function LandingPage() {
         'When you snap a photo of an incident (fire, flood, or accident), our AI vision system analyzes the image in under 2 seconds to classify the hazard type and estimate the severity score.',
         'This provides dispatchers with an immediate visual summary, ensuring the right specialized equipment (fire engines, rescue boats, or life-support ambulances) is deployed immediately.',
       ],
-      pills: ['⚡ 2-Second AI Triage', '🚒 Specialized Equipment Dispatch'],
+      pills: ['2-Second AI Triage', 'Specialized Equipment Dispatch'],
     },
     {
       num: '06',
@@ -133,7 +133,7 @@ export default function LandingPage() {
         '• Philippine National Police — PNP Balayan (traffic accidents, safety)',
         '• Rural Health Unit (RHU) Ambulance Services (medical trauma)',
       ],
-      pills: ['🚨 MDRRMO Balayan', '🚒 BFP Fire', '🚓 PNP Police', '🚑 RHU Ambulance'],
+      pills: ['MDRRMO Balayan', 'BFP Fire', 'PNP Police', 'RHU Ambulance'],
     },
   ];
 

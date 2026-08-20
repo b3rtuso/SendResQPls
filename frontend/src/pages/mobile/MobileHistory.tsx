@@ -318,34 +318,31 @@ export default function MobileHistory() {
         .srq-tracker-overlay {
           position: fixed;
           inset: 0;
-          background: rgba(15, 23, 42, 0.65);
+          background: rgba(15, 23, 42, 0.7);
           backdrop-filter: blur(8px);
           -webkit-backdrop-filter: blur(8px);
           z-index: 1050;
           display: flex;
-          align-items: flex-end;
+          align-items: center;
           justify-content: center;
-          animation: trackerFadeIn 0.25s ease;
+          padding: 20px;
+          box-sizing: border-box;
+          animation: trackerFadeIn 0.22s ease;
         }
         .srq-tracker-sheet {
           width: 100%;
-          max-width: 480px;
+          max-width: 440px;
           background: white;
-          border-top-left-radius: 28px;
-          border-top-right-radius: 28px;
-          max-height: 88vh;
+          border-radius: 24px;
+          max-height: 85vh;
           overflow-y: auto;
-          box-shadow: 0 -12px 40px rgba(15, 23, 42, 0.25);
-          animation: trackerSlideUp 0.32s cubic-bezier(0.16, 1, 0.3, 1);
-          padding: 12px 20px 32px;
+          box-shadow: 0 20px 60px rgba(15, 23, 42, 0.35);
+          animation: modalScaleIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+          padding: 24px 20px;
           box-sizing: border-box;
         }
         .srq-tracker-handle {
-          width: 38px;
-          height: 4px;
-          border-radius: 999px;
-          background: #CBD5E1;
-          margin: 0 auto 16px;
+          display: none;
         }
         .srq-stepper-track {
           position: relative;
@@ -634,7 +631,7 @@ export default function MobileHistory() {
                       border: '1px solid #DBEAFE',
                       fontSize: 11.5,
                     }}>
-                      <span>{inc.assignedDepartment ? `Unit: ${inc.assignedDepartment}` : 'Track Status'}</span>
+                      <span>Track Status</span>
                       <ChevronRight size={13} strokeWidth={2.5} />
                     </div>
                   </div>

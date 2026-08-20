@@ -17,6 +17,7 @@ import {
   getPendingCount,
   pruneStaleReports,
 } from '../../utils/offlineQueue';
+import { useLocationChecker } from '../../utils/useLocationChecker';
 import BottomNav from '../../components/BottomNav';
 import FcmBannerOverlay from '../../components/FcmBannerOverlay';
 import { useMobileToast } from '../../components/MobileToastProvider';
@@ -47,31 +48,12 @@ export default function MobileReport() {
   const [selectedManualBrgy, setSelectedManualBrgy] = useState(BARANGAYS[0]?.name || 'Poblacion 1');
   const [submittedIncident, setSubmittedIncident] = useState<any | null>(null);
 
-  // Location permission & readiness state
-  const [locStatus, setLocStatus] = useState<'granted' | 'denied' | 'prompt' | 'unavailable' | 'checking'>('checking');
+  // Real-time location state via useLocationChecker
+  const { isLocationOn, recheckLocation } = useLocationChecker();
+  const [showLocationGuideModal, setShowLocationGuideModal] = useState(false);
 
   // Emergency contacts from localStorage
   const [emergencyContacts, setEmergencyContacts] = useState<any[]>([]);
-
-  // Check location permission on mount
-  useEffect(() => {
-    if (!navigator.geolocation) {
-      setLocStatus('unavailable');
-      return;
-    }
-    if (navigator.permissions) {
-      navigator.permissions.query({ name: 'geolocation' }).then(result => {
-        setLocStatus(result.state as any);
-        result.onchange = () => {
-          setLocStatus(result.state as any);
-        };
-      }).catch(() => {
-        setLocStatus('prompt');
-      });
-    } else {
-      setLocStatus('prompt');
-    }
-  }, []);
 
   useEffect(() => {
     try {
@@ -137,27 +119,14 @@ export default function MobileReport() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOnline]);
 
-  const handleEnableGps = () => {
-    if (!navigator.geolocation) {
-      showToast({ type: 'error', priority: 'normal', title: 'Location Unavailable', message: 'Your device does not support GPS geolocation.' });
-      return;
+  const handleEnableGps = async () => {
+    const isNowOn = await recheckLocation();
+    if (isNowOn) {
+      showToast({ type: 'success', priority: 'normal', title: 'GPS Active', message: 'Location auto-tagging is enabled.' });
+      setShowLocationGuideModal(false);
+    } else {
+      setShowLocationGuideModal(true);
     }
-    navigator.geolocation.getCurrentPosition(
-      () => {
-        setLocStatus('granted');
-        showToast({ type: 'success', priority: 'normal', title: 'GPS Connected', message: 'Location auto-tagging is active.' });
-      },
-      () => {
-        setLocStatus('denied');
-        showToast({
-          type: 'warning',
-          priority: 'important',
-          title: 'Permission Denied',
-          message: 'Please allow Location permission in your browser or phone settings.',
-        });
-      },
-      { timeout: 8000, enableHighAccuracy: true }
-    );
   };
 
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -482,8 +451,8 @@ export default function MobileReport() {
           </div>
         )}
 
-        {/* Location Services Off/Denied Reminder Banner */}
-        {(locStatus === 'denied' || locStatus === 'unavailable') && (
+        {/* Location Services Off/Denied Reminder Banner (stays if OFF, auto-disappears if ON) */}
+        {isLocationOn === false && (
           <div style={{
             background: '#FEF3C7',
             border: '1.5px solid #FDE68A',
@@ -751,41 +720,46 @@ export default function MobileReport() {
         </div>
       )}
 
-      {/* ── Pre-flight Review & Submit Modal ── */}
+      {/* ── Pre-flight Review & Submit Modal (Screen-Centered Dialog) ── */}
       {showReviewModal && detectedLocation && (
-        <>
+        <div
+          onClick={() => setShowReviewModal(false)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 10000,
+            background: 'rgba(15, 23, 42, 0.7)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 20,
+          }}
+        >
           <div
-            onClick={() => setShowReviewModal(false)}
+            onClick={e => e.stopPropagation()}
             style={{
-              position: 'fixed', inset: 0, zIndex: 10000,
-              background: 'rgba(15, 23, 42, 0.65)',
-              backdropFilter: 'blur(6px)',
-              WebkitBackdropFilter: 'blur(6px)',
+              background: 'white',
+              borderRadius: 24,
+              padding: '28px 24px 28px',
+              maxWidth: 420,
+              width: '100%',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+              animation: 'modalScaleIn 0.28s cubic-bezier(0.16,1,0.3,1) both',
             }}
-          />
-          <div style={{
-            position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 10001,
-            background: 'white',
-            borderRadius: '24px 24px 0 0',
-            padding: '28px 24px 36px',
-            boxShadow: '0 -8px 40px rgba(0,0,0,0.22)',
-            animation: 'slideUp 0.28s cubic-bezier(0.16,1,0.3,1) both',
-          }}>
-            <div style={{ width: 40, height: 4, borderRadius: 4, background: '#E2E8F0', margin: '0 auto 20px' }} />
-
+          >
             <div style={{ textAlign: 'center', marginBottom: 20 }}>
               <div style={{
-                width: 48, height: 48, borderRadius: 16,
-                background: '#FEF2F2', border: '1px solid #FECACA',
+                width: 52, height: 52, borderRadius: 16,
+                background: '#FEF2F2', border: '1.5px solid #FECACA',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 margin: '0 auto 12px', color: '#DC2626',
               }}>
-                <AlertTriangle size={24} />
+                <AlertTriangle size={26} />
               </div>
-              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: '#0F172A' }}>
+              <h3 style={{ margin: 0, fontSize: 19, fontWeight: 900, color: '#0F172A', letterSpacing: '-0.2px' }}>
                 Confirm Emergency Dispatch
               </h3>
-              <p style={{ margin: '4px 0 0', fontSize: 13, color: '#64748B' }}>
+              <p style={{ margin: '6px 0 0', fontSize: 13, color: '#64748B', lineHeight: 1.5 }}>
                 Please review your report details before sending to MDRRMO.
               </p>
             </div>
@@ -793,7 +767,7 @@ export default function MobileReport() {
             {/* Preview Summary Card */}
             <div style={{
               background: '#F8FAFC', borderRadius: 16, padding: '14px 16px',
-              border: '1px solid #E2E8F0', marginBottom: 20, display: 'flex', gap: 14, alignItems: 'center',
+              border: '1px solid #E2E8F0', marginBottom: 22, display: 'flex', gap: 14, alignItems: 'center',
             }}>
               {preview && (
                 <img
@@ -843,7 +817,115 @@ export default function MobileReport() {
               </button>
             </div>
           </div>
-        </>
+        </div>
+      )}
+
+      {/* ── How to Enable Location Guide Modal (Screen-Centered Dialog) ── */}
+      {showLocationGuideModal && (
+        <div
+          onClick={() => setShowLocationGuideModal(false)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 10000,
+            background: 'rgba(15, 23, 42, 0.7)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 20,
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: 'white',
+              borderRadius: 24,
+              padding: '28px 24px 28px',
+              maxWidth: 420,
+              width: '100%',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.32)',
+              animation: 'modalScaleIn 0.28s cubic-bezier(0.16,1,0.3,1) both',
+            }}
+          >
+            <div style={{ textAlign: 'center', marginBottom: 18 }}>
+              <div style={{
+                width: 52, height: 52, borderRadius: 16,
+                background: '#FEF3C7', border: '1.5px solid #FDE68A',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                margin: '0 auto 12px', color: '#D97706',
+              }}>
+                <MapPin size={26} />
+              </div>
+              <h3 style={{ margin: 0, fontSize: 19, fontWeight: 900, color: '#0F172A', letterSpacing: '-0.2px' }}>
+                Enable Location Access
+              </h3>
+              <p style={{ margin: '6px 0 0', fontSize: 13, color: '#64748B', lineHeight: 1.5 }}>
+                Follow these quick steps so the app can automatically route responders to your location:
+              </p>
+            </div>
+
+            {/* Step-by-step instructions card */}
+            <div style={{
+              background: '#F8FAFC', borderRadius: 16, padding: '16px',
+              border: '1px solid #E2E8F0', marginBottom: 20,
+              display: 'flex', flexDirection: 'column', gap: 12,
+            }}>
+              <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#2563EB', color: 'white', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>1</div>
+                <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.45 }}>
+                  Tap the <strong>lock 🔒 or tune ⚙️ icon</strong> in your browser address bar.
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#2563EB', color: 'white', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>2</div>
+                <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.45 }}>
+                  Tap <strong>Permissions</strong> → <strong>Location</strong> → choose <strong>Allow</strong>.
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#2563EB', color: 'white', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>3</div>
+                <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.45 }}>
+                  Make sure your phone's <strong>GPS / Location</strong> toggle is turned on.
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <button
+                onClick={async () => {
+                  const ok = await recheckLocation();
+                  if (ok) {
+                    showToast({ type: 'success', priority: 'normal', title: 'Location Enabled!', message: 'GPS auto-tagging is now active.' });
+                    setShowLocationGuideModal(false);
+                  } else {
+                    showToast({ type: 'warning', priority: 'important', title: 'Still Disabled', message: 'Location is not yet enabled. Please check browser settings.' });
+                  }
+                }}
+                style={{
+                  width: '100%', padding: '14px', borderRadius: 14,
+                  background: '#2563EB', color: 'white', border: 'none',
+                  fontSize: 14, fontWeight: 800, cursor: 'pointer',
+                  boxShadow: '0 4px 16px rgba(37,99,235,0.3)',
+                  fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                }}
+              >
+                <MapPin size={16} /> Check Location Now
+              </button>
+
+              <button
+                onClick={() => setShowLocationGuideModal(false)}
+                style={{
+                  width: '100%', padding: '12px', borderRadius: 14,
+                  background: '#F1F5F9', border: '1.5px solid #E2E8F0',
+                  color: '#475569', fontSize: 13.5, fontWeight: 700, cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* ── Success Screen Modal Overlay ── */}

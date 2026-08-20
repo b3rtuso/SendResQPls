@@ -157,6 +157,7 @@ export default function MobileSignup() {
           padding: 28px 24px;
           box-shadow: 0 8px 40px rgba(30,58,95,0.12), 0 2px 8px rgba(0,0,0,0.06);
           position: relative; z-index: 2;
+          animation: authCardEntrance 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
       `}</style>
 

@@ -22,6 +22,8 @@ const safetyTips = [
   { icon: Stethoscope, color: '#8B5CF6', bg: '#F5F3FF', title: 'First Aid',   tip: 'Apply pressure to wounds with a clean cloth to stop bleeding. Do not move injured persons unless necessary.' },
 ];
 
+import { useLocationChecker } from '../../utils/useLocationChecker';
+
 const STATUS_KEY = 'srq_last_statuses';
 
 export default function MobileHome() {
@@ -32,9 +34,8 @@ export default function MobileHome() {
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Location permission state
-  type LocStatus = 'idle' | 'granted' | 'denied' | 'unavailable';
-  const [locStatus, setLocStatus] = useState<LocStatus>('idle');
+  // Real-time location state via useLocationChecker
+  const { isLocationOn, recheckLocation } = useLocationChecker();
   const [showLocBanner, setShowLocBanner] = useState(true);
   const [showLocModal, setShowLocModal] = useState(false);
 
@@ -101,49 +102,7 @@ export default function MobileHome() {
 
     async function initPermissionsSequentially() {
       // Step 1: Request GPS Location first
-      await new Promise<void>((resolve) => {
-        if (!navigator.geolocation) {
-          if (isMounted) setLocStatus('unavailable');
-          return resolve();
-        }
-
-        if (navigator.permissions) {
-          navigator.permissions.query({ name: 'geolocation' }).then(result => {
-            if (!isMounted) return resolve();
-            if (result.state === 'granted') {
-              setLocStatus('granted');
-              resolve();
-            } else if (result.state === 'denied') {
-              setLocStatus('denied');
-              resolve();
-            } else {
-              navigator.geolocation.getCurrentPosition(
-                () => { if (isMounted) setLocStatus('granted'); resolve(); },
-                () => { if (isMounted) setLocStatus('denied'); resolve(); },
-                { timeout: 8000, enableHighAccuracy: true }
-              );
-            }
-            result.onchange = () => {
-              if (isMounted) {
-                if (result.state === 'granted') setLocStatus('granted');
-                else if (result.state === 'denied') setLocStatus('denied');
-              }
-            };
-          }).catch(() => {
-            navigator.geolocation.getCurrentPosition(
-              () => { if (isMounted) setLocStatus('granted'); resolve(); },
-              () => { if (isMounted) setLocStatus('denied'); resolve(); },
-              { timeout: 8000, enableHighAccuracy: true }
-            );
-          });
-        } else {
-          navigator.geolocation.getCurrentPosition(
-            () => { if (isMounted) setLocStatus('granted'); resolve(); },
-            () => { if (isMounted) setLocStatus('denied'); resolve(); },
-            { timeout: 8000, enableHighAccuracy: true }
-          );
-        }
-      });
+      await recheckLocation();
 
       // Step 2: Polite breathing delay so dialogs appear sequentially
       await new Promise(r => setTimeout(r, 600));
@@ -164,15 +123,17 @@ export default function MobileHome() {
     return () => {
       isMounted = false;
     };
-  }, [userId]);
+  }, [userId, recheckLocation]);
 
-  // Auto-dismiss the green location banner after 4s
+  // Auto-dismiss the location banner if location is granted/on
   useEffect(() => {
-    if (locStatus === 'granted') {
+    if (isLocationOn === true) {
       const t = setTimeout(() => setShowLocBanner(false), 4000);
       return () => clearTimeout(t);
+    } else if (isLocationOn === false) {
+      setShowLocBanner(true);
     }
-  }, [locStatus]);
+  }, [isLocationOn]);
 
   return (
     <div className="mobile-shell" style={{ background: '#F1F5F9' }}>
@@ -230,7 +191,7 @@ export default function MobileHome() {
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }}>
 
         {/* ── Location Alert Banner (clickable → opens modal) ── */}
-        {showLocBanner && (locStatus === 'denied' || locStatus === 'unavailable') && (
+        {showLocBanner && isLocationOn === false && (
           <button
             onClick={() => setShowLocModal(true)}
             style={{
@@ -252,7 +213,7 @@ export default function MobileHome() {
           >
             <MapPinOff size={16} color="#DC2626" style={{ flexShrink: 0 }} />
             <div style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#991B1B' }}>
-              {locStatus === 'denied' ? 'Enable location for emergency reports' : 'GPS not supported on this device'}
+              Location is off. Tap to enable for emergency routing.
             </div>
             <div style={{ fontSize: 10, fontWeight: 700, color: '#DC2626', background: '#FEE2E2', borderRadius: 6, padding: '2px 7px', flexShrink: 0, letterSpacing: '0.04em' }}>
               FIX
@@ -486,114 +447,125 @@ export default function MobileHome() {
       <BottomNav />
 
 
-      {/* ── Location Permission Modal ── */}
+      {/* ── Location Permission Modal (Screen-Centered Dialog) ── */}
       {showLocModal && (
-        <>
-          {/* Backdrop */}
+        <div
+          onClick={() => setShowLocModal(false)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 10000,
+            background: 'rgba(15, 23, 42, 0.7)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 20,
+          }}
+        >
           <div
-            onClick={() => setShowLocModal(false)}
+            onClick={e => e.stopPropagation()}
             style={{
-              position: 'fixed', inset: 0, zIndex: 10000,
-              background: 'rgba(0,0,0,0.5)',
-              backdropFilter: 'blur(4px)',
-              WebkitBackdropFilter: 'blur(4px)',
+              background: 'white',
+              borderRadius: 24,
+              padding: '28px 24px 28px',
+              maxWidth: 420,
+              width: '100%',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.32)',
+              animation: 'modalScaleIn 0.28s cubic-bezier(0.16,1,0.3,1) both',
             }}
-          />
-          {/* Bottom-sheet card */}
-          <div style={{
-            position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 10001,
-            background: 'white',
-            borderRadius: '24px 24px 0 0',
-            padding: '28px 24px 40px',
-            boxShadow: '0 -8px 40px rgba(0,0,0,0.18)',
-            animation: 'slideUp 0.32s cubic-bezier(0.16,1,0.3,1) both',
-          }}>
-            {/* Handle bar */}
-            <div style={{
-              width: 40, height: 4, borderRadius: 4,
-              background: '#E2E8F0',
-              margin: '0 auto 24px',
-            }} />
+          >
+            <div style={{ textAlign: 'center', marginBottom: 18 }}>
+              <div style={{
+                width: 54, height: 54, borderRadius: 18,
+                background: 'linear-gradient(135deg, #FEE2E2, #FEF2F2)',
+                border: '1.5px solid #FECACA',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                margin: '0 auto 14px',
+              }}>
+                <Navigation size={26} color="#DC2626" strokeWidth={2} />
+              </div>
 
-            {/* Icon */}
-            <div style={{
-              width: 56, height: 56, borderRadius: 18,
-              background: 'linear-gradient(135deg, #FEE2E2, #FEF2F2)',
-              border: '1.5px solid #FECACA',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              margin: '0 auto 18px',
-            }}>
-              <Navigation size={26} color="#DC2626" strokeWidth={2} />
+              <div style={{
+                fontSize: 19, fontWeight: 900, color: '#0F172A',
+                textAlign: 'center', marginBottom: 6, letterSpacing: '-0.3px',
+              }}>
+                Enable Location Services
+              </div>
+
+              <div style={{
+                fontSize: 13, color: '#64748B', lineHeight: 1.5,
+                textAlign: 'center', marginBottom: 18,
+              }}>
+                SendResQPls needs your location to accurately dispatch emergency responders to you in Balayan:
+              </div>
             </div>
 
-            {/* Title */}
+            {/* Step-by-step instructions card */}
             <div style={{
-              fontSize: 18, fontWeight: 800, color: '#0F172A',
-              textAlign: 'center', marginBottom: 10, letterSpacing: '-0.3px',
+              background: '#F8FAFC', borderRadius: 16, padding: '16px',
+              border: '1px solid #E2E8F0', marginBottom: 20,
+              display: 'flex', flexDirection: 'column', gap: 12,
             }}>
-              Location Access Needed
+              <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#DC2626', color: 'white', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>1</div>
+                <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.45 }}>
+                  Tap the <strong>lock 🔒 or tune ⚙️ icon</strong> in your browser address bar.
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#DC2626', color: 'white', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>2</div>
+                <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.45 }}>
+                  Tap <strong>Permissions</strong> → <strong>Location</strong> → choose <strong>Allow</strong>.
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#DC2626', color: 'white', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>3</div>
+                <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.45 }}>
+                  Ensure your phone's <strong>GPS / Location</strong> is switched on in system settings.
+                </div>
+              </div>
             </div>
 
-            {/* Body */}
-            <div style={{
-              fontSize: 13.5, color: '#64748B', lineHeight: 1.7,
-              textAlign: 'center', marginBottom: 28, maxWidth: 300, margin: '0 auto 28px',
-            }}>
-              SendResQPls needs your location to accurately route emergency responders to you during a crisis.
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <button
+                onClick={async () => {
+                  const ok = await recheckLocation();
+                  if (ok) {
+                    setShowLocModal(false);
+                  } else {
+                    try {
+                      window.open('app-settings:', '_system');
+                    } catch {}
+                  }
+                }}
+                style={{
+                  width: '100%', padding: '15px 20px',
+                  background: 'linear-gradient(135deg, #DC2626, #B91C1C)',
+                  color: 'white', border: 'none', borderRadius: 16,
+                  fontSize: 15, fontWeight: 800, cursor: 'pointer',
+                  letterSpacing: '0.02em',
+                  boxShadow: '0 4px 16px rgba(220,38,38,0.35)',
+                  fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                }}
+              >
+                <Navigation size={16} /> Check Location Now
+              </button>
+
+              <button
+                onClick={() => setShowLocModal(false)}
+                style={{
+                  width: '100%', padding: '13px 20px',
+                  background: '#F1F5F9', color: '#475569',
+                  border: '1.5px solid #E2E8F0', borderRadius: 16,
+                  fontSize: 14, fontWeight: 700, cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                Not now
+              </button>
             </div>
-
-            {/* Open Settings CTA */}
-            <button
-              onClick={() => {
-                setShowLocModal(false);
-                if (navigator.geolocation) {
-                  navigator.geolocation.getCurrentPosition(
-                    () => {
-                      setLocStatus('granted');
-                      setShowLocBanner(true);
-                    },
-                    () => {
-                      setLocStatus('denied');
-                      try {
-                        window.open('app-settings:', '_system');
-                      } catch {}
-                    },
-                    { timeout: 8000, enableHighAccuracy: true }
-                  );
-                } else {
-                  try {
-                    window.open('app-settings:', '_system');
-                  } catch {}
-                }
-              }}
-              style={{
-                width: '100%', padding: '15px 20px',
-                background: 'linear-gradient(135deg, #DC2626, #B91C1C)',
-                color: 'white', border: 'none', borderRadius: 16,
-                fontSize: 15, fontWeight: 800, cursor: 'pointer',
-                marginBottom: 12, letterSpacing: '0.02em',
-                boxShadow: '0 4px 16px rgba(220,38,38,0.35)',
-                fontFamily: 'inherit',
-              }}
-            >
-              Open Settings
-            </button>
-
-            {/* Dismiss */}
-            <button
-              onClick={() => setShowLocModal(false)}
-              style={{
-                width: '100%', padding: '13px 20px',
-                background: '#F1F5F9', color: '#475569',
-                border: '1.5px solid #E2E8F0', borderRadius: 16,
-                fontSize: 14, fontWeight: 700, cursor: 'pointer',
-                fontFamily: 'inherit',
-              }}
-            >
-              Not now
-            </button>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

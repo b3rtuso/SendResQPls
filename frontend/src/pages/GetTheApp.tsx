@@ -15,6 +15,7 @@ export default function GetTheApp() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     const t = setTimeout(() => setMounted(true), 60);
     return () => clearTimeout(t);
   }, []);

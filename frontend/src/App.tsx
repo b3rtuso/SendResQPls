@@ -60,6 +60,15 @@ function MobileHomeWithOnboarding() {
   );
 }
 
+// ── Automatically scroll to top on route change ──────────────────────────────
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+}
+
 function App() {
   // Silently wake up the backend on initial app load if sleeping
   useEffect(() => {
@@ -75,6 +84,7 @@ function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
+        <ScrollToTop />
         <Routes>
           {/* === PUBLIC LANDING PAGE & GET APP === */}
           <Route path="/" element={<LandingPage />} />

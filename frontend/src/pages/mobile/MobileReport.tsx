@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ChevronLeft, AlertTriangle, Camera, Loader, WifiOff, Clock,
-  CheckCircle2, RotateCcw, MapPin, ArrowRight, ShieldCheck, Zap,
+  CheckCircle2, RotateCcw, MapPin, ArrowRight, ShieldCheck,
   MessageSquare, ChevronDown
 } from 'lucide-react';
 import { reportIncident } from '../../api/client';
@@ -31,7 +31,6 @@ export default function MobileReport() {
   const [photo, setPhoto] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [compressing, setCompressing] = useState(false);
-  const [compressionStats, setCompressionStats] = useState<{ origKB: number; compKB: number; savings: number } | null>(null);
   const [sending, setSending] = useState(false);
   const [flushing, setFlushing] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
@@ -117,7 +116,7 @@ export default function MobileReport() {
       setCompressing(true);
       try {
         // Automatically optimize high-res photo for fastest transmission
-        const { file: compressed, originalSize, compressedSize, savingsPercent } = await compressImage(file, {
+        const { file: compressed } = await compressImage(file, {
           maxWidth: 1600,
           maxHeight: 1200,
           quality: 0.82,
@@ -125,15 +124,6 @@ export default function MobileReport() {
 
         setPhoto(compressed);
         setPreview(URL.createObjectURL(compressed));
-        if (savingsPercent > 10) {
-          setCompressionStats({
-            origKB: Math.round(originalSize / 1024),
-            compKB: Math.round(compressedSize / 1024),
-            savings: savingsPercent,
-          });
-        } else {
-          setCompressionStats(null);
-        }
       } catch {
         setPhoto(file);
         setPreview(URL.createObjectURL(file));
@@ -467,20 +457,9 @@ export default function MobileReport() {
             )}
           </div>
 
-          {/* Photo actions & Optimization stats */}
+          {/* Photo actions */}
           {preview && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
-              {compressionStats ? (
-                <div style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 5,
-                  fontSize: 11.5, fontWeight: 700, color: '#16A34A',
-                  background: '#DCFCE7', padding: '4px 10px', borderRadius: 8,
-                }}>
-                  <Zap size={12} />
-                  <span>Optimized {compressionStats.origKB}KB → {compressionStats.compKB}KB ({compressionStats.savings}% faster)</span>
-                </div>
-              ) : <div />}
-
+            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginTop: 8 }}>
               <button
                 onClick={() => fileRef.current?.click()}
                 style={{

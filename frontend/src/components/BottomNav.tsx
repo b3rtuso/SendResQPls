@@ -19,7 +19,11 @@ export default function BottomNav() {
         /* ── Bottom Nav Shell ── */
         .bottom-nav {
           position: fixed;
-          bottom: 0; left: 0; right: 0;
+          bottom: 0;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 100%;
+          max-width: 480px;
           height: 68px;
           display: flex;
           align-items: center;
@@ -31,6 +35,7 @@ export default function BottomNav() {
           box-shadow: 0 -4px 24px rgba(15, 23, 42, 0.07);
           z-index: 1000;
           padding: 0 4px env(safe-area-inset-bottom, 0px);
+          box-sizing: border-box;
         }
 
         /* ── Individual Tab ── */

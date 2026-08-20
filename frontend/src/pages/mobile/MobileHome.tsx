@@ -95,43 +95,76 @@ export default function MobileHome() {
   }, []);
 
 
-  // Request push notifications setup on mount
+  // Request location permission first, then notifications sequentially (magkasunod)
   useEffect(() => {
-    if (userId) {
-      setupPushNotifications();
-    }
-  }, [userId]);
+    let isMounted = true;
 
-  // Request location permission and track grant status
-  useEffect(() => {
-    if (!navigator.geolocation) {
-      setLocStatus('unavailable');
-      return;
-    }
-    if (navigator.permissions) {
-      navigator.permissions.query({ name: 'geolocation' }).then(result => {
-        if (result.state === 'granted') setLocStatus('granted');
-        else if (result.state === 'denied') setLocStatus('denied');
-        else {
+    async function initPermissionsSequentially() {
+      // Step 1: Request GPS Location first
+      await new Promise<void>((resolve) => {
+        if (!navigator.geolocation) {
+          if (isMounted) setLocStatus('unavailable');
+          return resolve();
+        }
+
+        if (navigator.permissions) {
+          navigator.permissions.query({ name: 'geolocation' }).then(result => {
+            if (!isMounted) return resolve();
+            if (result.state === 'granted') {
+              setLocStatus('granted');
+              resolve();
+            } else if (result.state === 'denied') {
+              setLocStatus('denied');
+              resolve();
+            } else {
+              navigator.geolocation.getCurrentPosition(
+                () => { if (isMounted) setLocStatus('granted'); resolve(); },
+                () => { if (isMounted) setLocStatus('denied'); resolve(); },
+                { timeout: 8000, enableHighAccuracy: true }
+              );
+            }
+            result.onchange = () => {
+              if (isMounted) {
+                if (result.state === 'granted') setLocStatus('granted');
+                else if (result.state === 'denied') setLocStatus('denied');
+              }
+            };
+          }).catch(() => {
+            navigator.geolocation.getCurrentPosition(
+              () => { if (isMounted) setLocStatus('granted'); resolve(); },
+              () => { if (isMounted) setLocStatus('denied'); resolve(); },
+              { timeout: 8000, enableHighAccuracy: true }
+            );
+          });
+        } else {
           navigator.geolocation.getCurrentPosition(
-            () => setLocStatus('granted'),
-            () => setLocStatus('denied'),
-            { timeout: 10000, enableHighAccuracy: true }
+            () => { if (isMounted) setLocStatus('granted'); resolve(); },
+            () => { if (isMounted) setLocStatus('denied'); resolve(); },
+            { timeout: 8000, enableHighAccuracy: true }
           );
         }
-        result.onchange = () => {
-          if (result.state === 'granted') setLocStatus('granted');
-          else if (result.state === 'denied') setLocStatus('denied');
-        };
       });
-    } else {
-      navigator.geolocation.getCurrentPosition(
-        () => setLocStatus('granted'),
-        () => setLocStatus('denied'),
-        { timeout: 10000, enableHighAccuracy: true }
-      );
+
+      // Step 2: Polite breathing delay so dialogs appear sequentially
+      await new Promise(r => setTimeout(r, 600));
+      if (!isMounted) return;
+
+      // Step 3: Request Push Notifications second
+      if (userId) {
+        try {
+          await setupPushNotifications();
+        } catch (err) {
+          console.warn('[Push] Sequential setup error:', err);
+        }
+      }
     }
-  }, []);
+
+    initPermissionsSequentially();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [userId]);
 
   // Auto-dismiss the green location banner after 4s
   useEffect(() => {

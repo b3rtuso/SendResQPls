@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, MapPin, RefreshCw, ChevronLeft, Loader2, CheckCircle2, Clock, ShieldCheck, XCircle, AlertTriangle, PlusCircle } from 'lucide-react';
+import { AlertCircle, MapPin, RefreshCw, ChevronLeft, Loader2, CheckCircle2, Clock, ShieldCheck, XCircle, AlertTriangle, PlusCircle, X, Phone, Siren, ChevronRight, Check } from 'lucide-react';
 import { getMyIncidents, getIncidents } from '../../api/client';
 import type { Incident, Status } from '../../types';
 import BottomNav from '../../components/BottomNav';
@@ -24,6 +24,78 @@ const STATUS_THEMES: Record<Status, { bg: string; color: string; border: string;
   REJECTED:   { bg: '#FEE2E2', color: '#7F1D1D', border: '#FECACA', label: 'Rejected' },
 };
 
+const TAB_THEMES: Record<string, {
+  activeBg: string;
+  activeColor: string;
+  activeBorder: string;
+  activeGlow: string;
+  inactiveBg: string;
+  inactiveColor: string;
+  inactiveBorder: string;
+  dotColor: string;
+}> = {
+  ALL: {
+    activeBg: '#0F2942',
+    activeColor: '#FFFFFF',
+    activeBorder: '#0F2942',
+    activeGlow: 'rgba(15, 41, 66, 0.25)',
+    inactiveBg: '#FFFFFF',
+    inactiveColor: '#475569',
+    inactiveBorder: '#E2E8F0',
+    dotColor: '#64748B',
+  },
+  PENDING: {
+    activeBg: '#F59E0B',
+    activeColor: '#FFFFFF',
+    activeBorder: '#D97706',
+    activeGlow: 'rgba(245, 158, 11, 0.3)',
+    inactiveBg: '#FEF3C7',
+    inactiveColor: '#92400E',
+    inactiveBorder: '#FDE68A',
+    dotColor: '#F59E0B',
+  },
+  REVIEWING: {
+    activeBg: '#2563EB',
+    activeColor: '#FFFFFF',
+    activeBorder: '#1D4ED8',
+    activeGlow: 'rgba(37, 99, 235, 0.3)',
+    inactiveBg: '#DBEAFE',
+    inactiveColor: '#1E40AF',
+    inactiveBorder: '#BFDBFE',
+    dotColor: '#2563EB',
+  },
+  DISPATCHED: {
+    activeBg: '#8B5CF6',
+    activeColor: '#FFFFFF',
+    activeBorder: '#7C3AED',
+    activeGlow: 'rgba(139, 92, 246, 0.3)',
+    inactiveBg: '#EDE9FE',
+    inactiveColor: '#5B21B6',
+    inactiveBorder: '#DDD6FE',
+    dotColor: '#8B5CF6',
+  },
+  RESOLVED: {
+    activeBg: '#10B981',
+    activeColor: '#FFFFFF',
+    activeBorder: '#059669',
+    activeGlow: 'rgba(16, 185, 129, 0.3)',
+    inactiveBg: '#DCFCE7',
+    inactiveColor: '#14532D',
+    inactiveBorder: '#BBF7D0',
+    dotColor: '#10B981',
+  },
+  REJECTED: {
+    activeBg: '#EF4444',
+    activeColor: '#FFFFFF',
+    activeBorder: '#DC2626',
+    activeGlow: 'rgba(239, 68, 68, 0.3)',
+    inactiveBg: '#FEE2E2',
+    inactiveColor: '#7F1D1D',
+    inactiveBorder: '#FECACA',
+    dotColor: '#EF4444',
+  },
+};
+
 const TYPE_COLORS: Record<string, string> = {
   Fire: '#EF4444',
   Flood: '#3B82F6',
@@ -35,7 +107,7 @@ const TYPE_COLORS: Record<string, string> = {
   Landslide: '#78716C',
 };
 
-const FILTER_TABS = ['ALL', 'PENDING', 'DISPATCHED', 'RESOLVED', 'REJECTED'] as const;
+const FILTER_TABS = ['ALL', 'PENDING', 'REVIEWING', 'DISPATCHED', 'RESOLVED', 'REJECTED'] as const;
 type FilterTab = typeof FILTER_TABS[number];
 
 const PAGE_SIZE = 6;
@@ -47,6 +119,7 @@ export default function MobileHistory() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [statusFilter, setStatusFilter] = useState<FilterTab>('ALL');
   const [page, setPage] = useState(1);
+  const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
 
   // Pull-to-refresh states & refs
   const [pullDistance, setPullDistance] = useState(0);
@@ -201,22 +274,15 @@ export default function MobileHistory() {
           gap: 6px;
           padding: 7px 14px;
           border-radius: 999px;
-          background: white;
-          border: 1px solid #E2E8F0;
-          color: #475569;
           font-size: 12px;
           font-weight: 700;
           cursor: pointer;
           font-family: inherit;
-          transition: all 0.15s ease;
+          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
           white-space: nowrap;
           flex-shrink: 0;
-        }
-        .mh-filter-chip.active {
-          background: #0F2942;
-          border-color: #0F2942;
-          color: white;
-          box-shadow: 0 2px 8px rgba(15,41,66,0.25);
+          border-width: 1px;
+          border-style: solid;
         }
         .mh-chip-count {
           font-size: 10px;
@@ -225,7 +291,7 @@ export default function MobileHistory() {
           background: rgba(0,0,0,0.06);
         }
         .mh-filter-chip.active .mh-chip-count {
-          background: rgba(255,255,255,0.2);
+          background: rgba(255,255,255,0.25);
           color: white;
         }
         .mh-history-card {
@@ -235,10 +301,111 @@ export default function MobileHistory() {
           margin-bottom: 12px;
           border: 1px solid rgba(226,232,240,0.8);
           box-shadow: 0 2px 10px rgba(15,23,42,0.04);
-          transition: transform 0.15s ease;
+          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+          cursor: pointer;
+          position: relative;
+        }
+        .mh-history-card:hover {
+          border-color: #CBD5E1;
+          box-shadow: 0 4px 16px rgba(15,23,42,0.08);
+          transform: translateY(-1px);
         }
         .mh-history-card:active {
           transform: scale(0.985);
+        }
+
+        /* ── Delivery Tracker Sheet ── */
+        .srq-tracker-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(15, 23, 42, 0.65);
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          z-index: 1050;
+          display: flex;
+          align-items: flex-end;
+          justify-content: center;
+          animation: trackerFadeIn 0.25s ease;
+        }
+        .srq-tracker-sheet {
+          width: 100%;
+          max-width: 480px;
+          background: white;
+          border-top-left-radius: 28px;
+          border-top-right-radius: 28px;
+          max-height: 88vh;
+          overflow-y: auto;
+          box-shadow: 0 -12px 40px rgba(15, 23, 42, 0.25);
+          animation: trackerSlideUp 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+          padding: 12px 20px 32px;
+          box-sizing: border-box;
+        }
+        .srq-tracker-handle {
+          width: 38px;
+          height: 4px;
+          border-radius: 999px;
+          background: #CBD5E1;
+          margin: 0 auto 16px;
+        }
+        .srq-stepper-track {
+          position: relative;
+          padding-left: 36px;
+          margin: 20px 0;
+        }
+        .srq-stepper-line {
+          position: absolute;
+          left: 17px;
+          top: 14px;
+          bottom: 24px;
+          width: 2px;
+          background: #E2E8F0;
+        }
+        .srq-stepper-node {
+          position: relative;
+          margin-bottom: 22px;
+        }
+        .srq-stepper-node:last-child {
+          margin-bottom: 0;
+        }
+        .srq-node-icon-wrap {
+          position: absolute;
+          left: -36px;
+          top: 0;
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 2;
+          background: white;
+          border: 2px solid #CBD5E1;
+          color: #94A3B8;
+        }
+        .srq-node-icon-wrap.completed {
+          background: #DCFCE7;
+          border-color: #86EFAC;
+          color: #16A34A;
+        }
+        .srq-node-icon-wrap.active {
+          background: #EDE9FE;
+          border-color: #8B5CF6;
+          color: #7C3AED;
+          box-shadow: 0 0 0 5px rgba(139, 92, 246, 0.2);
+        }
+        .srq-node-icon-wrap.rejected {
+          background: #FEE2E2;
+          border-color: #FCA5A5;
+          color: #DC2626;
+        }
+
+        @keyframes trackerFadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes trackerSlideUp {
+          from { transform: translateY(100%); }
+          to { transform: translateY(0); }
         }
       `}</style>
 
@@ -304,11 +471,11 @@ export default function MobileHistory() {
           </button>
           <div>
             <h1 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: 'white', letterSpacing: '-0.2px' }}>Report History</h1>
-            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', margin: '2px 0 0' }}>Track all your emergency requests</p>
+            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', margin: '2px 0 0' }}>Tap any report to view live response status</p>
           </div>
         </div>
 
-        {/* ── Status Filter Chips ── */}
+        {/* ── Status Filter Chips with Admin Portal Palette ── */}
         <div style={{
           display: 'flex',
           gap: 8,
@@ -319,11 +486,18 @@ export default function MobileHistory() {
         }}>
           {FILTER_TABS.map(tab => {
             const isActive = statusFilter === tab;
+            const theme = TAB_THEMES[tab] || TAB_THEMES.ALL;
             const count = tab === 'ALL' ? allIncidents.length : (countsByStatus[tab] || 0);
             return (
               <button
                 key={tab}
                 className={`mh-filter-chip ${isActive ? 'active' : ''}`}
+                style={{
+                  background: isActive ? theme.activeBg : theme.inactiveBg,
+                  color: isActive ? theme.activeColor : theme.inactiveColor,
+                  borderColor: isActive ? theme.activeBorder : theme.inactiveBorder,
+                  boxShadow: isActive ? `0 2px 10px ${theme.activeGlow}` : 'none',
+                }}
                 onClick={() => { setStatusFilter(tab); setPage(1); }}
               >
                 <span>{tab === 'ALL' ? 'All' : tab.charAt(0) + tab.slice(1).toLowerCase()}</span>
@@ -344,7 +518,14 @@ export default function MobileHistory() {
               const accentColor = TYPE_COLORS[typeFirstWord] || '#2563EB';
 
               return (
-                <div className="mh-history-card" key={inc.id}>
+                <div
+                  className="mh-history-card"
+                  key={inc.id}
+                  onClick={() => setSelectedIncident(inc)}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`View details for ${inc.aiDetectedType || 'Emergency'}`}
+                >
                   {/* Top Row: Thumbnail + Info */}
                   <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 12 }}>
                     {/* Thumbnail Image or Icon box */}
@@ -441,11 +622,10 @@ export default function MobileHistory() {
                       {new Date(inc.createdAt).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })} •{' '}
                       {new Date(inc.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
-                    {inc.assignedDepartment && (
-                      <div style={{ fontWeight: 700, color: '#2563EB' }}>
-                        Unit: {inc.assignedDepartment}
-                      </div>
-                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontWeight: 700, color: '#2563EB' }}>
+                      <span>{inc.assignedDepartment ? `Unit: ${inc.assignedDepartment}` : 'Track Status'}</span>
+                      <ChevronRight size={13} />
+                    </div>
                   </div>
                 </div>
               );
@@ -546,6 +726,297 @@ export default function MobileHistory() {
           </div>
         )}
       </div>
+
+      {/* ─── LIVE DELIVERY-STYLE INCIDENT STATUS TRACKER MODAL ─── */}
+      {selectedIncident && (
+        <div
+          className="srq-tracker-overlay"
+          onClick={() => setSelectedIncident(null)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="srq-tracker-sheet"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Drag Handle */}
+            <div className="srq-tracker-handle" />
+
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+              <div>
+                <div style={{ fontSize: 10.5, fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  Live Status Tracker
+                </div>
+                <h2 style={{ fontSize: 18, fontWeight: 900, color: '#0F172A', margin: '2px 0 0', letterSpacing: '-0.3px' }}>
+                  {selectedIncident.aiDetectedType || 'Emergency Report'}
+                </h2>
+              </div>
+              <button
+                onClick={() => setSelectedIncident(null)}
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: '50%',
+                  border: '1px solid #E2E8F0',
+                  background: '#F8FAFC',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  color: '#64748B',
+                }}
+                aria-label="Close tracker"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Live Dispatch Badge / Status Summary */}
+            {selectedIncident.status === 'DISPATCHED' && (
+              <div style={{
+                background: 'linear-gradient(135deg, #EDE9FE 0%, #DDD6FE 100%)',
+                border: '1.5px solid #C4B5FD',
+                borderRadius: 16,
+                padding: '12px 14px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                marginBottom: 16,
+              }}>
+                <div style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 12,
+                  background: '#8B5CF6',
+                  color: 'white',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  boxShadow: '0 4px 12px rgba(139, 92, 246, 0.35)',
+                }}>
+                  <Siren size={22} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: '#5B21B6' }}>
+                    Responders En Route
+                  </div>
+                  <div style={{ fontSize: 11.5, color: '#6D28D9', marginTop: 1 }}>
+                    {selectedIncident.assignedDepartment ? `Assigned: ${selectedIncident.assignedDepartment}` : 'Emergency team dispatched to your GPS location'}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Vertical Delivery Stepper */}
+            <div className="srq-stepper-track">
+              <div className="srq-stepper-line" />
+
+              {/* Step 1: Report Submitted */}
+              <div className="srq-stepper-node">
+                <div className="srq-node-icon-wrap completed">
+                  <Check size={18} strokeWidth={3} />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 800, color: '#0F172A' }}>Report Submitted</div>
+                  <div style={{ fontSize: 11, color: '#94A3B8', fontWeight: 600 }}>
+                    {new Date(selectedIncident.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                </div>
+                <div style={{ fontSize: 11.5, color: '#64748B', marginTop: 2 }}>
+                  Emergency incident logged with GPS & photo evidence.
+                </div>
+              </div>
+
+              {/* Step 2: MDRRMO Verification & Triage */}
+              {selectedIncident.status === 'REJECTED' ? (
+                <div className="srq-stepper-node">
+                  <div className="srq-node-icon-wrap rejected">
+                    <XCircle size={18} strokeWidth={2.5} />
+                  </div>
+                  <div style={{ fontSize: 13.5, fontWeight: 800, color: '#DC2626' }}>Report Cancelled / Rejected</div>
+                  <div style={{ fontSize: 11.5, color: '#7F1D1D', marginTop: 2 }}>
+                    Command center reviewed and closed this report.
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="srq-stepper-node">
+                    <div className={`srq-node-icon-wrap ${
+                      selectedIncident.status === 'PENDING' ? 'active' : 'completed'
+                    }`}>
+                      {selectedIncident.status === 'PENDING' ? (
+                        <Clock size={18} />
+                      ) : (
+                        <Check size={18} strokeWidth={3} />
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                      <div style={{ fontSize: 13.5, fontWeight: 800, color: '#0F172A' }}>
+                        MDRRMO Triage & Verification
+                      </div>
+                      {selectedIncident.status !== 'PENDING' && (
+                        <span style={{ fontSize: 10, fontWeight: 800, color: '#16A34A', background: '#DCFCE7', padding: '1px 6px', borderRadius: 6 }}>
+                          VERIFIED
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 11.5, color: '#64748B', marginTop: 2 }}>
+                      {selectedIncident.status === 'PENDING'
+                        ? 'Command center is currently reviewing priority and location.'
+                        : 'Disaster hazard and response priority confirmed.'}
+                    </div>
+                  </div>
+
+                  {/* Step 3: Responders Dispatched */}
+                  <div className="srq-stepper-node">
+                    <div className={`srq-node-icon-wrap ${
+                      selectedIncident.status === 'DISPATCHED'
+                        ? 'active'
+                        : (selectedIncident.status === 'RESOLVED' ? 'completed' : '')
+                    }`}>
+                      {selectedIncident.status === 'RESOLVED' ? (
+                        <Check size={18} strokeWidth={3} />
+                      ) : (
+                        <ShieldCheck size={18} />
+                      )}
+                    </div>
+                    <div style={{ fontSize: 13.5, fontWeight: 800, color: '#0F172A' }}>
+                      Responders Dispatched
+                    </div>
+                    <div style={{ fontSize: 11.5, color: '#64748B', marginTop: 2 }}>
+                      {selectedIncident.assignedDepartment
+                        ? `Unit: ${selectedIncident.assignedDepartment} mobilized`
+                        : (selectedIncident.status === 'DISPATCHED' ? 'Nearest emergency response team en route' : 'Awaiting team deployment')}
+                    </div>
+                  </div>
+
+                  {/* Step 4: On-Scene Operations */}
+                  <div className="srq-stepper-node">
+                    <div className={`srq-node-icon-wrap ${
+                      selectedIncident.status === 'RESOLVED' ? 'completed' : ''
+                    }`}>
+                      {selectedIncident.status === 'RESOLVED' ? (
+                        <Check size={18} strokeWidth={3} />
+                      ) : (
+                        <MapPin size={18} />
+                      )}
+                    </div>
+                    <div style={{ fontSize: 13.5, fontWeight: 800, color: '#0F172A' }}>
+                      On-Scene Arrival
+                    </div>
+                    <div style={{ fontSize: 11.5, color: '#64748B', marginTop: 2 }}>
+                      {selectedIncident.status === 'RESOLVED'
+                        ? 'Responders arrived on-site and rendered emergency assistance.'
+                        : 'Emergency personnel arriving at your location.'}
+                    </div>
+                  </div>
+
+                  {/* Step 5: Incident Resolved */}
+                  <div className="srq-stepper-node">
+                    <div className={`srq-node-icon-wrap ${
+                      selectedIncident.status === 'RESOLVED' ? 'completed' : ''
+                    }`}>
+                      <CheckCircle2 size={18} />
+                    </div>
+                    <div style={{ fontSize: 13.5, fontWeight: 800, color: '#0F172A' }}>
+                      Incident Resolved & Safe
+                    </div>
+                    <div style={{ fontSize: 11.5, color: '#64748B', marginTop: 2 }}>
+                      {selectedIncident.status === 'RESOLVED'
+                        ? 'Emergency operation completed and verified by MDRRMO.'
+                        : 'Final resolution and safety clearance.'}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Incident Details Card */}
+            <div style={{
+              background: '#F8FAFC',
+              border: '1px solid #E2E8F0',
+              borderRadius: 18,
+              padding: 14,
+              display: 'flex',
+              gap: 12,
+              alignItems: 'center',
+              margin: '16px 0',
+            }}>
+              {selectedIncident.photoUrl ? (
+                <img
+                  src={selectedIncident.photoUrl}
+                  alt="Incident Scene"
+                  style={{
+                    width: 60,
+                    height: 60,
+                    borderRadius: 12,
+                    objectFit: 'cover',
+                    border: '1.5px solid #CBD5E1',
+                    flexShrink: 0,
+                  }}
+                />
+              ) : (
+                <div style={{
+                  width: 60,
+                  height: 60,
+                  borderRadius: 12,
+                  background: '#EFF6FF',
+                  color: '#2563EB',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}>
+                  <AlertTriangle size={24} />
+                </div>
+              )}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A' }}>
+                  {selectedIncident.latitude && selectedIncident.longitude
+                    ? getNearestBarangay(selectedIncident.latitude, selectedIncident.longitude)
+                    : 'Balayan, Batangas'}
+                </div>
+                <div style={{ fontSize: 11, color: '#64748B', marginTop: 3 }}>
+                  GPS: {selectedIncident.latitude?.toFixed(4)}, {selectedIncident.longitude?.toFixed(4)}
+                </div>
+                {selectedIncident.adminNotes && (
+                  <div style={{ fontSize: 11.5, color: '#475569', marginTop: 4, fontStyle: 'italic' }}>
+                    "{selectedIncident.adminNotes}"
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Direct Call Command Center Action */}
+            <a
+              href="tel:09171234567"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                width: '100%',
+                padding: '14px 20px',
+                borderRadius: 14,
+                background: '#DC2626',
+                color: 'white',
+                textDecoration: 'none',
+                fontSize: 14,
+                fontWeight: 800,
+                letterSpacing: '0.02em',
+                boxShadow: '0 4px 14px rgba(220, 38, 38, 0.35)',
+                boxSizing: 'border-box',
+              }}
+            >
+              <Phone size={16} />
+              <span>Call MDRRMO Balayan (0917-123-4567)</span>
+            </a>
+          </div>
+        </div>
+      )}
+
       <BottomNav />
       <FcmBannerOverlay />
     </div>

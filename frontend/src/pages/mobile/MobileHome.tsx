@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Phone, AlertTriangle, Wind, Waves, Siren, Stethoscope, ChevronDown, MapPinOff, WifiOff, Navigation, Settings } from 'lucide-react';
+import { Phone, AlertTriangle, Wind, Waves, Siren, Stethoscope, ChevronDown, MapPinOff, WifiOff, Navigation, Settings, Lock } from 'lucide-react';
 import BottomNav from '../../components/BottomNav';
 import FcmBannerOverlay from '../../components/FcmBannerOverlay';
 import { getMyIncidents, cachedGet } from '../../api/client';
@@ -34,8 +34,8 @@ export default function MobileHome() {
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Real-time location state via useLocationChecker
-  const { isLocationOn, recheckLocation } = useLocationChecker();
+  // Real-time location state via useLocationChecker (framework: Phone GPS ON? -> Allowed? -> Continue)
+  const { isLocationOn, status: locStatus, recheckLocation, openLocationSettings, openAppSettings } = useLocationChecker();
   const [showLocModal, setShowLocModal] = useState(false);
 
   // Online/offline state
@@ -293,7 +293,7 @@ export default function MobileHome() {
           )}
         </div>
 
-        {/* ── GPS Location Reminder Card ─────────────────── */}
+        {/* ── GPS Location Reminder Card (Framework Branching) ── */}
         {isLocationOn !== true && (
           <div style={{ padding: '16px 20px 0' }}>
             <div
@@ -301,9 +301,11 @@ export default function MobileHome() {
               role="button"
               tabIndex={0}
               style={{
-                background: 'linear-gradient(135deg, #FFF7ED 0%, #FEF2F2 100%)',
-                border: '1.5px solid #FDBA74',
-                borderLeft: '4px solid #F97316',
+                background: locStatus === 'PERMISSION_DENIED'
+                  ? 'linear-gradient(135deg, #EFF6FF 0%, #FEF2F2 100%)'
+                  : 'linear-gradient(135deg, #FFF7ED 0%, #FEF2F2 100%)',
+                border: `1.5px solid ${locStatus === 'PERMISSION_DENIED' ? '#93C5FD' : '#FDBA74'}`,
+                borderLeft: `4px solid ${locStatus === 'PERMISSION_DENIED' ? '#2563EB' : '#F97316'}`,
                 borderRadius: 18,
                 padding: '16px 16px 16px 18px',
                 display: 'flex',
@@ -311,62 +313,92 @@ export default function MobileHome() {
                 gap: 14,
                 cursor: 'pointer',
                 animation: 'fadeUp 0.3s ease both',
-                boxShadow: '0 4px 16px rgba(249, 115, 22, 0.12)',
+                boxShadow: locStatus === 'PERMISSION_DENIED'
+                  ? '0 4px 16px rgba(37, 99, 235, 0.12)'
+                  : '0 4px 16px rgba(249, 115, 22, 0.12)',
               }}
             >
               {/* Pulsing icon */}
               <div style={{ position: 'relative', flexShrink: 0, marginTop: 2 }}>
                 <div style={{
                   position: 'absolute', inset: -5, borderRadius: '50%',
-                  background: 'rgba(249, 115, 22, 0.2)',
+                  background: locStatus === 'PERMISSION_DENIED' ? 'rgba(37, 99, 235, 0.2)' : 'rgba(249, 115, 22, 0.2)',
                   animation: 'radarPing 2s ease infinite',
                   pointerEvents: 'none',
                 }} />
                 <div style={{
                   width: 38, height: 38, borderRadius: 12,
                   background: '#FFF',
-                  border: '1.5px solid #FDBA74',
+                  border: `1.5px solid ${locStatus === 'PERMISSION_DENIED' ? '#93C5FD' : '#FDBA74'}`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  boxShadow: '0 2px 8px rgba(249,115,22,0.15)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
                 }}>
-                  <MapPinOff size={18} color="#F97316" strokeWidth={2.2} />
+                  {locStatus === 'PERMISSION_DENIED' ? (
+                    <Lock size={18} color="#2563EB" strokeWidth={2.2} />
+                  ) : (
+                    <MapPinOff size={18} color="#F97316" strokeWidth={2.2} />
+                  )}
                 </div>
               </div>
 
               {/* Text */}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 800, color: '#9A3412', marginBottom: 3, letterSpacing: '-0.1px' }}>
-                  📍 Location Services Off
+                <div style={{
+                  fontSize: 13, fontWeight: 800,
+                  color: locStatus === 'PERMISSION_DENIED' ? '#1E40AF' : '#9A3412',
+                  marginBottom: 3, letterSpacing: '-0.1px'
+                }}>
+                  {locStatus === 'PERMISSION_DENIED'
+                    ? '🔒 Location Permission Needed'
+                    : '📍 Phone Location (GPS) is OFF'}
                 </div>
-                <div style={{ fontSize: 12, color: '#C2410C', lineHeight: 1.45, marginBottom: 12 }}>
-                  Emergency responders need your location to reach you quickly. Enable GPS before sending an alert.
+                <div style={{
+                  fontSize: 12,
+                  color: locStatus === 'PERMISSION_DENIED' ? '#1D4ED8' : '#C2410C',
+                  lineHeight: 1.45, marginBottom: 12
+                }}>
+                  {locStatus === 'PERMISSION_DENIED'
+                    ? 'SendResQPls is not allowed to access your location. Tap to grant permission in App Settings.'
+                    : 'Your phone GPS is turned off. Turn on location services so emergency responders can locate you.'}
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
-                  <button
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      const ok = await recheckLocation();
-                      if (!ok) {
-                        // Try to open system settings
-                        try {
-                          window.open('app-settings:', '_system');
-                        } catch {
-                          window.open('https://support.google.com/android/answer/3467281', '_blank');
-                        }
-                      }
-                    }}
-                    style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 6,
-                      padding: '8px 14px', borderRadius: 10,
-                      background: '#F97316', border: 'none',
-                      color: 'white', fontSize: 12, fontWeight: 800,
-                      cursor: 'pointer', fontFamily: 'inherit',
-                      boxShadow: '0 3px 10px rgba(249,115,22,0.35)',
-                    }}
-                  >
-                    <Settings size={13} />
-                    Open Settings
-                  </button>
+                  {locStatus === 'PERMISSION_DENIED' ? (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openAppSettings();
+                      }}
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                        padding: '8px 14px', borderRadius: 10,
+                        background: '#2563EB', border: 'none',
+                        color: 'white', fontSize: 12, fontWeight: 800,
+                        cursor: 'pointer', fontFamily: 'inherit',
+                        boxShadow: '0 3px 10px rgba(37,99,235,0.35)',
+                      }}
+                    >
+                      <Settings size={13} />
+                      Open App Settings
+                    </button>
+                  ) : (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openLocationSettings();
+                      }}
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                        padding: '8px 14px', borderRadius: 10,
+                        background: '#F97316', border: 'none',
+                        color: 'white', fontSize: 12, fontWeight: 800,
+                        cursor: 'pointer', fontFamily: 'inherit',
+                        boxShadow: '0 3px 10px rgba(249,115,22,0.35)',
+                      }}
+                    >
+                      <Settings size={13} />
+                      Open Location Settings
+                    </button>
+                  )}
                   <button
                     onClick={async (e) => {
                       e.stopPropagation();
@@ -375,8 +407,10 @@ export default function MobileHome() {
                     style={{
                       display: 'inline-flex', alignItems: 'center', gap: 6,
                       padding: '8px 14px', borderRadius: 10,
-                      background: 'rgba(249,115,22,0.1)', border: '1px solid #FDBA74',
-                      color: '#C2410C', fontSize: 12, fontWeight: 700,
+                      background: 'rgba(0,0,0,0.04)',
+                      border: `1px solid ${locStatus === 'PERMISSION_DENIED' ? '#BFDBFE' : '#FDBA74'}`,
+                      color: locStatus === 'PERMISSION_DENIED' ? '#1E40AF' : '#C2410C',
+                      fontSize: 12, fontWeight: 700,
                       cursor: 'pointer', fontFamily: 'inherit',
                     }}
                   >
@@ -430,11 +464,16 @@ export default function MobileHome() {
                     {h.number}
                   </div>
                 </div>
-                {/* Name label below */}
-                <div style={{ padding: '9px 12px 11px' }}>
-                  <div style={{ fontSize: 10, fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em', lineHeight: 1.3 }}>
-                    {h.name}
-                  </div>
+                {/* Name row */}
+                <div style={{
+                  padding: '8px 12px 10px',
+                  fontSize: 11.5,
+                  fontWeight: 800,
+                  color: '#0F172A',
+                  letterSpacing: '-0.1px',
+                  lineHeight: 1.25,
+                }}>
+                  {h.name}
                 </div>
               </a>
             ))}
@@ -442,20 +481,19 @@ export default function MobileHome() {
         </div>
 
         {/* ── Safety Tips ─────────────────────────────────── */}
-        <div style={{ padding: '24px 20px 28px' }}>
-          <p className="srq-section-label">Quick Safety Tips</p>
+        <div style={{ padding: '24px 20px 20px' }}>
+          <p className="srq-section-label">Emergency Safety Tips</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {safetyTips.map((t, i) => (
               <div
                 key={t.title}
                 className="srq-tip-card"
-                style={{ animationDelay: `${i * 0.07 + 0.15}s` }}
+                style={{ animationDelay: `${i * 0.08}s` }}
               >
-                {/* Icon block — double-bezel: outer tinted shell + inner icon */}
+                {/* Icon box with tint */}
                 <div style={{
-                  width: 46, height: 46, borderRadius: 14,
-                  background: t.bg,
-                  border: `1.5px solid ${t.color}22`,
+                  width: 44, height: 44, borderRadius: 14,
+                  background: t.bg, border: `1.5px solid ${t.color}25`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   flexShrink: 0, position: 'relative',
                 }}>
@@ -481,7 +519,8 @@ export default function MobileHome() {
                 </div>
                 {/* Right accent bar */}
                 <div style={{
-                  width: 3, height: '100%', borderRadius: 4,
+                  width: 3,
+                  borderRadius: 4,
                   background: `linear-gradient(to bottom, ${t.color}, ${t.color}44)`,
                   alignSelf: 'stretch', flexShrink: 0,
                   marginLeft: 4,
@@ -495,7 +534,7 @@ export default function MobileHome() {
       <BottomNav />
 
 
-      {/* ── Location Permission Modal (Screen-Centered Dialog) ── */}
+      {/* ── Location Framework Modal (Screen-Centered Dialog) ── */}
       {showLocModal && (
         <div
           onClick={() => setShowLocModal(false)}
@@ -525,26 +564,34 @@ export default function MobileHome() {
             <div style={{ textAlign: 'center', marginBottom: 18 }}>
               <div style={{
                 width: 54, height: 54, borderRadius: 18,
-                background: 'linear-gradient(135deg, #FEE2E2, #FEF2F2)',
-                border: '1.5px solid #FECACA',
+                background: locStatus === 'PERMISSION_DENIED' ? 'linear-gradient(135deg, #DBEAFE, #EFF6FF)' : 'linear-gradient(135deg, #FEE2E2, #FEF2F2)',
+                border: `1.5px solid ${locStatus === 'PERMISSION_DENIED' ? '#BFDBFE' : '#FECACA'}`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 margin: '0 auto 14px',
               }}>
-                <Navigation size={26} color="#DC2626" strokeWidth={2} />
+                {locStatus === 'PERMISSION_DENIED' ? (
+                  <Lock size={26} color="#2563EB" strokeWidth={2} />
+                ) : (
+                  <Navigation size={26} color="#DC2626" strokeWidth={2} />
+                )}
               </div>
 
               <div style={{
                 fontSize: 19, fontWeight: 900, color: '#0F172A',
                 textAlign: 'center', marginBottom: 6, letterSpacing: '-0.3px',
               }}>
-                Enable Location Services
+                {locStatus === 'PERMISSION_DENIED'
+                  ? 'Allow SendResQPls Location'
+                  : 'Turn On Phone Location'}
               </div>
 
               <div style={{
                 fontSize: 13, color: '#64748B', lineHeight: 1.5,
                 textAlign: 'center', marginBottom: 18,
               }}>
-                SendResQPls needs your location to accurately dispatch emergency responders to you in Balayan:
+                {locStatus === 'PERMISSION_DENIED'
+                  ? 'SendResQPls needs location permission to dispatch emergency responders directly to your coordinates in Balayan.'
+                  : 'Your phone GPS is currently switched off. Turn on location services so SendResQPls can find you.'}
               </div>
             </div>
 
@@ -554,58 +601,109 @@ export default function MobileHome() {
               border: '1px solid #E2E8F0', marginBottom: 20,
               display: 'flex', flexDirection: 'column', gap: 12,
             }}>
-              <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#DC2626', color: 'white', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>1</div>
-                <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.45 }}>
-                  Tap the <strong>lock 🔒 or tune ⚙️ icon</strong> in your browser address bar.
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#DC2626', color: 'white', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>2</div>
-                <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.45 }}>
-                  Tap <strong>Permissions</strong> → <strong>Location</strong> → choose <strong>Allow</strong>.
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#DC2626', color: 'white', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>3</div>
-                <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.45 }}>
-                  Ensure your phone's <strong>GPS / Location</strong> is switched on in system settings.
-                </div>
-              </div>
+              {locStatus === 'PERMISSION_DENIED' ? (
+                <>
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                    <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#2563EB', color: 'white', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>1</div>
+                    <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.45 }}>
+                      Tap <strong>Open App Settings</strong> below (or tap the 🔒 lock icon in browser).
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                    <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#2563EB', color: 'white', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>2</div>
+                    <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.45 }}>
+                      Tap <strong>Permissions</strong> → <strong>Location</strong> → choose <strong>Allow</strong>.
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                    <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#2563EB', color: 'white', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>3</div>
+                    <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.45 }}>
+                      Return here and tap <strong>Check Location Now</strong>.
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                    <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#DC2626', color: 'white', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>1</div>
+                    <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.45 }}>
+                      Swipe down from the top of your phone screen to open <strong>Quick Settings</strong>.
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                    <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#DC2626', color: 'white', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>2</div>
+                    <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.45 }}>
+                      Tap the <strong>📍 Location / GPS</strong> icon to turn it ON.
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                    <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#DC2626', color: 'white', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>3</div>
+                    <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.45 }}>
+                      Return here and tap <strong>Check Location Now</strong>.
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {locStatus === 'PERMISSION_DENIED' ? (
+                <button
+                  onClick={() => openAppSettings()}
+                  style={{
+                    width: '100%', padding: '15px 20px',
+                    background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
+                    color: 'white', border: 'none', borderRadius: 16,
+                    fontSize: 15, fontWeight: 800, cursor: 'pointer',
+                    letterSpacing: '0.02em',
+                    boxShadow: '0 4px 16px rgba(37,99,235,0.35)',
+                    fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  }}
+                >
+                  <Settings size={16} /> Open App Settings
+                </button>
+              ) : (
+                <button
+                  onClick={() => openLocationSettings()}
+                  style={{
+                    width: '100%', padding: '15px 20px',
+                    background: 'linear-gradient(135deg, #F97316, #EA580C)',
+                    color: 'white', border: 'none', borderRadius: 16,
+                    fontSize: 15, fontWeight: 800, cursor: 'pointer',
+                    letterSpacing: '0.02em',
+                    boxShadow: '0 4px 16px rgba(249,115,22,0.35)',
+                    fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  }}
+                >
+                  <Settings size={16} /> Open Location Settings
+                </button>
+              )}
+
               <button
                 onClick={async () => {
                   const ok = await recheckLocation();
                   if (ok) {
                     setShowLocModal(false);
-                  } else {
-                    try {
-                      window.open('app-settings:', '_system');
-                    } catch {}
                   }
                 }}
                 style={{
-                  width: '100%', padding: '15px 20px',
-                  background: 'linear-gradient(135deg, #DC2626, #B91C1C)',
-                  color: 'white', border: 'none', borderRadius: 16,
-                  fontSize: 15, fontWeight: 800, cursor: 'pointer',
-                  letterSpacing: '0.02em',
-                  boxShadow: '0 4px 16px rgba(220,38,38,0.35)',
-                  fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  width: '100%', padding: '13px 20px',
+                  background: '#F1F5F9', color: '#1E293B',
+                  border: '1.5px solid #CBD5E1', borderRadius: 16,
+                  fontSize: 14, fontWeight: 700, cursor: 'pointer',
+                  fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                 }}
               >
-                <Navigation size={16} /> Check Location Now
+                <Navigation size={15} /> Check Location Now
               </button>
 
               <button
                 onClick={() => setShowLocModal(false)}
                 style={{
-                  width: '100%', padding: '13px 20px',
-                  background: '#F1F5F9', color: '#475569',
-                  border: '1.5px solid #E2E8F0', borderRadius: 16,
-                  fontSize: 14, fontWeight: 700, cursor: 'pointer',
+                  width: '100%', padding: '11px 20px',
+                  background: 'none', color: '#64748B',
+                  border: 'none', borderRadius: 16,
+                  fontSize: 13, fontWeight: 600, cursor: 'pointer',
                   fontFamily: 'inherit',
                 }}
               >

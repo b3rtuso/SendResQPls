@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   ChevronLeft, AlertTriangle, Camera, Loader, WifiOff, Clock,
   RotateCcw, MapPin, ArrowRight, ShieldCheck,
-  MessageSquare, ChevronDown
+  MessageSquare, ChevronDown, Lock, Settings, Navigation
 } from 'lucide-react';
 import { reportIncident } from '../../api/client';
 import { isWithinBalayan, getNearestBarangay, BARANGAYS } from '../../data/balayan-data';
@@ -48,8 +48,8 @@ export default function MobileReport() {
   const [selectedManualBrgy, setSelectedManualBrgy] = useState(BARANGAYS[0]?.name || 'Poblacion 1');
   const [submittedIncident, setSubmittedIncident] = useState<any | null>(null);
 
-  // Real-time location state via useLocationChecker
-  const { isLocationOn, recheckLocation } = useLocationChecker();
+  // Real-time location state via useLocationChecker (framework: Phone GPS ON? -> Allowed? -> Continue)
+  const { isLocationOn, status: locStatus, recheckLocation, openLocationSettings, openAppSettings } = useLocationChecker();
   const [showLocationGuideModal, setShowLocationGuideModal] = useState(false);
 
   // Emergency contacts from localStorage
@@ -825,7 +825,7 @@ export default function MobileReport() {
         </div>
       )}
 
-      {/* ── How to Enable Location Guide Modal (Screen-Centered Dialog) ── */}
+      {/* ── Location Framework Modal (Screen-Centered Dialog) ── */}
       {showLocationGuideModal && (
         <div
           onClick={() => setShowLocationGuideModal(false)}
@@ -855,17 +855,27 @@ export default function MobileReport() {
             <div style={{ textAlign: 'center', marginBottom: 18 }}>
               <div style={{
                 width: 52, height: 52, borderRadius: 16,
-                background: '#FEF3C7', border: '1.5px solid #FDE68A',
+                background: locStatus === 'PERMISSION_DENIED' ? '#DBEAFE' : '#FEF3C7',
+                border: `1.5px solid ${locStatus === 'PERMISSION_DENIED' ? '#BFDBFE' : '#FDE68A'}`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                margin: '0 auto 12px', color: '#D97706',
+                margin: '0 auto 12px',
+                color: locStatus === 'PERMISSION_DENIED' ? '#2563EB' : '#D97706',
               }}>
-                <MapPin size={26} />
+                {locStatus === 'PERMISSION_DENIED' ? (
+                  <Lock size={26} />
+                ) : (
+                  <Navigation size={26} />
+                )}
               </div>
               <h3 style={{ margin: 0, fontSize: 19, fontWeight: 900, color: '#0F172A', letterSpacing: '-0.2px' }}>
-                Enable Location Access
+                {locStatus === 'PERMISSION_DENIED'
+                  ? 'Allow Location Access'
+                  : 'Turn On Phone Location'}
               </h3>
               <p style={{ margin: '6px 0 0', fontSize: 13, color: '#64748B', lineHeight: 1.5 }}>
-                Follow these quick steps so the app can automatically route responders to your location:
+                {locStatus === 'PERMISSION_DENIED'
+                  ? 'SendResQPls needs location access to pinpoint where emergency responders should be dispatched.'
+                  : 'Your phone GPS is currently off. Turn on location services to automatically tag your emergency report.'}
               </p>
             </div>
 
@@ -875,27 +885,82 @@ export default function MobileReport() {
               border: '1px solid #E2E8F0', marginBottom: 20,
               display: 'flex', flexDirection: 'column', gap: 12,
             }}>
-              <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#2563EB', color: 'white', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>1</div>
-                <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.45 }}>
-                  Tap the <strong>lock 🔒 or tune ⚙️ icon</strong> in your browser address bar.
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#2563EB', color: 'white', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>2</div>
-                <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.45 }}>
-                  Tap <strong>Permissions</strong> → <strong>Location</strong> → choose <strong>Allow</strong>.
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#2563EB', color: 'white', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>3</div>
-                <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.45 }}>
-                  Make sure your phone's <strong>GPS / Location</strong> toggle is turned on.
-                </div>
-              </div>
+              {locStatus === 'PERMISSION_DENIED' ? (
+                <>
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                    <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#2563EB', color: 'white', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>1</div>
+                    <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.45 }}>
+                      Tap <strong>Open App Settings</strong> below (or the 🔒 lock icon in browser).
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                    <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#2563EB', color: 'white', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>2</div>
+                    <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.45 }}>
+                      Tap <strong>Permissions</strong> → <strong>Location</strong> → choose <strong>Allow</strong>.
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                    <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#2563EB', color: 'white', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>3</div>
+                    <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.45 }}>
+                      Return here and tap <strong>Check Location Now</strong>.
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                    <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#F59E0B', color: 'white', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>1</div>
+                    <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.45 }}>
+                      Swipe down from the top of your phone screen to open <strong>Quick Settings</strong>.
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                    <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#F59E0B', color: 'white', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>2</div>
+                    <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.45 }}>
+                      Tap the <strong>📍 Location / GPS</strong> icon to turn it ON.
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                    <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#F59E0B', color: 'white', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>3</div>
+                    <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.45 }}>
+                      Return here and tap <strong>Check Location Now</strong>.
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {locStatus === 'PERMISSION_DENIED' ? (
+                <button
+                  onClick={() => openAppSettings()}
+                  style={{
+                    width: '100%', padding: '14px', borderRadius: 14,
+                    background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
+                    color: 'white', border: 'none',
+                    fontSize: 14, fontWeight: 800, cursor: 'pointer',
+                    boxShadow: '0 4px 16px rgba(37,99,235,0.3)',
+                    fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  }}
+                >
+                  <Settings size={16} /> Open App Settings
+                </button>
+              ) : (
+                <button
+                  onClick={() => openLocationSettings()}
+                  style={{
+                    width: '100%', padding: '14px', borderRadius: 14,
+                    background: 'linear-gradient(135deg, #F59E0B, #D97706)',
+                    color: 'white', border: 'none',
+                    fontSize: 14, fontWeight: 800, cursor: 'pointer',
+                    boxShadow: '0 4px 16px rgba(245,158,11,0.3)',
+                    fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  }}
+                >
+                  <Settings size={16} /> Open Location Settings
+                </button>
+              )}
+
               <button
                 onClick={async () => {
                   const ok = await recheckLocation();
@@ -903,26 +968,26 @@ export default function MobileReport() {
                     showToast({ type: 'success', priority: 'normal', title: 'Location Enabled!', message: 'GPS auto-tagging is now active.' });
                     setShowLocationGuideModal(false);
                   } else {
-                    showToast({ type: 'warning', priority: 'important', title: 'Still Disabled', message: 'Location is not yet enabled. Please check browser settings.' });
+                    showToast({ type: 'warning', priority: 'important', title: 'Still Disabled', message: 'Location is not yet enabled. Please follow the steps above.' });
                   }
                 }}
                 style={{
-                  width: '100%', padding: '14px', borderRadius: 14,
-                  background: '#2563EB', color: 'white', border: 'none',
-                  fontSize: 14, fontWeight: 800, cursor: 'pointer',
-                  boxShadow: '0 4px 16px rgba(37,99,235,0.3)',
-                  fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  width: '100%', padding: '13px', borderRadius: 14,
+                  background: '#F1F5F9', color: '#1E293B',
+                  border: '1.5px solid #CBD5E1',
+                  fontSize: 13.5, fontWeight: 700, cursor: 'pointer',
+                  fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                 }}
               >
-                <MapPin size={16} /> Check Location Now
+                <Navigation size={15} /> Check Location Now
               </button>
 
               <button
                 onClick={() => setShowLocationGuideModal(false)}
                 style={{
-                  width: '100%', padding: '12px', borderRadius: 14,
-                  background: '#F1F5F9', border: '1.5px solid #E2E8F0',
-                  color: '#475569', fontSize: 13.5, fontWeight: 700, cursor: 'pointer',
+                  width: '100%', padding: '11px', borderRadius: 14,
+                  background: 'none', border: 'none',
+                  color: '#64748B', fontSize: 13, fontWeight: 600, cursor: 'pointer',
                   fontFamily: 'inherit',
                 }}
               >

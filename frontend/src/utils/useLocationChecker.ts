@@ -12,11 +12,19 @@ export function useLocationChecker() {
 
     setChecking(true);
 
+    let permState: PermissionState | null = null;
+
     // 1. Check permissions API if available
     try {
       if (navigator.permissions) {
         const perm = await navigator.permissions.query({ name: 'geolocation' });
-        if (perm.state === 'denied') {
+        permState = perm.state;
+        if (perm.state === 'granted') {
+          // Permission is explicitly granted in browser!
+          setIsLocationOn(true);
+          setChecking(false);
+          return true;
+        } else if (perm.state === 'denied') {
           setIsLocationOn(false);
           setChecking(false);
           return false;
@@ -34,13 +42,24 @@ export function useLocationChecker() {
           setChecking(false);
           resolve(true);
         },
-        () => {
-          // If permission denied or GPS hardware is disabled/unavailable
-          setIsLocationOn(false);
-          setChecking(false);
-          resolve(false);
+        (err) => {
+          // If explicitly denied by user
+          if (err.code === err.PERMISSION_DENIED) {
+            setIsLocationOn(false);
+            setChecking(false);
+            resolve(false);
+          } else if (permState === 'granted') {
+            // Permission is granted, satellite fix might just take time
+            setIsLocationOn(true);
+            setChecking(false);
+            resolve(true);
+          } else {
+            setIsLocationOn(false);
+            setChecking(false);
+            resolve(false);
+          }
         },
-        { timeout: 4500, maximumAge: 10000, enableHighAccuracy: false }
+        { timeout: 10000, maximumAge: 300000, enableHighAccuracy: false }
       );
     });
   }, []);
@@ -53,7 +72,17 @@ export function useLocationChecker() {
     if (navigator.permissions) {
       navigator.permissions.query({ name: 'geolocation' }).then(p => {
         permObj = p;
+        if (p.state === 'granted') {
+          setIsLocationOn(true);
+        } else if (p.state === 'denied') {
+          setIsLocationOn(false);
+        }
         p.onchange = () => {
+          if (p.state === 'granted') {
+            setIsLocationOn(true);
+          } else if (p.state === 'denied') {
+            setIsLocationOn(false);
+          }
           checkStatus();
         };
       }).catch(() => {});
@@ -72,10 +101,10 @@ export function useLocationChecker() {
     window.addEventListener('focus', handleFocus);
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    // Heartbeat check every 6s
+    // Heartbeat check every 4s
     const interval = setInterval(() => {
       checkStatus();
-    }, 6000);
+    }, 4000);
 
     return () => {
       if (permObj) permObj.onchange = null;

@@ -69,18 +69,20 @@ export default function MobileNotifications() {
   return (
     <div className="mobile-shell" style={{ background: '#F8FAFC' }}>
       <div className="mobile-page" style={{ flex: 1, overflowY: 'auto', paddingBottom: 85 }}>
-        {/* Header */}
+        {/* Header (flush top, matching Home header gradient) */}
         <div style={{
-          background: 'linear-gradient(135deg, #0F2942 0%, #1E3A5F 100%)',
-          margin: '0 -24px 16px',
-          padding: '18px 24px',
+          background: 'linear-gradient(155deg, #0F1F38 0%, #1E3A5F 40%, #2563EB 100%)',
+          margin: 0,
+          padding: '24px 20px 20px',
           display: 'flex',
           alignItems: 'center',
           gap: 12,
           color: 'white',
-          boxShadow: '0 4px 16px rgba(15, 41, 66, 0.18)',
+          boxShadow: '0 6px 24px rgba(15, 31, 56, 0.35)',
+          borderRadius: '0 0 24px 24px',
+          marginBottom: 16,
         }}>
-          <button 
+          <button
             onClick={() => navigate('/mobile')}
             style={{
               width: 36,
@@ -107,7 +109,7 @@ export default function MobileNotifications() {
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                   background: '#EF4444', color: 'white', fontSize: 10, fontWeight: 800,
                   minWidth: 18, height: 18, borderRadius: 9, padding: '0 4px',
-                  border: '1.5px solid #0F2942',
+                  border: '1.5px solid rgba(255,255,255,0.25)',
                 }}>
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
@@ -116,6 +118,8 @@ export default function MobileNotifications() {
             <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', margin: '2px 0 0' }}>Real-time notifications on your reports</p>
           </div>
         </div>
+
+        <div style={{ padding: '0 20px' }}>
 
         {/* Action Bar (Mark all read & Clear all) */}
         {notifications.length > 0 && (
@@ -265,6 +269,7 @@ export default function MobileNotifications() {
             })}
           </div>
         )}
+        </div>
       </div>
 
       <BottomNav />

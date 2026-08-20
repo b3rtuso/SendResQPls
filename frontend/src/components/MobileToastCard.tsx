@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle, XCircle, AlertTriangle, Info, Bell, X, Zap } from 'lucide-react';
+import { X, Zap } from 'lucide-react';
 import type { MobileToastItem } from '../contexts/MobileToastContext';
 
 interface MobileToastCardProps {
@@ -28,15 +28,6 @@ const STATUS_COLOR: Record<string, string> = {
   NEW_INCIDENT: '#EF4444',
 };
 
-const TYPE_ICON: Record<string, React.ElementType> = {
-  success:  CheckCircle,
-  error:    XCircle,
-  warning:  AlertTriangle,
-  info:     Info,
-  incident: Bell,
-  system:   Bell,
-};
-
 // ── Component ─────────────────────────────────────────────
 export default function MobileToastCard({ toast, onDismiss, index }: MobileToastCardProps) {
   const navigate = useNavigate();
@@ -61,7 +52,6 @@ export default function MobileToastCard({ toast, onDismiss, index }: MobileToast
 
   const isCritical = toast.priority === 'critical';
   const duration   = toast.duration ?? 0;
-  const Icon       = TYPE_ICON[toast.type] ?? Bell;
 
   // ── Lifecycle ──────────────────────────────────────────
   const triggerExit = () => {
@@ -223,52 +213,37 @@ export default function MobileToastCard({ toast, onDismiss, index }: MobileToast
         }} />
       )}
 
-      {/* Main content row */}
+      {/* Main content row — Facebook Style without icons */}
       <div style={{
         display: 'flex', alignItems: 'flex-start',
-        gap: 12, padding: '14px 14px 12px 16px',
-        paddingLeft: leftBorder > 0 ? (14 + leftBorder) : 16,
+        gap: 12, padding: '14px 16px 14px',
+        paddingLeft: leftBorder > 0 ? (16 + leftBorder) : 16,
       }}>
-        {/* Icon / Avatar */}
-        <div style={{
-          width: 40, height: 40, borderRadius: 12, flexShrink: 0,
-          background: `${accent}18`,
-          border: `1.5px solid ${accent}28`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          overflow: 'hidden',
-        }}>
-          {toast.type === 'incident' && toast.status === undefined ? (
-            <img src="/logo.jpg" alt="SRQ" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          ) : (
-            <Icon size={18} color={accent} strokeWidth={2.2} />
-          )}
-        </div>
-
         {/* Text content */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
             <span style={{
-              fontSize: 10, fontWeight: 700, color: '#94A3B8',
-              textTransform: 'uppercase', letterSpacing: '0.4px',
+              fontSize: 11, fontWeight: 700, color: '#1877F2',
+              letterSpacing: '0.2px',
             }}>
               SendResQPls
             </span>
             {toast.status && (
               <>
                 <span style={{ width: 3, height: 3, borderRadius: '50%', background: accent, flexShrink: 0, display: 'inline-block' }} />
-                <span style={{ fontSize: 10, fontWeight: 700, color: accent }}>
+                <span style={{ fontSize: 10.5, fontWeight: 700, color: accent }}>
                   {toast.status.charAt(0) + toast.status.slice(1).toLowerCase().replace('_', ' ')}
                 </span>
               </>
             )}
-            <span style={{ marginLeft: 'auto', fontSize: 10, color: '#CBD5E1', flexShrink: 0 }}>
+            <span style={{ marginLeft: 'auto', fontSize: 10.5, color: '#94A3B8', flexShrink: 0 }}>
               {toast.timestamp}
             </span>
           </div>
 
           <div style={{
-            fontSize: 13.5, fontWeight: 700, color: '#0F172A',
-            lineHeight: 1.3, letterSpacing: '-0.1px',
+            fontSize: 14, fontWeight: 700, color: '#0F172A',
+            lineHeight: 1.35, letterSpacing: '-0.1px',
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           }}>
             {toast.title}
@@ -276,7 +251,7 @@ export default function MobileToastCard({ toast, onDismiss, index }: MobileToast
 
           {toast.message && (
             <div style={{
-              fontSize: 12, color: '#64748B', marginTop: 2,
+              fontSize: 12.5, color: '#475569', marginTop: 3,
               lineHeight: 1.45, overflow: 'hidden',
               display: '-webkit-box', WebkitLineClamp: 2,
               WebkitBoxOrient: 'vertical',
@@ -291,14 +266,14 @@ export default function MobileToastCard({ toast, onDismiss, index }: MobileToast
           onClick={e => { e.stopPropagation(); triggerExit(); }}
           aria-label="Dismiss notification"
           style={{
-            flexShrink: 0, width: 26, height: 26, borderRadius: 8,
+            flexShrink: 0, width: 24, height: 24, borderRadius: '50%',
             background: '#F1F5F9', border: '1px solid #E2E8F0',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', color: '#94A3B8', padding: 0,
+            cursor: 'pointer', color: '#64748B', padding: 0,
             transition: 'background 0.15s',
           }}
         >
-          <X size={13} strokeWidth={2.5} />
+          <X size={12} strokeWidth={2.5} />
         </button>
       </div>
 

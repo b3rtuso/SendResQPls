@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ChevronLeft, AlertTriangle, Camera, Loader, WifiOff, Clock,
-  CheckCircle2, RotateCcw, MapPin, ArrowRight, ShieldCheck,
+  RotateCcw, MapPin, ArrowRight, ShieldCheck,
   MessageSquare, ChevronDown
 } from 'lucide-react';
 import { reportIncident } from '../../api/client';
@@ -364,16 +364,17 @@ export default function MobileReport() {
       `}</style>
 
       <div className="mobile-page" style={{ paddingBottom: 100 }}>
-        {/* Header */}
+        {/* Header (flush top, matching Home header gradient) */}
         <div style={{
-          background: 'linear-gradient(135deg, #0F2942 0%, #1E3A5F 100%)',
-          margin: '0 -24px 20px',
-          padding: '18px 24px',
+          background: 'linear-gradient(155deg, #0F1F38 0%, #1E3A5F 40%, #2563EB 100%)',
+          margin: 0,
+          padding: '24px 20px 20px',
           display: 'flex',
           alignItems: 'center',
           gap: 12,
           color: 'white',
-          boxShadow: '0 4px 16px rgba(15, 41, 66, 0.18)',
+          boxShadow: '0 6px 24px rgba(15, 31, 56, 0.35)',
+          borderRadius: '0 0 24px 24px',
         }}>
           <button
             onClick={() => navigate('/mobile')}
@@ -399,6 +400,8 @@ export default function MobileReport() {
             <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', margin: '2px 0 0' }}>MDRRMO Balayan Command Center</p>
           </div>
         </div>
+
+        <div style={{ padding: '20px 20px 0' }}>
 
         {/* Offline Warning Banner */}
         {!isOnline && (
@@ -720,6 +723,8 @@ export default function MobileReport() {
         </div>
       )}
 
+      </div>
+
       {/* ── Pre-flight Review & Submit Modal (Screen-Centered Dialog) ── */}
       {showReviewModal && detectedLocation && (
         <div
@@ -928,7 +933,7 @@ export default function MobileReport() {
         </div>
       )}
 
-      {/* ── Success Screen Modal Overlay ── */}
+      {/* ── Success Screen Modal Overlay (Facebook-Style, No Icons) ── */}
       {submittedIncident && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 11000,
@@ -943,7 +948,7 @@ export default function MobileReport() {
           <div style={{
             background: 'white',
             borderRadius: 24,
-            padding: '32px 24px 28px',
+            padding: '28px 24px 28px',
             maxWidth: 380,
             width: '100%',
             textAlign: 'center',
@@ -951,15 +956,17 @@ export default function MobileReport() {
             animation: 'scaleUp 0.3s cubic-bezier(0.16,1,0.3,1) both',
           }}>
             <div style={{
-              width: 64, height: 64, borderRadius: '50%',
-              background: '#DCFCE7', border: '2px solid #86EFAC',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              margin: '0 auto 16px', color: '#16A34A',
+              fontSize: 11.5,
+              fontWeight: 800,
+              color: submittedIncident.offline ? '#D97706' : '#16A34A',
+              letterSpacing: '0.6px',
+              textTransform: 'uppercase',
+              marginBottom: 8,
             }}>
-              <CheckCircle2 size={36} />
+              {submittedIncident.offline ? 'Offline Storage' : 'Live MDRRMO Dispatch'}
             </div>
 
-            <h2 style={{ fontSize: 22, fontWeight: 900, color: '#0F172A', margin: '0 0 6px', letterSpacing: '-0.3px' }}>
+            <h2 style={{ fontSize: 22, fontWeight: 900, color: '#0F172A', margin: '0 0 8px', letterSpacing: '-0.3px' }}>
               {submittedIncident.offline ? 'Report Saved Locally' : 'Emergency Alert Dispatched!'}
             </h2>
 

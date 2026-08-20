@@ -1,5 +1,5 @@
-﻿import { useEffect, useState, useRef } from "react";
-import { CheckCircle, XCircle, AlertTriangle, X, Info } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
+import { X } from "lucide-react";
 
 export type ToastType = "success" | "error" | "warning" | "info";
 
@@ -11,13 +11,11 @@ interface ToastProps {
   onClose: () => void;
 }
 
-const icons = { success: CheckCircle, error: XCircle, warning: AlertTriangle, info: Info };
-
 const palette = {
-  success: { rail: "#22C55E", icon: "#22C55E", glow: "rgba(34,197,94,0.18)"  },
-  error:   { rail: "#EF4444", icon: "#EF4444", glow: "rgba(239,68,68,0.18)"   },
-  warning: { rail: "#F59E0B", icon: "#F59E0B", glow: "rgba(245,158,11,0.18)"  },
-  info:    { rail: "#3B82F6", icon: "#3B82F6", glow: "rgba(59,130,246,0.18)"  },
+  success: { rail: "#22C55E", label: "Success", glow: "rgba(34,197,94,0.18)"  },
+  error:   { rail: "#EF4444", label: "Alert",   glow: "rgba(239,68,68,0.18)"   },
+  warning: { rail: "#F59E0B", label: "Notice",  glow: "rgba(245,158,11,0.18)"  },
+  info:    { rail: "#3B82F6", label: "Update",  glow: "rgba(59,130,246,0.18)"  },
 };
 
 export default function Toast({ message, type, detail, duration = 5000, onClose }: ToastProps) {
@@ -27,8 +25,7 @@ export default function Toast({ message, type, detail, duration = 5000, onClose 
   const rafRef   = useRef<number | null>(null);
   const startRef = useRef<number | null>(null);
 
-  const Icon  = icons[type];
-  const color = palette[type];
+  const color = palette[type] || palette.info;
 
   // Animate progress bar
   useEffect(() => {
@@ -75,7 +72,7 @@ export default function Toast({ message, type, detail, duration = 5000, onClose 
       background: "rgba(15,23,42,0.96)",
       backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
       border: "1px solid rgba(255,255,255,0.1)",
-      borderRadius: 18, overflow: "hidden",
+      borderRadius: 16, overflow: "hidden",
       boxShadow: `0 20px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04), 0 4px 24px ${color.glow}`,
       fontFamily: "var(--font)",
     }}>
@@ -85,24 +82,25 @@ export default function Toast({ message, type, detail, duration = 5000, onClose 
         background: `linear-gradient(to bottom, ${color.rail}, ${color.rail}88)`,
       }} />
 
-      {/* Content row */}
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 14, padding: "16px 18px 16px 22px" }}>
-        {/* Icon halo */}
-        <div style={{
-          width: 36, height: 36, borderRadius: 10, flexShrink: 0, marginTop: 1,
-          background: `${color.rail}1A`, border: `1px solid ${color.rail}33`,
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          <Icon size={18} color={color.icon} strokeWidth={2.2} />
-        </div>
-
+      {/* Content row — Facebook style without icons */}
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "14px 18px 14px 20px" }}>
         {/* Text */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 700, fontSize: 14, color: "rgba(255,255,255,0.95)", marginBottom: detail ? 4 : 0, letterSpacing: "-0.1px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: color.rail, letterSpacing: "0.2px", textTransform: "uppercase" }}>
+              {color.label}
+            </span>
+            <span style={{ width: 3, height: 3, borderRadius: "50%", background: "rgba(255,255,255,0.3)", display: "inline-block" }} />
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)" }}>
+              Admin Center
+            </span>
+          </div>
+
+          <div style={{ fontWeight: 700, fontSize: 14, color: "rgba(255,255,255,0.95)", marginBottom: detail ? 3 : 0, letterSpacing: "-0.1px" }}>
             {message}
           </div>
           {detail && (
-            <div style={{ fontSize: 12.5, color: "rgba(255,255,255,0.52)", lineHeight: 1.5 }}>
+            <div style={{ fontSize: 12.5, color: "rgba(255,255,255,0.65)", lineHeight: 1.45 }}>
               {detail}
             </div>
           )}
@@ -111,11 +109,11 @@ export default function Toast({ message, type, detail, duration = 5000, onClose 
         {/* Dismiss */}
         <button onClick={dismiss} aria-label="Dismiss" style={{
           background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)",
-          borderRadius: 8, width: 28, height: 28, cursor: "pointer", padding: 0,
+          borderRadius: "50%", width: 24, height: 24, cursor: "pointer", padding: 0,
           display: "flex", alignItems: "center", justifyContent: "center",
-          color: "rgba(255,255,255,0.5)", flexShrink: 0, transition: "background 0.15s",
+          color: "rgba(255,255,255,0.6)", flexShrink: 0, transition: "background 0.15s",
         }}>
-          <X size={14} />
+          <X size={12} />
         </button>
       </div>
 

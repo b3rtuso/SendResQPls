@@ -53,6 +53,31 @@ button:active:not(:disabled) {
 
 /* ===== MOBILE APP STYLES (SRQ - SendResqPls) ===== */
 
+/* Global Mobile Scrollbar Hiding (full scrollability preserved) */
+.mobile-shell,
+.mobile-shell *,
+.mobile-page,
+.mobile-page *,
+.srq-tracker-sheet,
+.mobile-modal-card,
+.history-list {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.mobile-shell::-webkit-scrollbar,
+.mobile-shell *::-webkit-scrollbar,
+.mobile-page::-webkit-scrollbar,
+.mobile-page *::-webkit-scrollbar,
+.srq-tracker-sheet::-webkit-scrollbar,
+.mobile-modal-card::-webkit-scrollbar,
+.history-list::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+}
+
 /* Mobile Layout Shell */
 .mobile-shell {
   width: 100%;
@@ -1010,9 +1035,14 @@ button:active:not(:disabled) {
 /* ===== APP-WIDE MOBILE ANIMATIONS & TRANSITIONS ===== */
 .mobile-page {
   animation: mobilePageFadeIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-  padding: 16px 20px 100px;
+  padding: 0 0 100px;
   box-sizing: border-box;
   width: 100%;
+}
+
+.mobile-page-content {
+  padding: 16px 20px;
+  box-sizing: border-box;
 }
 
 .mobile-auth {

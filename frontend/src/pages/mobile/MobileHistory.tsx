@@ -407,78 +407,83 @@ export default function MobileHistory() {
       `}</style>
 
       <div className="mobile-page" style={{ paddingBottom: 90 }}>
-        {/* Pull-to-refresh Indicator */}
+        {/* Header (flush top, matching Home header gradient) */}
         <div style={{
-          height: pullDistance > 0 || refreshing ? Math.max(pullDistance, refreshing ? 50 : 0) : 0,
-          opacity: pullDistance > 0 || refreshing ? 1 : 0,
-          transition: isPulling ? 'none' : 'height 0.2s ease, opacity 0.2s ease',
+          background: 'linear-gradient(155deg, #0F1F38 0%, #1E3A5F 40%, #2563EB 100%)',
+          margin: 0,
+          padding: '24px 20px 20px',
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          overflow: 'hidden',
-          background: 'rgba(37, 99, 235, 0.05)',
-          borderBottom: pullDistance > 0 || refreshing ? '1px solid var(--border-light)' : 'none',
-          color: 'var(--text-secondary)',
-          fontSize: 13,
-          fontWeight: 600,
-          gap: 8,
-          margin: '0 -24px',
-          borderRadius: '0 0 16px 16px',
-        }}>
-          <RefreshCw
-            size={16}
-            className={refreshing ? "spin" : ""}
-            style={{
-              transform: refreshing ? undefined : `rotate(${pullDistance * 3}deg)`,
-              transition: refreshing ? undefined : 'transform 0.1s linear'
-            }}
-          />
-          <span>{refreshing ? 'Syncing...' : pullDistance > 60 ? 'Release to refresh' : 'Pull down to refresh'}</span>
-        </div>
-
-        {/* Header */}
-        <div style={{
-          background: 'linear-gradient(135deg, #0F2942 0%, #1E3A5F 100%)',
-          margin: '0 -24px 16px',
-          padding: '18px 24px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
+          flexDirection: 'column',
+          gap: 0,
           color: 'white',
-          boxShadow: '0 4px 16px rgba(15, 41, 66, 0.18)',
+          boxShadow: '0 6px 24px rgba(15, 31, 56, 0.35)',
+          borderRadius: '0 0 24px 24px',
+          marginBottom: 0,
         }}>
-          <button 
-            onClick={() => navigate('/mobile')}
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 12,
-              border: '1.5px solid rgba(255, 255, 255, 0.25)',
-              background: 'rgba(255, 255, 255, 0.12)',
+          {/* Pull-to-refresh Indicator — only shows when user is actively pulling */}
+          {(pullDistance > 0 || refreshing) && (
+            <div style={{
+              height: refreshing ? 40 : Math.min(pullDistance, 50),
+              opacity: pullDistance > 0 || refreshing ? 1 : 0,
+              transition: isPulling ? 'none' : 'height 0.2s ease, opacity 0.2s ease',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              cursor: 'pointer',
-              color: 'white',
-              padding: 0,
-            }}
-            aria-label="Back"
-          >
-            <ChevronLeft size={20} />
-          </button>
-          <div>
-            <h1 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: 'white', letterSpacing: '-0.2px' }}>Report History</h1>
-            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', margin: '2px 0 0' }}>Tap any report to view live response status</p>
+              overflow: 'hidden',
+              color: 'rgba(255,255,255,0.85)',
+              fontSize: 12,
+              fontWeight: 600,
+              gap: 8,
+              marginBottom: 8,
+            }}>
+              <RefreshCw
+                size={14}
+                className={refreshing ? "spin" : ""}
+                style={{
+                  transform: refreshing ? undefined : `rotate(${pullDistance * 3}deg)`,
+                  transition: refreshing ? undefined : 'transform 0.1s linear'
+                }}
+              />
+              <span>{refreshing ? 'Syncing...' : pullDistance > 60 ? 'Release to refresh' : 'Pull to refresh'}</span>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <button
+              onClick={() => navigate('/mobile')}
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 12,
+                border: '1.5px solid rgba(255, 255, 255, 0.25)',
+                background: 'rgba(255, 255, 255, 0.12)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: 'white',
+                padding: 0,
+              }}
+              aria-label="Back"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <div>
+              <h1 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: 'white', letterSpacing: '-0.2px' }}>Report History</h1>
+              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', margin: '2px 0 0' }}>Tap any report to view live response status</p>
+            </div>
           </div>
         </div>
+
+        <div style={{ padding: '16px 20px 0' }}>
 
         {/* ── Status Filter Chips with Admin Portal Palette ── */}
         <div style={{
           display: 'flex',
           gap: 8,
           overflowX: 'auto',
-          margin: '0 -24px 16px',
-          padding: '0 24px 4px',
+          margin: '0 0 16px',
+          padding: '0 0 4px',
           scrollbarWidth: 'none',
         }}>
           {FILTER_TABS.map(tab => {
@@ -733,6 +738,7 @@ export default function MobileHistory() {
             )}
           </div>
         )}
+        </div>
       </div>
 
       {/* ─── LIVE DELIVERY-STYLE INCIDENT STATUS TRACKER MODAL ─── */}

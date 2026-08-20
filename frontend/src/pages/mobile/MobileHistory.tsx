@@ -349,12 +349,12 @@ export default function MobileHistory() {
         }
         .srq-stepper-track {
           position: relative;
-          padding-left: 36px;
+          padding-left: 48px;
           margin: 20px 0;
         }
         .srq-stepper-line {
           position: absolute;
-          left: 17px;
+          left: 19px;
           top: 14px;
           bottom: 24px;
           width: 2px;
@@ -362,17 +362,17 @@ export default function MobileHistory() {
         }
         .srq-stepper-node {
           position: relative;
-          margin-bottom: 22px;
+          margin-bottom: 24px;
         }
         .srq-stepper-node:last-child {
           margin-bottom: 0;
         }
         .srq-node-icon-wrap {
           position: absolute;
-          left: -36px;
+          left: -48px;
           top: 0;
-          width: 36px;
-          height: 36px;
+          width: 38px;
+          height: 38px;
           border-radius: 50%;
           display: flex;
           align-items: center;
@@ -622,9 +622,20 @@ export default function MobileHistory() {
                       {new Date(inc.createdAt).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })} •{' '}
                       {new Date(inc.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontWeight: 700, color: '#2563EB' }}>
+                    <div style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      fontWeight: 700,
+                      color: '#2563EB',
+                      background: '#EFF6FF',
+                      padding: '4px 10px',
+                      borderRadius: 8,
+                      border: '1px solid #DBEAFE',
+                      fontSize: 11.5,
+                    }}>
                       <span>{inc.assignedDepartment ? `Unit: ${inc.assignedDepartment}` : 'Track Status'}</span>
-                      <ChevronRight size={13} />
+                      <ChevronRight size={13} strokeWidth={2.5} />
                     </div>
                   </div>
                 </div>

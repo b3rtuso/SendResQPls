@@ -20,7 +20,7 @@ export default function LandingPage() {
   const [faqVisible, setFaqVisible] = useState(false);
   const [accessVisible, setAccessVisible] = useState(false);
   const [highlighted, setHighlighted] = useState(false);
-  const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
   const highlightTimerRef = useRef<any>(null);
 
   const scrollToAccess = () => {

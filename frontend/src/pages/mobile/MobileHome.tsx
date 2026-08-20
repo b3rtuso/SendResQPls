@@ -546,8 +546,25 @@ export default function MobileHome() {
             <button
               onClick={() => {
                 setShowLocModal(false);
-                // Deep-link to device app settings (Capacitor / mobile browser)
-                window.open('app-settings:', '_system');
+                if (navigator.geolocation) {
+                  navigator.geolocation.getCurrentPosition(
+                    () => {
+                      setLocStatus('granted');
+                      setShowLocBanner(true);
+                    },
+                    () => {
+                      setLocStatus('denied');
+                      try {
+                        window.open('app-settings:', '_system');
+                      } catch {}
+                    },
+                    { timeout: 8000, enableHighAccuracy: true }
+                  );
+                } else {
+                  try {
+                    window.open('app-settings:', '_system');
+                  } catch {}
+                }
               }}
               style={{
                 width: '100%', padding: '15px 20px',

@@ -21,6 +21,10 @@ import BottomNav from '../../components/BottomNav';
 import FcmBannerOverlay from '../../components/FcmBannerOverlay';
 import { useMobileToast } from '../../components/MobileToastProvider';
 
+// ── Module-level cache to persist photo across mobile tab switches ──────────
+let cachedReportPhoto: File | null = null;
+let cachedReportPreview: string | null = null;
+
 export default function MobileReport() {
   const navigate = useNavigate();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -28,8 +32,8 @@ export default function MobileReport() {
 
   const { push: showToast } = useMobileToast();
 
-  const [photo, setPhoto] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [photo, setPhoto] = useState<File | null>(() => cachedReportPhoto);
+  const [preview, setPreview] = useState<string | null>(() => cachedReportPreview);
   const [compressing, setCompressing] = useState(false);
   const [sending, setSending] = useState(false);
   const [flushing, setFlushing] = useState(false);
@@ -43,8 +47,31 @@ export default function MobileReport() {
   const [selectedManualBrgy, setSelectedManualBrgy] = useState(BARANGAYS[0]?.name || 'Poblacion 1');
   const [submittedIncident, setSubmittedIncident] = useState<any | null>(null);
 
+  // Location permission & readiness state
+  const [locStatus, setLocStatus] = useState<'granted' | 'denied' | 'prompt' | 'unavailable' | 'checking'>('checking');
+
   // Emergency contacts from localStorage
   const [emergencyContacts, setEmergencyContacts] = useState<any[]>([]);
+
+  // Check location permission on mount
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      setLocStatus('unavailable');
+      return;
+    }
+    if (navigator.permissions) {
+      navigator.permissions.query({ name: 'geolocation' }).then(result => {
+        setLocStatus(result.state as any);
+        result.onchange = () => {
+          setLocStatus(result.state as any);
+        };
+      }).catch(() => {
+        setLocStatus('prompt');
+      });
+    } else {
+      setLocStatus('prompt');
+    }
+  }, []);
 
   useEffect(() => {
     try {
@@ -110,26 +137,61 @@ export default function MobileReport() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOnline]);
 
+  const handleEnableGps = () => {
+    if (!navigator.geolocation) {
+      showToast({ type: 'error', priority: 'normal', title: 'Location Unavailable', message: 'Your device does not support GPS geolocation.' });
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      () => {
+        setLocStatus('granted');
+        showToast({ type: 'success', priority: 'normal', title: 'GPS Connected', message: 'Location auto-tagging is active.' });
+      },
+      () => {
+        setLocStatus('denied');
+        showToast({
+          type: 'warning',
+          priority: 'important',
+          title: 'Permission Denied',
+          message: 'Please allow Location permission in your browser or phone settings.',
+        });
+      },
+      { timeout: 8000, enableHighAccuracy: true }
+    );
+  };
+
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setCompressing(true);
-      try {
-        // Automatically optimize high-res photo for fastest transmission
-        const { file: compressed } = await compressImage(file, {
-          maxWidth: 1600,
-          maxHeight: 1200,
-          quality: 0.82,
-        });
+    // Reset file input so selecting the same file again triggers onChange
+    e.target.value = '';
 
-        setPhoto(compressed);
-        setPreview(URL.createObjectURL(compressed));
-      } catch {
-        setPhoto(file);
-        setPreview(URL.createObjectURL(file));
-      } finally {
-        setCompressing(false);
-      }
+    if (!file) {
+      // User cancelled file selection dialog -> KEEP EXISTING PHOTO INTACT!
+      return;
+    }
+
+    setCompressing(true);
+    try {
+      // Automatically optimize high-res photo for fastest transmission
+      const { file: compressed } = await compressImage(file, {
+        maxWidth: 1600,
+        maxHeight: 1200,
+        quality: 0.82,
+      });
+
+      const objectUrl = URL.createObjectURL(compressed);
+      cachedReportPhoto = compressed;
+      cachedReportPreview = objectUrl;
+      setPhoto(compressed);
+      setPreview(objectUrl);
+    } catch {
+      const objectUrl = URL.createObjectURL(file);
+      cachedReportPhoto = file;
+      cachedReportPreview = objectUrl;
+      setPhoto(file);
+      setPreview(objectUrl);
+    } finally {
+      setCompressing(false);
     }
   };
 
@@ -221,6 +283,8 @@ export default function MobileReport() {
 
         const newCount = getPendingCount();
         setPendingCount(newCount);
+        cachedReportPhoto = null;
+        cachedReportPreview = null;
         setPhoto(null);
         setPreview(null);
         setDetectedLocation(null);
@@ -244,6 +308,8 @@ export default function MobileReport() {
       const response = await reportIncident(formData);
       const { incident } = response.data;
 
+      cachedReportPhoto = null;
+      cachedReportPreview = null;
       setPhoto(null);
       setPreview(null);
       setDetectedLocation(null);
@@ -416,6 +482,55 @@ export default function MobileReport() {
           </div>
         )}
 
+        {/* Location Services Off/Denied Reminder Banner */}
+        {(locStatus === 'denied' || locStatus === 'unavailable') && (
+          <div style={{
+            background: '#FEF3C7',
+            border: '1.5px solid #FDE68A',
+            borderRadius: 14,
+            padding: '12px 16px',
+            marginBottom: 16,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+          }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: 10,
+              background: '#F59E0B', color: 'white',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              <MapPin size={18} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: '#92400E' }}>
+                Location Services Off
+              </div>
+              <div style={{ fontSize: 11.5, color: '#B45309', marginTop: 1, lineHeight: 1.4 }}>
+                GPS is off. You can manually select your barangay on submit or enable GPS.
+              </div>
+            </div>
+            <button
+              onClick={handleEnableGps}
+              style={{
+                padding: '7px 12px',
+                borderRadius: 10,
+                background: '#D97706',
+                color: 'white',
+                border: 'none',
+                fontSize: 11.5,
+                fontWeight: 800,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+                fontFamily: 'inherit',
+              }}
+            >
+              Enable GPS
+            </button>
+          </div>
+        )}
+
         {/* Camera Viewfinder Box */}
         <div style={{ marginBottom: 20 }}>
           <div className="viewfinder-box" onClick={() => fileRef.current?.click()}>
@@ -438,14 +553,14 @@ export default function MobileReport() {
                 style={{ width: '100%', height: 260, objectFit: 'cover' }}
               />
             ) : (
-              <div style={{ textAlign: 'center', padding: '36px 20px', zIndex: 1 }}>
+              <div style={{ textAlign: 'center', padding: '40px 20px', zIndex: 1 }}>
                 <div style={{
-                  width: 60, height: 60, borderRadius: 20,
-                  background: 'rgba(239,68,68,0.18)', border: '1.5px solid rgba(239,68,68,0.4)',
+                  width: 58, height: 58, borderRadius: '50%',
+                  background: 'rgba(239, 68, 68, 0.15)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  margin: '0 auto 14px', color: '#EF4444',
+                  margin: '0 auto 14px', border: '1.5px solid rgba(239, 68, 68, 0.3)',
                 }}>
-                  <Camera size={28} />
+                  <Camera size={28} color="#EF4444" />
                 </div>
                 <h3 style={{ margin: '0 0 6px', color: '#FFFFFF', fontSize: 16, fontWeight: 800 }}>
                   Take or Upload Photo
@@ -539,47 +654,52 @@ export default function MobileReport() {
         </button>
       </div>
 
-      {/* ── Manual Barangay Selection Modal (GPS Indoor Fallback) ── */}
+      {/* ── Manual Barangay Selection Modal (Screen-Centered Dialog) ── */}
       {showManualBarangayModal && (
-        <>
+        <div
+          onClick={() => setShowManualBarangayModal(false)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 10000,
+            background: 'rgba(15, 23, 42, 0.7)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 20,
+          }}
+        >
           <div
-            onClick={() => setShowManualBarangayModal(false)}
+            onClick={e => e.stopPropagation()}
             style={{
-              position: 'fixed', inset: 0, zIndex: 10000,
-              background: 'rgba(15, 23, 42, 0.65)',
-              backdropFilter: 'blur(6px)',
-              WebkitBackdropFilter: 'blur(6px)',
+              background: 'white',
+              borderRadius: 24,
+              padding: '28px 24px 28px',
+              maxWidth: 420,
+              width: '100%',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+              animation: 'scaleUp 0.28s cubic-bezier(0.16,1,0.3,1) both',
             }}
-          />
-          <div style={{
-            position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 10001,
-            background: 'white',
-            borderRadius: '24px 24px 0 0',
-            padding: '28px 24px 36px',
-            boxShadow: '0 -8px 40px rgba(0,0,0,0.22)',
-            animation: 'slideUp 0.28s cubic-bezier(0.16,1,0.3,1) both',
-          }}>
-            <div style={{ width: 40, height: 4, borderRadius: 4, background: '#E2E8F0', margin: '0 auto 20px' }} />
-
+          >
             <div style={{ textAlign: 'center', marginBottom: 20 }}>
               <div style={{
-                width: 48, height: 48, borderRadius: 16,
-                background: '#FEF3C7', border: '1px solid #FDE68A',
+                width: 52, height: 52, borderRadius: 16,
+                background: '#FEF3C7', border: '1.5px solid #FDE68A',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 margin: '0 auto 12px', color: '#D97706',
               }}>
-                <MapPin size={24} />
+                <MapPin size={26} />
               </div>
-              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: '#0F172A' }}>
+              <h3 style={{ margin: 0, fontSize: 19, fontWeight: 900, color: '#0F172A', letterSpacing: '-0.2px' }}>
                 Select Your Barangay
               </h3>
-              <p style={{ margin: '4px 0 0', fontSize: 13, color: '#64748B' }}>
-                GPS signal was slow indoors. Please confirm which Balayan barangay you are located in:
+              <p style={{ margin: '6px 0 0', fontSize: 13, color: '#64748B', lineHeight: 1.5 }}>
+                Location services are off or signal was blocked indoors. Please confirm your Balayan barangay:
               </p>
             </div>
 
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#64748B', marginBottom: 6, textTransform: 'uppercase' }}>
+            <div style={{ marginBottom: 22 }}>
+              <label style={{ display: 'block', fontSize: 11.5, fontWeight: 800, color: '#64748B', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Barangay in Balayan, Batangas
               </label>
               <div style={{ position: 'relative' }}>
@@ -589,8 +709,9 @@ export default function MobileReport() {
                   style={{
                     width: '100%', padding: '14px 16px', borderRadius: 14,
                     border: '1.5px solid #CBD5E1', background: '#F8FAFC',
-                    fontSize: 15, fontWeight: 600, color: '#0F172A',
+                    fontSize: 15, fontWeight: 700, color: '#0F172A',
                     fontFamily: 'inherit', outline: 'none', appearance: 'none',
+                    cursor: 'pointer',
                   }}
                 >
                   {BARANGAYS.map(b => (
@@ -627,7 +748,7 @@ export default function MobileReport() {
               </button>
             </div>
           </div>
-        </>
+        </div>
       )}
 
       {/* ── Pre-flight Review & Submit Modal ── */}

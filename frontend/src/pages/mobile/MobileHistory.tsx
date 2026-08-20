@@ -164,6 +164,23 @@ export default function MobileHistory() {
 
   useEffect(() => { fetchHistory(); }, []);
 
+  // ── Body scroll-lock: prevent background from scrolling behind the modal ──
+  useEffect(() => {
+    if (selectedIncident) {
+      // Lock
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+    } else {
+      // Restore
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    };
+  }, [selectedIncident]);
+
   const filteredIncidents = useMemo(() => {
     if (statusFilter === 'ALL') return allIncidents;
     return allIncidents.filter(inc => inc.status === statusFilter);
@@ -748,10 +765,12 @@ export default function MobileHistory() {
           onClick={() => setSelectedIncident(null)}
           role="dialog"
           aria-modal="true"
+          style={{ touchAction: 'none' }}
         >
           <div
             className="srq-tracker-sheet"
             onClick={e => e.stopPropagation()}
+            style={{ overscrollBehavior: 'contain', touchAction: 'pan-y' }}
           >
             {/* Drag Handle */}
             <div className="srq-tracker-handle" />

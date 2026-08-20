@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Phone, AlertTriangle, Wind, Waves, Siren, Stethoscope, ChevronDown, MapPinOff, X, WifiOff, Navigation } from 'lucide-react';
+import { Phone, AlertTriangle, Wind, Waves, Siren, Stethoscope, ChevronDown, MapPinOff, WifiOff, Navigation, Settings } from 'lucide-react';
 import BottomNav from '../../components/BottomNav';
 import FcmBannerOverlay from '../../components/FcmBannerOverlay';
 import { getMyIncidents, cachedGet } from '../../api/client';
@@ -36,7 +36,6 @@ export default function MobileHome() {
 
   // Real-time location state via useLocationChecker
   const { isLocationOn, recheckLocation } = useLocationChecker();
-  const [showLocBanner, setShowLocBanner] = useState(true);
   const [showLocModal, setShowLocModal] = useState(false);
 
   // Online/offline state
@@ -125,15 +124,6 @@ export default function MobileHome() {
     };
   }, [userId, recheckLocation]);
 
-  // Auto-dismiss the location banner if location is granted/on
-  useEffect(() => {
-    if (isLocationOn === true) {
-      const t = setTimeout(() => setShowLocBanner(false), 4000);
-      return () => clearTimeout(t);
-    } else if (isLocationOn === false) {
-      setShowLocBanner(true);
-    }
-  }, [isLocationOn]);
 
   return (
     <div className="mobile-shell" style={{ background: '#F1F5F9' }}>
@@ -189,44 +179,6 @@ export default function MobileHome() {
       {/* FCM event bridge — renders null, routes push events to toast context */}
       <FcmBannerOverlay />
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }}>
-
-        {/* ── Location Alert Banner (clickable → opens modal) ── */}
-        {showLocBanner && isLocationOn === false && (
-          <button
-            onClick={() => setShowLocModal(true)}
-            style={{
-              background: '#FEF2F2',
-              padding: '10px 16px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              animation: 'slideDown 0.22s ease',
-              width: '100%',
-              borderTop: 'none',
-              borderLeft: 'none',
-              borderRight: 'none',
-              borderBottom: '1px solid #FCA5A5',
-              cursor: 'pointer',
-              textAlign: 'left' as const,
-              fontFamily: 'inherit',
-            }}
-          >
-            <MapPinOff size={16} color="#DC2626" style={{ flexShrink: 0 }} />
-            <div style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#991B1B' }}>
-              Location is off. Tap to enable for emergency routing.
-            </div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: '#DC2626', background: '#FEE2E2', borderRadius: 6, padding: '2px 7px', flexShrink: 0, letterSpacing: '0.04em' }}>
-              FIX
-            </div>
-            <button
-              onClick={e => { e.stopPropagation(); setShowLocBanner(false); }}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#991B1B', padding: 2, flexShrink: 0, display: 'flex' }}
-              aria-label="Dismiss"
-            >
-              <X size={14} />
-            </button>
-          </button>
-        )}
 
         {/* ── Header ─────────────────────────────────── */}
         <div className="mobile-home-header" style={{ marginBottom: 24 }}>
@@ -340,6 +292,102 @@ export default function MobileHome() {
             </div>
           )}
         </div>
+
+        {/* ── GPS Location Reminder Card ─────────────────── */}
+        {isLocationOn !== true && (
+          <div style={{ padding: '16px 20px 0' }}>
+            <div
+              onClick={() => setShowLocModal(true)}
+              role="button"
+              tabIndex={0}
+              style={{
+                background: 'linear-gradient(135deg, #FFF7ED 0%, #FEF2F2 100%)',
+                border: '1.5px solid #FDBA74',
+                borderLeft: '4px solid #F97316',
+                borderRadius: 18,
+                padding: '16px 16px 16px 18px',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 14,
+                cursor: 'pointer',
+                animation: 'fadeUp 0.3s ease both',
+                boxShadow: '0 4px 16px rgba(249, 115, 22, 0.12)',
+              }}
+            >
+              {/* Pulsing icon */}
+              <div style={{ position: 'relative', flexShrink: 0, marginTop: 2 }}>
+                <div style={{
+                  position: 'absolute', inset: -5, borderRadius: '50%',
+                  background: 'rgba(249, 115, 22, 0.2)',
+                  animation: 'radarPing 2s ease infinite',
+                  pointerEvents: 'none',
+                }} />
+                <div style={{
+                  width: 38, height: 38, borderRadius: 12,
+                  background: '#FFF',
+                  border: '1.5px solid #FDBA74',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: '0 2px 8px rgba(249,115,22,0.15)',
+                }}>
+                  <MapPinOff size={18} color="#F97316" strokeWidth={2.2} />
+                </div>
+              </div>
+
+              {/* Text */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: '#9A3412', marginBottom: 3, letterSpacing: '-0.1px' }}>
+                  📍 Location Services Off
+                </div>
+                <div style={{ fontSize: 12, color: '#C2410C', lineHeight: 1.45, marginBottom: 12 }}>
+                  Emergency responders need your location to reach you quickly. Enable GPS before sending an alert.
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      const ok = await recheckLocation();
+                      if (!ok) {
+                        // Try to open system settings
+                        try {
+                          window.open('app-settings:', '_system');
+                        } catch {
+                          window.open('https://support.google.com/android/answer/3467281', '_blank');
+                        }
+                      }
+                    }}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                      padding: '8px 14px', borderRadius: 10,
+                      background: '#F97316', border: 'none',
+                      color: 'white', fontSize: 12, fontWeight: 800,
+                      cursor: 'pointer', fontFamily: 'inherit',
+                      boxShadow: '0 3px 10px rgba(249,115,22,0.35)',
+                    }}
+                  >
+                    <Settings size={13} />
+                    Open Settings
+                  </button>
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      await recheckLocation();
+                    }}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                      padding: '8px 14px', borderRadius: 10,
+                      background: 'rgba(249,115,22,0.1)', border: '1px solid #FDBA74',
+                      color: '#C2410C', fontSize: 12, fontWeight: 700,
+                      cursor: 'pointer', fontFamily: 'inherit',
+                    }}
+                  >
+                    <Navigation size={13} />
+                    Check Again
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ── Emergency Hotlines ─────────────────────────── */}
         <div style={{ padding: '24px 20px 0' }}>

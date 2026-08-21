@@ -106,11 +106,24 @@ export default function BottomNav() {
           position: relative;
         }
         .bn-tab.active .bn-icon-wrap {
-          background: rgba(37, 99, 235, 0.1);
-          transform: translateY(-1px);
+          background: rgba(37, 99, 235, 0.12);
+          transform: translateY(-2px) scale(1.08);
+          animation: bnTabActiveBounce 0.36s cubic-bezier(0.34, 1.56, 0.64, 1) both;
         }
         .bn-report-tab.active .bn-icon-wrap {
-          background: rgba(220, 38, 38, 0.1);
+          background: rgba(220, 38, 38, 0.12);
+        }
+
+        @keyframes bnTabActiveBounce {
+          0% {
+            transform: scale(0.85);
+          }
+          60% {
+            transform: scale(1.15) translateY(-3px);
+          }
+          100% {
+            transform: scale(1.08) translateY(-2px);
+          }
         }
 
         /* Press / tap state */

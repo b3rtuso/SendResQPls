@@ -1583,3 +1583,100 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
   color: #AB47BC !important;
   border: 1px solid rgba(171, 71, 188, 0.3) !important;
 }
+
+/* ============================================================
+   MOBILE PAGE & AUTH TRANSITION SYSTEM
+   ============================================================ */
+.mobile-page-transition {
+  width: 100%;
+  min-height: 100dvh;
+  animation: mobilePageTransitionIn 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform, opacity, filter;
+}
+
+@keyframes mobilePageTransitionIn {
+  0% {
+    opacity: 0;
+    transform: translateY(28px) scale(0.965);
+    filter: blur(4px);
+  }
+  50% {
+    opacity: 0.85;
+    filter: blur(0px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0px);
+  }
+}
+
+/* ── Nested Section Slide Transition (Sub-pages & Profile sub-sections) ── */
+.mobile-section-transition {
+  width: 100%;
+  min-height: 100dvh;
+  animation: mobileSectionSlideIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform, opacity, filter;
+}
+
+@keyframes mobileSectionSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateX(45px) scale(0.98);
+    filter: blur(3px);
+  }
+  60% {
+    opacity: 0.9;
+    filter: blur(0px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    filter: blur(0px);
+  }
+}
+
+/* ── Auth Screen Transition (Login <-> Signup <-> Forgot Password) ── */
+.mobile-auth-transition {
+  width: 100%;
+  min-height: 100dvh;
+  animation: mobileAuthFadeSlide 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform, opacity, filter;
+}
+
+@keyframes mobileAuthFadeSlide {
+  0% {
+    opacity: 0;
+    transform: translateY(36px) scale(0.94);
+    filter: blur(5px);
+  }
+  50% {
+    opacity: 0.85;
+    filter: blur(0px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0px);
+  }
+}
+
+@keyframes authCardEntrance {
+  0% {
+    opacity: 0;
+    transform: translateY(24px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-page-transition,
+  .mobile-section-transition,
+  .mobile-auth-transition,
+  .ml-form-card {
+    animation: none !important;
+  }
+}

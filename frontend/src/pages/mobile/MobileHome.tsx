@@ -369,7 +369,7 @@ export default function MobileHome() {
                       Detecting…
                     </>
                   ) : (
-                    <><Navigation size={12} /> Enable</>
+                    <><Navigation size={12} /> Enable GPS</>
                   )}
                 </button>
               )}
@@ -648,7 +648,7 @@ export default function MobileHome() {
                       Detecting Location…
                     </>
                   ) : (
-                    <><Navigation size={16} /> Enable Location</>
+                    <><Navigation size={16} /> Enable GPS</>
                   )}
                 </button>
               )}

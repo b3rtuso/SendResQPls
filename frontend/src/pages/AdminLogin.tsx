@@ -66,17 +66,23 @@ export default function AdminLogin() {
     display: 'flex',
     alignItems: 'center',
     position: 'relative',
-    background: focusField === field ? '#FFFFFF' : '#F8FAFC',
-    border: `1.5px solid ${focusField === field ? '#2563EB' : '#E2E8F0'}`,
+    background: error ? '#FFF8F8' : focusField === field ? '#FFFFFF' : '#F8FAFC',
+    border: `1.5px solid ${error ? '#EF4444' : focusField === field ? '#2563EB' : '#E2E8F0'}`,
     borderRadius: 14,
     transition: 'all 0.18s',
-    boxShadow: focusField === field ? '0 0 0 3px rgba(37,99,235,0.1)' : 'none',
+    boxShadow: error
+      ? '0 0 0 3px rgba(239,68,68,0.09)'
+      : focusField === field ? '0 0 0 3px rgba(37,99,235,0.1)' : 'none',
   });
 
   return (
     <div className="al-page-wrapper">
       <style>{`
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        .al-input-error::placeholder {
+          color: #EF4444 !important;
+          opacity: 0.85 !important;
+        }
 
         @keyframes alOrbPulse {
           0%, 100% { transform: scale(1) translate(0, 0); opacity: 0.18; }
@@ -408,8 +414,10 @@ export default function AdminLogin() {
                 </span>
                 <input
                   type="email"
+                  className={error ? 'al-input-error' : ''}
+                  placeholder="admin@balayan.gov.ph"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => { setEmail(e.target.value); if (error) setError(''); }}
                   onFocus={() => setFocusField('email')}
                   onBlur={() => setFocusField(null)}
                   onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
@@ -426,7 +434,7 @@ export default function AdminLogin() {
                   display: 'block',
                   fontSize: 12.5,
                   fontWeight: 700,
-                  color: '#374151',
+                  color: error ? '#DC2626' : '#374151',
                   marginBottom: 6,
                   letterSpacing: '0.01em',
                 }}
@@ -438,7 +446,7 @@ export default function AdminLogin() {
                   style={{
                     position: 'absolute',
                     left: 14,
-                    color: focusField === 'pass' ? '#2563EB' : '#94A3B8',
+                    color: error ? '#EF4444' : focusField === 'pass' ? '#2563EB' : '#94A3B8',
                     display: 'flex',
                     transition: 'color 0.18s',
                   }}
@@ -447,8 +455,10 @@ export default function AdminLogin() {
                 </span>
                 <input
                   type={showPass ? 'text' : 'password'}
+                  className={error ? 'al-input-error' : ''}
+                  placeholder="••••••••"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => { setPassword(e.target.value); if (error) setError(''); }}
                   onFocus={() => setFocusField('pass')}
                   onBlur={() => setFocusField(null)}
                   onKeyDown={(e) => e.key === 'Enter' && handleLogin()}

@@ -233,24 +233,37 @@ export const changePassword = async (req: AuthRequest, res: Response) => {
 export const forgotPassword = async (req: Request, res: Response) => {
   try {
     const { email } = req.body;
-    if (!email) return res.status(400).json({ error: 'Email is required' });
+    if (!email || typeof email !== 'string') {
+      return res.status(400).json({ error: 'Email is required' });
+    }
 
-    const user = await prisma.user.findUnique({ where: { email } });
-    // Always return success to prevent user enumeration
-    if (!user) return res.json({ message: 'If this email is registered, a reset link has been sent.' });
+    const cleanEmail = email.trim();
+    const user = await prisma.user.findFirst({
+      where: {
+        email: {
+          equals: cleanEmail,
+          mode: 'insensitive',
+        },
+      },
+    });
+
+    if (!user || !user.email) {
+      console.log(`⚠️ Password reset attempted for unregistered email: ${cleanEmail}`);
+      return res.status(404).json({ error: 'This email is not registered in our database.' });
+    }
 
     // Generate a secure random token
     const token = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
 
     // Store in Redis with 30-minute TTL — survives server restarts unlike in-memory Map
-    await redis.set(`pwd_reset:${token}`, email, 'EX', 30 * 60);
+    await redis.set(`pwd_reset:${token}`, user.email, 'EX', 30 * 60);
 
     // Build reset URL — uses the app's frontend URL
     const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/mobile/reset-password?token=${token}`;
 
-    await sendPasswordResetEmail(email, user.name, resetUrl);
-    console.log(`📧 Password reset link sent to ${email}`);
-    res.json({ message: 'If this email is registered, a reset link has been sent.' });
+    await sendPasswordResetEmail(user.email, user.name, resetUrl);
+    console.log(`📧 Password reset link sent to ${user.email}`);
+    res.json({ message: 'Password reset link has been sent to your email.' });
   } catch (error: any) {
     console.error('❌ Forgot password error:', error.message);
     res.status(500).json({ error: 'Failed to send reset email' });

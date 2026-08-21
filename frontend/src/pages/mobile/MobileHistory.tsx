@@ -135,6 +135,8 @@ export default function MobileHistory() {
   const containerRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
+  const selectedIncidentRef = useRef<Incident | null>(null);
+
   const updatePullDistance = (val: number) => {
     pullDistanceRef.current = val;
     setPullDistance(val);
@@ -143,6 +145,15 @@ export default function MobileHistory() {
   useEffect(() => {
     refreshingRef.current = refreshing;
   }, [refreshing]);
+
+  useEffect(() => {
+    selectedIncidentRef.current = selectedIncident;
+    if (selectedIncident) {
+      isPullingRef.current = false;
+      setIsPulling(false);
+      updatePullDistance(0);
+    }
+  }, [selectedIncident]);
 
   const fetchHistory = async () => {
     setLoading(true);
@@ -261,7 +272,7 @@ export default function MobileHistory() {
     if (!container) return;
 
     const handleTouchMove = (e: TouchEvent) => {
-      if (!isPullingRef.current || refreshingRef.current) return;
+      if (selectedIncidentRef.current || !isPullingRef.current || refreshingRef.current) return;
       const currentY = e.touches[0].clientY;
       const deltaY = currentY - startYRef.current;
 
@@ -281,15 +292,14 @@ export default function MobileHistory() {
   }, []);
 
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (window.scrollY === 0 && !refreshingRef.current) {
-      startYRef.current = e.touches[0].clientY;
-      isPullingRef.current = true;
-      setIsPulling(true);
-    }
+    if (selectedIncidentRef.current || window.scrollY !== 0 || refreshingRef.current) return;
+    startYRef.current = e.touches[0].clientY;
+    isPullingRef.current = true;
+    setIsPulling(true);
   };
 
   const handleTouchEnd = async () => {
-    if (!isPullingRef.current) return;
+    if (selectedIncidentRef.current || !isPullingRef.current) return;
     isPullingRef.current = false;
     setIsPulling(false);
 
@@ -796,6 +806,9 @@ export default function MobileHistory() {
         <div
           className="srq-tracker-overlay"
           onClick={() => setSelectedIncident(null)}
+          onTouchStart={e => e.stopPropagation()}
+          onTouchMove={e => e.stopPropagation()}
+          onTouchEnd={e => e.stopPropagation()}
           role="dialog"
           aria-modal="true"
           style={{ touchAction: 'none' }}
@@ -803,6 +816,9 @@ export default function MobileHistory() {
           <div
             className="srq-tracker-sheet"
             onClick={e => e.stopPropagation()}
+            onTouchStart={e => e.stopPropagation()}
+            onTouchMove={e => e.stopPropagation()}
+            onTouchEnd={e => e.stopPropagation()}
             style={{ overscrollBehavior: 'contain', touchAction: 'pan-y' }}
           >
             {/* Drag Handle */}

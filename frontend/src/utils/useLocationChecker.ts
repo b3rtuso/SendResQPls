@@ -220,7 +220,12 @@ export function useLocationChecker(): LocationCheckerResult {
     // ── Native Android: Trigger Google Play Services Location Accuracy Dialog ──
     if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android') {
       try {
-        const result = await LocationAccuracy.enableLocation();
+        const resultPromise = LocationAccuracy.enableLocation();
+        const timeoutPromise = new Promise<{ enabled: boolean }>((res) =>
+          setTimeout(() => res({ enabled: false }), 12000)
+        );
+        const result = await Promise.race([resultPromise, timeoutPromise]);
+
         if (result?.enabled) {
           // User tapped "Turn on" on the Google Play Services Location Accuracy system dialog!
           // Probe coordinates with high accuracy
@@ -254,16 +259,28 @@ export function useLocationChecker(): LocationCheckerResult {
                       setRequesting(false);
                       resolve(true);
                     },
-                    { timeout: 8000, enableHighAccuracy: true }
+                    { timeout: 5000, enableHighAccuracy: true }
                   );
-                }, 500);
+                }, 400);
               },
-              { timeout: 6000, enableHighAccuracy: true }
+              { timeout: 5000, enableHighAccuracy: true }
             );
           });
+        } else {
+          // User clicked "No thanks" / rejected the system dialog
+          setStatus('GPS_OFF');
+          setIsLocationOn(false);
+          setIsGpsOn(false);
+          setRequesting(false);
+          return false;
         }
       } catch (nativeErr) {
         console.warn('[LocationAccuracy] Native prompt error or rejected:', nativeErr);
+        setStatus('GPS_OFF');
+        setIsLocationOn(false);
+        setIsGpsOn(false);
+        setRequesting(false);
+        return false;
       }
     }
 

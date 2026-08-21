@@ -49,7 +49,9 @@ export default function MobileLogin() {
       setupPushNotifications().catch(err => console.warn('[Login] Push notification setup failed:', err));
       if (res.data.role === 'ADMIN') { navigate('/'); } else { navigate('/mobile'); }
     } catch {
-      setPassError('Incorrect email or password. Please try again.');
+      setEmailError('error');
+      setPassError('error');
+      setGlobalError('Incorrect email or password. Please try again.');
     } finally { setLoading(false); }
   };
 
@@ -70,7 +72,7 @@ export default function MobileLogin() {
   });
 
   return (
-    <div className="mobile-shell" style={{ background: '#F1F5F9' }}>
+    <div className="mobile-shell mobile-auth-transition" style={{ background: '#F1F5F9' }}>
       <style>{`
         .ml-login-header {
           background: linear-gradient(160deg, #0F1F38 0%, #1D4ED8 60%, #2563EB 100%);
@@ -120,6 +122,10 @@ export default function MobileLogin() {
         .ml-auth-btn:disabled { background: #94A3B8; box-shadow: none; cursor: not-allowed; }
         .ml-spin { width:16px; height:16px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:mlspin .75s linear infinite; }
         @keyframes mlspin { to { transform: rotate(360deg); } }
+        .ml-input-error::placeholder {
+          color: #EF4444 !important;
+          opacity: 0.85 !important;
+        }
       `}</style>
 
       {/* Branded header */}
@@ -160,7 +166,7 @@ export default function MobileLogin() {
         )}
 
         {/* Email field */}
-        <div style={{ marginBottom: emailError ? 6 : 14 }}>
+        <div style={{ marginBottom: emailError && emailError !== 'error' ? 6 : 14 }}>
           <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: emailError ? '#DC2626' : '#374151', marginBottom: 6, letterSpacing: '0.01em' }}>Email Address</label>
           <div style={wrapStyle('email', !!emailError)}>
             <span style={{ position: 'absolute', left: 14, color: emailError ? '#EF4444' : focusField === 'email' ? '#2563EB' : '#94A3B8', display: 'flex', transition: 'color 0.18s' }}>
@@ -168,10 +174,15 @@ export default function MobileLogin() {
             </span>
             <input
               type="email"
+              className={emailError ? 'ml-input-error' : ''}
               placeholder="juan@example.com"
               autoComplete="email"
               value={email}
-              onChange={e => { setEmail(e.target.value); if (emailError) setEmailError(''); }}
+              onChange={e => {
+                setEmail(e.target.value);
+                if (emailError) setEmailError('');
+                if (globalError) setGlobalError('');
+              }}
               onFocus={() => setFocusField('email')}
               onBlur={() => setFocusField(null)}
               onKeyDown={e => e.key === 'Enter' && handleLogin()}
@@ -179,7 +190,7 @@ export default function MobileLogin() {
             />
           </div>
         </div>
-        {emailError && (
+        {emailError && emailError !== 'error' && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 10, marginTop: 4 }}>
             <AlertTriangle size={12} color="#EF4444" />
             <span style={{ fontSize: 11.5, color: '#DC2626', fontWeight: 600 }}>{emailError}</span>
@@ -187,7 +198,7 @@ export default function MobileLogin() {
         )}
 
         {/* Password field */}
-        <div style={{ marginBottom: passError ? 4 : 8 }}>
+        <div style={{ marginBottom: passError && passError !== 'error' ? 4 : 8 }}>
           <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: passError ? '#DC2626' : '#374151', marginBottom: 6, letterSpacing: '0.01em' }}>Password</label>
           <div style={wrapStyle('pass', !!passError)}>
             <span style={{ position: 'absolute', left: 14, color: passError ? '#EF4444' : focusField === 'pass' ? '#2563EB' : '#94A3B8', display: 'flex', transition: 'color 0.18s' }}>
@@ -195,10 +206,15 @@ export default function MobileLogin() {
             </span>
             <input
               type={showPass ? 'text' : 'password'}
+              className={passError ? 'ml-input-error' : ''}
               placeholder="••••••••"
               autoComplete="current-password"
               value={password}
-              onChange={e => { setPassword(e.target.value); if (passError) setPassError(''); }}
+              onChange={e => {
+                setPassword(e.target.value);
+                if (passError) setPassError('');
+                if (globalError) setGlobalError('');
+              }}
               onFocus={() => setFocusField('pass')}
               onBlur={() => setFocusField(null)}
               onKeyDown={e => e.key === 'Enter' && handleLogin()}
@@ -206,6 +222,7 @@ export default function MobileLogin() {
             />
             {/* 44×44 tap target for eye toggle */}
             <button
+              type="button"
               onClick={() => setShowPass(!showPass)}
               aria-label={showPass ? 'Hide password' : 'Show password'}
               style={{
@@ -221,7 +238,7 @@ export default function MobileLogin() {
             </button>
           </div>
         </div>
-        {passError && (
+        {passError && passError !== 'error' && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 8, marginTop: 2 }}>
             <AlertTriangle size={12} color="#EF4444" />
             <span style={{ fontSize: 11.5, color: '#DC2626', fontWeight: 600 }}>{passError}</span>

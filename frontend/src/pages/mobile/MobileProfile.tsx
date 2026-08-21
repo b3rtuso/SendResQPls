@@ -179,7 +179,7 @@ export default function MobileProfile() {
 
   /* ── MAIN VIEW ─────────────────────────────────────────── */
   if (section === 'main') return (
-    <div className="mobile-shell">
+    <div className="mobile-shell mobile-section-transition" key="profile-main">
       <div style={{ flex: 1, paddingBottom: 80 }}>
 
         {/* Hero Header — uses percentage width, no 100vw hack */}
@@ -263,7 +263,7 @@ export default function MobileProfile() {
 
   /* ── ACCOUNT DETAILS ───────────────────────────────────── */
   if (section === 'account') return (
-    <div className="mobile-shell">
+    <div className="mobile-shell mobile-section-transition" key="profile-account">
       <div style={{ flex: 1, paddingBottom: 80 }}>
 
         <SectionHeader title="Account Details" onBack={() => setSection('main')} />
@@ -344,7 +344,7 @@ export default function MobileProfile() {
 
   /* ── EMERGENCY CONTACTS ────────────────────────────────── */
   if (section === 'contacts') return (
-    <div className="mobile-shell">
+    <div className="mobile-shell mobile-section-transition" key="profile-contacts">
       <div style={{ flex: 1, paddingBottom: 80 }}>
 
         <SectionHeader title="Emergency Contacts" onBack={() => setSection('main')} />
@@ -426,7 +426,7 @@ export default function MobileProfile() {
 
   /* ── NOTIFICATION SETTINGS ─────────────────────────────── */
   if (section === 'notifications') return (
-    <div className="mobile-shell">
+    <div className="mobile-shell mobile-section-transition" key="profile-notifications">
       <div style={{ flex: 1, paddingBottom: 80 }}>
 
         <SectionHeader title="Notification Settings" onBack={() => setSection('main')} />
@@ -466,7 +466,7 @@ export default function MobileProfile() {
     ];
 
     return (
-      <div className="mobile-shell">
+      <div className="mobile-shell mobile-section-transition" key="profile-help">
         <div style={{ flex: 1, paddingBottom: 80 }}>
           <SectionHeader title="Help & Support" onBack={() => setSection('main')} />
           <div style={{ padding: 'clamp(14px, 4vw, 20px)' }}>

@@ -90,6 +90,29 @@ function MobileHomeWithOnboarding() {
   );
 }
 
+// ── Animated mobile routes wrapper with transition support ──────────────────
+function AnimatedMobileRoutes() {
+  const location = useLocation();
+
+  return (
+    <div key={location.pathname} className="mobile-page-transition">
+      <Routes location={location}>
+        {/* Public mobile */}
+        <Route path="login" element={<MobileLogin />} />
+        <Route path="signup" element={<MobileSignup />} />
+        <Route path="forgot-password" element={<MobileForgotPassword />} />
+        <Route path="reset-password" element={<MobileResetPassword />} />
+        {/* Protected mobile */}
+        <Route path="" element={<MobileHomeWithOnboarding />} />
+        <Route path="report" element={<PrivateRoute><MobileReport /></PrivateRoute>} />
+        <Route path="history" element={<PrivateRoute><MobileHistory /></PrivateRoute>} />
+        <Route path="profile" element={<PrivateRoute><MobileProfile /></PrivateRoute>} />
+        <Route path="notifications" element={<PrivateRoute><MobileNotifications /></PrivateRoute>} />
+      </Routes>
+    </div>
+  );
+}
+
 // ── Automatically scroll to top on route change ──────────────────────────────
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -137,19 +160,7 @@ function App() {
                 <FcmBannerOverlay />
                 {/* Push tap navigation bridge. Renders nothing. */}
                 <RouterAwareNotificationSetup />
-                <Routes>
-                  {/* Public mobile */}
-                  <Route path="login" element={<MobileLogin />} />
-                  <Route path="signup" element={<MobileSignup />} />
-                  <Route path="forgot-password" element={<MobileForgotPassword />} />
-                  <Route path="reset-password" element={<MobileResetPassword />} />
-                  {/* Protected mobile */}
-                  <Route path="" element={<MobileHomeWithOnboarding />} />
-                  <Route path="report" element={<PrivateRoute><MobileReport /></PrivateRoute>} />
-                  <Route path="history" element={<PrivateRoute><MobileHistory /></PrivateRoute>} />
-                  <Route path="profile" element={<PrivateRoute><MobileProfile /></PrivateRoute>} />
-                  <Route path="notifications" element={<PrivateRoute><MobileNotifications /></PrivateRoute>} />
-                </Routes>
+                <AnimatedMobileRoutes />
               </MobileToastProvider>
             }
           />

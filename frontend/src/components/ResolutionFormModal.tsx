@@ -108,19 +108,19 @@ export default function ResolutionFormModal({ isOpen, onClose, onSubmit, inciden
       zIndex: 9999,
       background: 'rgba(15, 23, 42, 0.75)',
       backdropFilter: 'blur(8px)',
+      WebkitBackdropFilter: 'blur(8px)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: 16,
+      padding: 'clamp(12px, 3vw, 24px)',
       overflowY: 'auto',
     }}>
       <div style={{
         background: '#FFFFFF',
         borderRadius: 16,
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-        width: '100%',
-        maxWidth: 820,
-        maxHeight: '90vh',
+        width: 'min(820px, calc(100vw - 24px))',
+        maxHeight: 'min(92vh, calc(100vh - 24px))',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
@@ -128,12 +128,13 @@ export default function ResolutionFormModal({ isOpen, onClose, onSubmit, inciden
       }}>
         {/* Header */}
         <div style={{
-          padding: '18px 24px',
+          padding: '16px clamp(16px, 3vw, 24px)',
           background: 'linear-gradient(135deg, #1E293B 0%, #0F172A 100%)',
           color: 'white',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          flexShrink: 0,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{
@@ -423,7 +424,7 @@ export default function ResolutionFormModal({ isOpen, onClose, onSubmit, inciden
           </div>
 
           {/* Action Buttons */}
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', paddingTop: 12, borderTop: '1px solid #E2E8F0' }}>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', paddingTop: 12, borderTop: '1px solid #E2E8F0', flexWrap: 'wrap' }}>
             <button type="button" onClick={onClose} className="btn btn-outline" disabled={isSubmitting}>
               Cancel
             </button>
@@ -452,6 +453,14 @@ export default function ResolutionFormModal({ isOpen, onClose, onSubmit, inciden
           .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
           .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
           .form-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+          @media (max-width: 640px) {
+            .form-grid-2,
+            .form-grid-3,
+            .form-grid-4 {
+              grid-template-columns: 1fr !important;
+              gap: 10px;
+            }
+          }
           .field-label { font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px; }
           .field-input {
             width: 100%;

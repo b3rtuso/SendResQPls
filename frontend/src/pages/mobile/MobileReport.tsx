@@ -836,7 +836,8 @@ export default function MobileReport() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: 20,
+            padding: 'clamp(12px, 3vw, 20px)',
+            overflowY: 'auto',
           }}
         >
           <div
@@ -844,9 +845,10 @@ export default function MobileReport() {
             style={{
               background: 'white',
               borderRadius: 24,
-              padding: '28px 24px 28px',
-              maxWidth: 420,
-              width: '100%',
+              padding: 'clamp(20px, 4vw, 28px) clamp(16px, 4vw, 24px)',
+              width: 'min(420px, calc(100vw - 32px))',
+              maxHeight: 'calc(100vh - 32px)',
+              overflowY: 'auto',
               boxShadow: '0 20px 60px rgba(0,0,0,0.32)',
               animation: 'modalScaleIn 0.28s cubic-bezier(0.16,1,0.3,1) both',
             }}
@@ -1028,14 +1030,16 @@ export default function MobileReport() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: 24,
+          padding: 'clamp(12px, 3vw, 24px)',
+          overflowY: 'auto',
         }}>
           <div style={{
             background: 'white',
             borderRadius: 24,
-            padding: '28px 24px 28px',
-            maxWidth: 380,
-            width: '100%',
+            padding: 'clamp(20px, 4vw, 28px) clamp(16px, 4vw, 24px)',
+            width: 'min(380px, calc(100vw - 32px))',
+            maxHeight: 'calc(100vh - 32px)',
+            overflowY: 'auto',
             textAlign: 'center',
             boxShadow: '0 24px 60px rgba(0,0,0,0.3)',
             animation: 'scaleUp 0.3s cubic-bezier(0.16,1,0.3,1) both',

@@ -750,7 +750,7 @@ export default function Dashboard() {
         </div>
 
         {/* ── Two-column: incidents table + departments ─────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 20, marginBottom: 24 }}>
+        <div className="dashboard-bottom-grid">
 
           {/* Recent Incidents */}
           <div style={{ background: 'white', borderRadius: 14, boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden', border: '1px solid #F1F5F9' }}>
@@ -966,14 +966,14 @@ export default function Dashboard() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: 20,
+          padding: 'clamp(12px, 3vw, 24px)',
+          overflowY: 'auto',
         }}>
           <div style={{
             background: '#FFFFFF',
             borderRadius: 24,
-            width: '100%',
-            maxWidth: 720,
-            maxHeight: '90vh',
+            width: 'min(720px, calc(100vw - 24px))',
+            maxHeight: 'min(90vh, calc(100vh - 24px))',
             display: 'flex',
             flexDirection: 'column',
             boxShadow: '0 24px 60px rgba(15, 23, 42, 0.25)',
@@ -983,12 +983,13 @@ export default function Dashboard() {
           }}>
             {/* Modal Header */}
             <div style={{
-              padding: '20px 24px',
+              padding: '16px clamp(16px, 3vw, 24px)',
               borderBottom: '1px solid #F1F5F9',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
               background: '#FAFAFB',
+              flexShrink: 0,
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{

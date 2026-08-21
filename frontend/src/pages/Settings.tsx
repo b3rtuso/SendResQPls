@@ -963,28 +963,30 @@ export default function SettingsPage() {
       {showAuditLog && (
         <div style={{
           position: 'fixed',
-          top: 0, left: 0,
-          width: '100vw', height: '100vh',
+          inset: 0,
           background: 'rgba(15, 23, 42, 0.7)',
           backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           zIndex: 10000,
-          padding: 20,
+          padding: 'clamp(12px, 3vw, 24px)',
+          overflowY: 'auto',
         }}>
           <div style={{
             background: 'white',
             borderRadius: 16,
-            width: '100%', maxWidth: '820px',
-            maxHeight: '85vh',
+            width: 'min(820px, calc(100vw - 24px))',
+            maxHeight: 'min(88vh, calc(100vh - 24px))',
             boxShadow: '0 24px 60px rgba(0,0,0,0.3)',
             display: 'flex', flexDirection: 'column',
             overflow: 'hidden',
           }}>
             <div style={{
-              padding: '18px 24px',
+              padding: '16px clamp(16px, 3vw, 24px)',
               borderBottom: '1px solid #E2E8F0',
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               background: '#FAFBFC',
+              flexShrink: 0,
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <Activity size={18} style={{ color: '#2563EB' }} />
@@ -1003,8 +1005,8 @@ export default function SettingsPage() {
               </button>
             </div>
             
-            <div style={{ padding: '20px 24px', overflowY: 'auto', flex: 1 }}>
-              <div style={{ overflowX: 'auto' }}>
+            <div style={{ padding: 'clamp(16px, 3vw, 24px)', overflowY: 'auto', flex: 1 }}>
+              <div className="table-responsive">
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, textAlign: 'left' }}>
                   <thead>
                     <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>

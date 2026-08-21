@@ -76,6 +76,14 @@ export default function CallLogs() {
         @media (max-width: 900px) {
           .cl-stats-grid {
             grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .cl-stats-grid {
+            grid-template-columns: 1fr;
+            gap: 10px;
           }
         }
       `}</style>
@@ -98,10 +106,10 @@ export default function CallLogs() {
 
           <div className="cl-stat-card">
             <div>
-              <div className="cl-stat-label">Accepted Calls</div>
+              <div className="cl-stat-label">Accepted</div>
               <div className="cl-stat-value">{metrics.accepted}</div>
             </div>
-            <div className="cl-stat-icon" style={{ background: 'rgba(16, 185, 129, 0.08)', color: '#10B981' }}>
+            <div className="cl-stat-icon" style={{ background: 'rgba(34, 197, 94, 0.08)', color: '#16A34A' }}>
               <PhoneIncoming size={20} />
             </div>
           </div>
@@ -111,7 +119,7 @@ export default function CallLogs() {
               <div className="cl-stat-label">No Response</div>
               <div className="cl-stat-value">{metrics.noResponse}</div>
             </div>
-            <div className="cl-stat-icon" style={{ background: 'rgba(245, 158, 11, 0.08)', color: '#F59E0B' }}>
+            <div className="cl-stat-icon" style={{ background: 'rgba(245, 158, 11, 0.08)', color: '#D97706' }}>
               <Clock size={20} />
             </div>
           </div>
@@ -121,28 +129,19 @@ export default function CallLogs() {
               <div className="cl-stat-label">Declined</div>
               <div className="cl-stat-value">{metrics.declined}</div>
             </div>
-            <div className="cl-stat-icon" style={{ background: 'rgba(239, 68, 68, 0.08)', color: '#EF4444' }}>
+            <div className="cl-stat-icon" style={{ background: 'rgba(239, 68, 68, 0.08)', color: '#DC2626' }}>
               <PhoneOff size={20} />
             </div>
           </div>
         </div>
 
-        {/* ── Filters & Search ── */}
-        <div className="fade-in" style={{
-          background: '#FFFFFF',
-          borderRadius: 14,
-          padding: '14px 18px',
-          marginBottom: 16,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          border: '1px solid #E2E8F0',
-        }}>
-          <div style={{ position: 'relative', width: 280 }}>
-            <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
+        {/* ── Filter / Search Bar ── */}
+        <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+          <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
+            <Search size={15} color="#94A3B8" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }} />
             <input
               type="text"
-              placeholder="Search call logs by caller or department..."
+              placeholder="Search call logs, caller identity, department..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               style={{
@@ -155,6 +154,7 @@ export default function CallLogs() {
                 fontFamily: 'inherit',
                 color: '#0F172A',
                 background: '#F8FAFC',
+                boxSizing: 'border-box',
               }}
             />
           </div>
@@ -190,56 +190,58 @@ export default function CallLogs() {
           boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
           overflow: 'hidden',
         }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, textAlign: 'left' }}>
-            <thead>
-              <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
-                {['Log ID', 'Linked Request', 'Caller Identity', 'Target Department', 'Duration', 'Call Status', 'Timestamp'].map(h => (
-                  <th key={h} style={{ padding: '14px 18px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '64px 24px', color: '#94A3B8' }}>
-                    <div style={{
-                      width: 48, height: 48, borderRadius: 12,
-                      background: '#F8FAFC', border: '1px solid #E2E8F0',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      margin: '0 auto 12px', color: '#64748B',
-                    }}>
-                      <Phone size={22} />
-                    </div>
-                    <div style={{ fontWeight: 700, color: '#0F172A', fontSize: 15 }}>No Call Logs Available</div>
-                    <div style={{ fontSize: 13, marginTop: 4 }}>Field communications and 911 dispatch records will be indexed here in real time.</div>
-                  </td>
+          <div className="table-responsive">
+            <table style={{ width: '100%', minWidth: 680, borderCollapse: 'collapse', fontSize: 13, textAlign: 'left' }}>
+              <thead>
+                <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
+                  {['Log ID', 'Linked Request', 'Caller Identity', 'Target Department', 'Duration', 'Call Status', 'Timestamp'].map(h => (
+                    <th key={h} style={{ padding: '14px 18px', fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                      {h}
+                    </th>
+                  ))}
                 </tr>
-              ) : (
-                filtered.map((log) => {
-                  const Icon = statusIcon[log.status] || Phone;
-                  return (
-                    <tr key={log.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                      <td style={{ padding: '14px 18px', fontWeight: 700, fontFamily: 'monospace', color: '#2563EB' }}>{log.id}</td>
-                      <td style={{ padding: '14px 18px' }}><span style={{ color: '#2563EB', fontWeight: 600 }}>{log.requestId}</span></td>
-                      <td style={{ padding: '14px 18px', fontWeight: 600, color: '#0F172A' }}>{log.callerName}</td>
-                      <td style={{ padding: '14px 18px', color: '#475569' }}>{log.department}</td>
-                      <td style={{ padding: '14px 18px', fontVariantNumeric: 'tabular-nums' }}>{log.duration}</td>
-                      <td style={{ padding: '14px 18px' }}>
-                        <span className={`badge ${statusBadge[log.status]}`}>
-                          <Icon size={12} /> {log.status}
-                        </span>
-                      </td>
-                      <td style={{ padding: '14px 18px', color: '#94A3B8', fontVariantNumeric: 'tabular-nums' }}>
-                        {new Date(log.timestamp).toLocaleTimeString()}
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} style={{ textAlign: 'center', padding: '64px 24px', color: '#94A3B8' }}>
+                      <div style={{
+                        width: 48, height: 48, borderRadius: 12,
+                        background: '#F8FAFC', border: '1px solid #E2E8F0',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        margin: '0 auto 12px', color: '#64748B',
+                      }}>
+                        <Phone size={22} />
+                      </div>
+                      <div style={{ fontWeight: 700, color: '#0F172A', fontSize: 15 }}>No Call Logs Available</div>
+                      <div style={{ fontSize: 13, marginTop: 4 }}>Field communications and 911 dispatch records will be indexed here in real time.</div>
+                    </td>
+                  </tr>
+                ) : (
+                  filtered.map((log) => {
+                    const Icon = statusIcon[log.status] || Phone;
+                    return (
+                      <tr key={log.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                        <td style={{ padding: '14px 18px', fontWeight: 700, fontFamily: 'monospace', color: '#2563EB' }}>{log.id}</td>
+                        <td style={{ padding: '14px 18px' }}><span style={{ color: '#2563EB', fontWeight: 600 }}>{log.requestId}</span></td>
+                        <td style={{ padding: '14px 18px', fontWeight: 600, color: '#0F172A' }}>{log.callerName}</td>
+                        <td style={{ padding: '14px 18px', color: '#475569' }}>{log.department}</td>
+                        <td style={{ padding: '14px 18px', fontVariantNumeric: 'tabular-nums' }}>{log.duration}</td>
+                        <td style={{ padding: '14px 18px' }}>
+                          <span className={`badge ${statusBadge[log.status]}`}>
+                            <Icon size={12} /> {log.status}
+                          </span>
+                        </td>
+                        <td style={{ padding: '14px 18px', color: '#94A3B8', fontVariantNumeric: 'tabular-nums' }}>
+                          {new Date(log.timestamp).toLocaleTimeString()}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </>

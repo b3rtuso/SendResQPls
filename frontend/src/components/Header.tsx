@@ -1,5 +1,6 @@
 import { Search, Bell, X, AlertCircle, AlertTriangle, CheckCircle, XCircle, Menu } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getIncidents, updateIncidentStatus } from '../api/client';
 import { fetchEventSource } from '@microsoft/fetch-event-source';
 import { useAdminNav } from '../context/AdminNavContext';
@@ -33,6 +34,7 @@ const SEEN_KEY = 'admin_seen_incident_ids';
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 export default function Header({ title, subtitle }: HeaderProps) {
+  const navigate = useNavigate();
   const { toggleSidebar } = useAdminNav();
   const [notifications, setNotifications] = useState<NotifItem[]>([]);
   const [showPanel, setShowPanel] = useState(false);
@@ -357,13 +359,19 @@ export default function Header({ title, subtitle }: HeaderProps) {
         <div style={{
           position: 'fixed', inset: 0, zIndex: 10000,
           background: 'rgba(15,23,42,0.65)', backdropFilter: 'blur(4px)',
+          WebkitBackdropFilter: 'blur(4px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: 20,
+          padding: 'clamp(12px, 3vw, 24px)',
+          overflowY: 'auto',
         }}>
           <div style={{
-            background: 'white', borderRadius: 20, maxWidth: 480, width: '100%',
+            background: 'white', borderRadius: 20,
+            width: 'min(480px, calc(100vw - 32px))',
+            maxHeight: 'calc(100vh - 32px)',
             boxShadow: '0 24px 60px rgba(0,0,0,0.3)',
             overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
             animation: 'slideDown 0.3s cubic-bezier(0.16,1,0.3,1)',
           }}>
             <div style={{
@@ -538,10 +546,14 @@ export default function Header({ title, subtitle }: HeaderProps) {
             {showPanel && (
               <div style={{
                 position: 'absolute', top: 'calc(100% + 10px)', right: 0,
-                width: 330, background: 'white',
+                width: 'min(330px, calc(100vw - 24px))',
+                background: 'white',
                 border: '1px solid #E2E8F0',
                 borderRadius: 14, boxShadow: '0 12px 36px rgba(15,23,42,0.14)',
                 zIndex: 200, overflow: 'hidden',
+                maxHeight: 'min(420px, 75vh)',
+                display: 'flex',
+                flexDirection: 'column',
               }}>
                 <div style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -560,7 +572,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
                   </button>
                 </div>
 
-                <div style={{ maxHeight: 320, overflowY: 'auto' }}>
+                <div style={{ maxHeight: 320, overflowY: 'auto', flex: 1 }}>
                   {notifications.length === 0 ? (
                     <div style={{ padding: '28px 16px', textAlign: 'center', color: '#94A3B8' }}>
                       <Bell size={24} style={{ marginBottom: 6, opacity: 0.3 }} />
@@ -568,16 +580,17 @@ export default function Header({ title, subtitle }: HeaderProps) {
                     </div>
                   ) : (
                     notifications.map((n, i) => (
-                      <a
+                      <div
                         key={n.id}
-                        href={`/requests/${n.id}`}
-                        onClick={() => setShowPanel(false)}
+                        onClick={() => {
+                          setShowPanel(false);
+                          navigate(`/requests/${n.id}`);
+                        }}
                         style={{
                           display: 'flex', alignItems: 'flex-start', gap: 10,
                           padding: '12px 16px',
                           borderTop: i === 0 ? 'none' : '1px solid #F1F5F9',
                           background: n.isNew ? 'rgba(37,99,235,0.04)' : 'transparent',
-                          textDecoration: 'none',
                           cursor: 'pointer',
                           transition: 'background 0.15s',
                         }}
@@ -586,7 +599,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
                       >
                         <AlertCircle size={16} color={statusColor(n.status)} style={{ marginTop: 2, flexShrink: 0 }} />
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 2 }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {n.type}
                             {n.isNew && (
                               <span style={{
@@ -603,7 +616,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
                           </div>
                         </div>
                         <span style={{ fontSize: 11, color: '#94A3B8', flexShrink: 0, alignSelf: 'center' }}>→</span>
-                      </a>
+                      </div>
                     ))
                   )}
                 </div>
@@ -614,9 +627,15 @@ export default function Header({ title, subtitle }: HeaderProps) {
                   textAlign: 'center',
                   background: '#FAFBFC',
                 }}>
-                  <a href="/requests" style={{ fontSize: 12, color: '#2563EB', fontWeight: 700, textDecoration: 'none' }}>
+                  <button
+                    onClick={() => {
+                      setShowPanel(false);
+                      navigate('/requests');
+                    }}
+                    style={{ background: 'none', border: 'none', padding: 0, fontSize: 12, color: '#2563EB', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
+                  >
                     View full request queue →
-                  </a>
+                  </button>
                 </div>
               </div>
             )}

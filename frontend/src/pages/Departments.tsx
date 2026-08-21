@@ -432,28 +432,30 @@ export default function Departments() {
       {showModal && (
         <div style={{
           position: 'fixed',
-          top: 0, left: 0,
-          width: '100vw', height: '100vh',
+          inset: 0,
           background: 'rgba(15, 23, 42, 0.6)',
           backdropFilter: 'blur(8px)',
           WebkitBackdropFilter: 'blur(8px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           zIndex: 10000,
+          padding: 'clamp(12px, 3vw, 24px)',
+          overflowY: 'auto',
         }}>
           <div style={{
             background: 'white',
             borderRadius: 16,
-            width: '90%', maxWidth: '520px',
-            maxHeight: '90vh',
+            width: 'min(520px, calc(100vw - 24px))',
+            maxHeight: 'min(90vh, calc(100vh - 24px))',
             boxShadow: '0 20px 50px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05)',
             display: 'flex', flexDirection: 'column',
             overflow: 'hidden',
           }}>
             {/* Modal Header */}
             <div style={{
-              padding: '20px 24px',
+              padding: '16px clamp(16px, 3vw, 24px)',
               borderBottom: '1px solid var(--border-light)',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              flexShrink: 0,
             }}>
               <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: 'var(--text-primary)' }}>
                 {editingDept ? 'Edit Responding Department' : 'Add Responding Department'}
@@ -470,11 +472,11 @@ export default function Departments() {
             </div>
 
             {/* Modal Body / Form */}
-            <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', overflowY: 'auto', padding: '24px' }}>
+            <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', overflowY: 'auto', padding: 'clamp(16px, 3vw, 24px)' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 
                 {/* Code & Full Name */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 12 }}>
+                <div className="form-grid-2">
                   <div className="form-group" style={{ margin: 0 }}>
                     <label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Dept Code</label>
                     <input 
@@ -524,7 +526,7 @@ export default function Departments() {
                 </div>
 
                 {/* Contact & Email */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div className="form-grid-2">
                   <div className="form-group" style={{ margin: 0 }}>
                     <label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Contact Number</label>
                     <input 
@@ -556,7 +558,7 @@ export default function Departments() {
                 </div>
 
                 {/* Personnel & Status */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div className="form-grid-2">
                   <div className="form-group" style={{ margin: 0 }}>
                     <label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Active Personnel Count</label>
                     <input 
@@ -607,7 +609,7 @@ export default function Departments() {
               </div>
 
               {/* Modal Footer / Buttons */}
-              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 32, borderTop: '1px solid var(--border-light)', paddingTop: 20 }}>
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 32, borderTop: '1px solid var(--border-light)', paddingTop: 20, flexWrap: 'wrap' }}>
                 <button 
                   type="button" 
                   onClick={() => setShowModal(false)}

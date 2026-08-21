@@ -853,8 +853,7 @@ export default function Requests() {
           bottom: 20,
           left: '50%',
           transform: 'translateX(-50%)',
-          width: 'calc(100% - 28px)',
-          maxWidth: 640,
+          width: 'min(640px, calc(100% - 24px))',
           zIndex: 1000,
           background: '#0F172A',
           color: 'white',
@@ -887,7 +886,7 @@ export default function Requests() {
           <div style={{ height: 20, width: 1, background: 'rgba(255,255,255,0.2)' }} />
 
           {/* Quick Assign Unit Dropdown */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 12, color: '#94A3B8', fontWeight: 600 }}>Assign to:</span>
             <select
               onChange={e => { if (e.target.value) handleBatchAssign(e.target.value); }}
@@ -915,57 +914,59 @@ export default function Requests() {
           </div>
 
           {/* Quick Status Advance */}
-          <button
-            onClick={() => handleBatchStatus('REVIEWING')}
-            disabled={batchLoading}
-            style={{
-              background: '#334155',
-              color: 'white',
-              border: 'none',
-              borderRadius: 8,
-              padding: '6px 12px',
-              fontSize: 12,
-              fontWeight: 700,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 5,
-            }}
-          >
-            Mark Reviewing
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <button
+              onClick={() => handleBatchStatus('REVIEWING')}
+              disabled={batchLoading}
+              style={{
+                background: '#334155',
+                color: 'white',
+                border: 'none',
+                borderRadius: 8,
+                padding: '6px 12px',
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+              }}
+            >
+              Mark Reviewing
+            </button>
 
-          <button
-            onClick={() => handleBatchStatus('DISPATCHED')}
-            disabled={batchLoading}
-            style={{
-              background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
-              color: 'white',
-              border: 'none',
-              borderRadius: 8,
-              padding: '6px 14px',
-              fontSize: 12,
-              fontWeight: 800,
-              cursor: 'pointer',
-            }}
-          >
-            {batchLoading ? 'Dispatching…' : 'Dispatch All'}
-          </button>
+            <button
+              onClick={() => handleBatchStatus('DISPATCHED')}
+              disabled={batchLoading}
+              style={{
+                background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
+                color: 'white',
+                border: 'none',
+                borderRadius: 8,
+                padding: '6px 14px',
+                fontSize: 12,
+                fontWeight: 800,
+                cursor: 'pointer',
+              }}
+            >
+              {batchLoading ? 'Dispatching…' : 'Dispatch All'}
+            </button>
 
-          <button
-            onClick={() => setSelectedIds(new Set())}
-            style={{
-              background: 'transparent',
-              color: '#94A3B8',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: 12,
-              fontWeight: 600,
-              padding: '4px 8px',
-            }}
-          >
-            Deselect
-          </button>
+            <button
+              onClick={() => setSelectedIds(new Set())}
+              style={{
+                background: 'transparent',
+                color: '#94A3B8',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: 12,
+                fontWeight: 600,
+                padding: '4px 8px',
+              }}
+            >
+              Deselect
+            </button>
+          </div>
         </div>
       )}
 
@@ -976,11 +977,13 @@ export default function Requests() {
           style={{
             position: 'fixed', inset: 0, zIndex: 9999,
             background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: 24, cursor: 'zoom-out',
+            padding: 'clamp(12px, 3vw, 24px)', cursor: 'zoom-out',
+            overflowY: 'auto',
           }}
         >
-          <div style={{ position: 'relative', maxWidth: 840, maxHeight: '88vh', borderRadius: 16, overflow: 'hidden', boxShadow: '0 25px 60px rgba(0,0,0,0.5)' }}>
+          <div style={{ position: 'relative', width: 'min(840px, calc(100vw - 24px))', maxHeight: 'min(88vh, calc(100vh - 24px))', borderRadius: 16, overflow: 'hidden', boxShadow: '0 25px 60px rgba(0,0,0,0.5)' }}>
             <img src={previewUrl} alt="Evidence Full" style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
             <button
               onClick={() => setPreviewUrl(null)}

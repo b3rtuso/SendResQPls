@@ -510,9 +510,10 @@ export default function MobileHome() {
             style={{
               background: 'white',
               borderRadius: 24,
-              padding: '28px 24px 28px',
-              maxWidth: 420,
-              width: '100%',
+              padding: 'clamp(20px, 4vw, 28px) clamp(16px, 4vw, 24px)',
+              width: 'min(420px, calc(100vw - 32px))',
+              maxHeight: 'calc(100vh - 32px)',
+              overflowY: 'auto',
               boxShadow: '0 20px 60px rgba(0,0,0,0.32)',
               animation: 'modalScaleIn 0.28s cubic-bezier(0.16,1,0.3,1) both',
             }}

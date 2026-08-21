@@ -766,29 +766,33 @@ export default function RequestDetails() {
 
       {/* ── Status Change Confirmation Modal ── */}
       {confirmModal.open && confirmModal.targetStatus && (
-        <>
-          {/* Backdrop */}
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 10000,
+            background: 'rgba(15, 23, 42, 0.6)',
+            backdropFilter: 'blur(6px)',
+            WebkitBackdropFilter: 'blur(6px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 'clamp(12px, 3vw, 24px)',
+            overflowY: 'auto',
+          }}
+          onClick={() => setConfirmModal(prev => ({ ...prev, open: false }))}
+        >
           <div
-            onClick={() => setConfirmModal(prev => ({ ...prev, open: false }))}
+            onClick={(e) => e.stopPropagation()}
             style={{
-              position: 'fixed', inset: 0, zIndex: 9000,
-              background: 'rgba(15, 23, 42, 0.55)',
-              backdropFilter: 'blur(4px)',
-              WebkitBackdropFilter: 'blur(4px)',
+              background: 'white',
+              borderRadius: 20,
+              width: 'min(480px, calc(100vw - 32px))',
+              maxHeight: 'calc(100vh - 32px)',
+              padding: 'clamp(20px, 3vw, 28px)',
+              boxShadow: '0 24px 64px rgba(15,23,42,0.22), 0 8px 24px rgba(15,23,42,0.1)',
+              animation: 'fadeUp 0.25s cubic-bezier(0.16,1,0.3,1) both',
+              display: 'flex',
+              flexDirection: 'column',
+              overflowY: 'auto',
             }}
-          />
-          {/* Modal card */}
-          <div style={{
-            position: 'fixed', top: '50%', left: '50%',
-            transform: 'translate(-50%, -50%)',
-            zIndex: 9001,
-            background: 'white',
-            borderRadius: 20,
-            width: 'min(480px, 90vw)',
-            padding: '28px',
-            boxShadow: '0 24px 64px rgba(15,23,42,0.22), 0 8px 24px rgba(15,23,42,0.1)',
-            animation: 'fadeUp 0.25s cubic-bezier(0.16,1,0.3,1) both',
-          }}>
+          >
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 20 }}>
               <div style={{
@@ -835,7 +839,7 @@ export default function RequestDetails() {
             </div>
 
             {/* Action row */}
-            <div style={{ display: 'flex', gap: 10 }}>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
               <button
                 onClick={() => setConfirmModal(prev => ({ ...prev, open: false }))}
                 style={{
@@ -844,6 +848,7 @@ export default function RequestDetails() {
                   fontSize: 14, fontWeight: 700, color: '#475569',
                   cursor: 'pointer', fontFamily: 'var(--font)',
                   transition: 'background 0.15s',
+                  minWidth: 100,
                 }}
               >
                 Cancel
@@ -862,13 +867,14 @@ export default function RequestDetails() {
                     ? '0 4px 14px rgba(239,68,68,0.35)'
                     : '0 4px 14px rgba(37,99,235,0.35)',
                   transition: 'opacity 0.15s',
+                  minWidth: 160,
                 }}
               >
                 Confirm — Set to {confirmModal.targetStatus}
               </button>
             </div>
           </div>
-        </>
+        </div>
       )}
     </>
   );

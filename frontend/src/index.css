@@ -152,6 +152,14 @@ body {
   100% { background-position: -200% 0; }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-shimmer,
+  [style*="skeletonShimmer"] {
+    animation: none !important;
+    background: #E2E8F0 !important;
+  }
+}
+
 
 /* Clickable cards */
 .card-clickable {
@@ -464,6 +472,20 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
   grid-template-columns: repeat(4, 1fr);
   gap: 18px;
   margin-bottom: 24px;
+}
+
+@media (max-width: 1024px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+}
+
+@media (max-width: 640px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
 }
 
 .stat-card {
@@ -1126,8 +1148,19 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
   gap: 24px;
 }
 
+.dashboard-bottom-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
 @media (max-width: 1024px) {
   .grid-3-1 {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+  .dashboard-bottom-grid {
     grid-template-columns: 1fr;
     gap: 18px;
   }
@@ -1142,7 +1175,64 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
     grid-template-columns: 1fr !important;
     gap: 16px;
   }
+  .dashboard-bottom-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px;
+  }
 }
+
+/* ===== RESPONSIVE TABLE UTILITIES ===== */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: inherit;
+}
+
+/* ===== RESPONSIVE MODAL & POPUP UTILITIES ===== */
+.modal-overlay-centered {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(12px, 3vw, 24px);
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  overflow-y: auto;
+}
+
+.modal-card-responsive {
+  background: #FFFFFF;
+  border-radius: 18px;
+  width: 100%;
+  max-height: calc(100vh - 32px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25);
+  border: 1px solid var(--border);
+}
+
+.modal-body-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: clamp(16px, 3vw, 24px);
+  overscroll-behavior: contain;
+}
+
+/* Responsive form grid collapse on small screens */
+@media (max-width: 640px) {
+  .form-grid-2,
+  .form-grid-3,
+  .form-grid-4 {
+    grid-template-columns: 1fr !important;
+    gap: 12px;
+  }
+}
+
 
 /* ===== QUICK ACTION BUTTONS ===== */
 .quick-actions {

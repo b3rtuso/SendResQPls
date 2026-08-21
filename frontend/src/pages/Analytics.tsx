@@ -897,7 +897,7 @@ export default function Analytics() {
             </div>
 
             {/* ── Live Downloadable Report Cards (July 19 Exact Design & Position) ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, marginBottom: 28 }}>
+            <div className="analytics-reports-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20, marginBottom: 28 }}>
 
               {/* ── DAILY REPORT CARD ── */}
               <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
@@ -1101,20 +1101,23 @@ export default function Analytics() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: 20,
+          padding: 'clamp(12px, 3vw, 24px)',
           background: 'rgba(10, 14, 26, 0.75)',
           backdropFilter: 'blur(16px) saturate(1.8)',
           WebkitBackdropFilter: 'blur(16px) saturate(1.8)',
           animation: 'fadeIn 0.2s ease-out',
+          overflowY: 'auto',
         }}>
           <div style={{
-            maxWidth: 460,
-            width: '100%',
+            width: 'min(460px, calc(100vw - 32px))',
+            maxHeight: 'calc(100vh - 32px)',
             background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 41, 59, 0.98) 100%)',
             borderRadius: 24,
             padding: 8,
             border: '1px solid rgba(255, 255, 255, 0.12)',
             boxShadow: '0 25px 60px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.15)',
+            display: 'flex',
+            flexDirection: 'column',
           }}>
             <div style={{
               background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.8) 100%)',

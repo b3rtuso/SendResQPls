@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Phone, AlertTriangle, Wind, Waves, Siren, Stethoscope, ChevronDown, WifiOff, Navigation, Lock } from 'lucide-react';
 import BottomNav from '../../components/BottomNav';
-import FcmBannerOverlay from '../../components/FcmBannerOverlay';
 import { getMyIncidents, cachedGet } from '../../api/client';
 import { setupPushNotifications } from '../../utils/pushNotificationHelper';
 import { getStoredNotifications, saveNotifications, type StoredNotif } from './MobileNotifications';
@@ -176,8 +175,6 @@ export default function MobileHome() {
           margin: 0 0 14px;
         }
       `}</style>
-      {/* FCM event bridge — renders null, routes push events to toast context */}
-      <FcmBannerOverlay />
       <div style={{ flex: 1, paddingBottom: 80 }}>
 
         {/* ── Header ─────────────────────────────────── */}

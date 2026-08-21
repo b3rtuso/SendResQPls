@@ -4,7 +4,6 @@ import { AlertCircle, MapPin, RefreshCw, ChevronLeft, Loader2, CheckCircle2, Clo
 import { getMyIncidents, getIncidents } from '../../api/client';
 import type { Incident, Status } from '../../types';
 import BottomNav from '../../components/BottomNav';
-import FcmBannerOverlay from '../../components/FcmBannerOverlay';
 import { FCM_FOREGROUND_EVENT } from '../../utils/pushNotificationHelper';
 import type { FcmNotificationPayload } from '../../utils/pushNotificationHelper';
 import { getNearestBarangay } from '../../data/balayan-data';
@@ -1085,7 +1084,6 @@ export default function MobileHistory() {
       )}
 
       <BottomNav />
-      <FcmBannerOverlay />
     </div>
   );
 }

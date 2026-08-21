@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import Requests from './pages/Requests';
@@ -20,12 +20,42 @@ import MobileOnboarding, { shouldShowOnboarding } from './pages/mobile/MobileOnb
 import MobileForgotPassword from './pages/mobile/MobileForgotPassword';
 import MobileResetPassword from './pages/mobile/MobileResetPassword';
 import { MobileToastProvider } from './components/MobileToastProvider';
+import FcmBannerOverlay from './components/FcmBannerOverlay';
 import { AdminNavProvider } from './context/AdminNavContext';
 import LandingPage from './pages/LandingPage';
 import GetTheApp from './pages/GetTheApp';
 import ErrorBoundary from './components/ErrorBoundary';
 import { useState, useEffect } from 'react';
+import { registerPushNavigate, unregisterPushNavigate, consumePendingRoute } from './utils/pushNotificationHelper';
 import './App.css';
+
+/**
+ * RouterAwareNotificationSetup — mounts inside BrowserRouter so it has access
+ * to useNavigate(). Registers the navigate function with the push helper so
+ * that notification taps use in-app routing (no page reload). Also consumes any
+ * pending route stored during a cold-start tap before React Router was ready.
+ */
+function RouterAwareNotificationSetup() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Register navigate so pushRoute() can call it
+    registerPushNavigate(navigate);
+
+    // Consume any pending route from a cold-start notification tap
+    const pending = consumePendingRoute();
+    if (pending) {
+      navigate(pending, { replace: true });
+    }
+
+    return () => {
+      unregisterPushNavigate();
+    };
+  }, [navigate]);
+
+  return null;
+}
+
 
 // ── Mobile auth guard: redirects to /mobile/login if no token ───────────────
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -93,19 +123,36 @@ function App() {
           {/* === ADMIN LOGIN (public) === */}
           <Route path="/admin/login" element={<AdminLogin />} />
 
-          {/* === PUBLIC MOBILE ROUTES === */}
-          {/* MobileToastProvider wraps ALL mobile routes so toast context is available everywhere */}
-          <Route path="/mobile/login" element={<MobileToastProvider><MobileLogin /></MobileToastProvider>} />
-          <Route path="/mobile/signup" element={<MobileToastProvider><MobileSignup /></MobileToastProvider>} />
-          <Route path="/mobile/forgot-password" element={<MobileForgotPassword />} />
-          <Route path="/mobile/reset-password" element={<MobileResetPassword />} />
-
-          {/* === PROTECTED MOBILE ROUTES (require login) === */}
-          <Route path="/mobile" element={<MobileToastProvider><MobileHomeWithOnboarding /></MobileToastProvider>} />
-          <Route path="/mobile/report" element={<MobileToastProvider><PrivateRoute><MobileReport /></PrivateRoute></MobileToastProvider>} />
-          <Route path="/mobile/history" element={<MobileToastProvider><PrivateRoute><MobileHistory /></PrivateRoute></MobileToastProvider>} />
-          <Route path="/mobile/profile" element={<MobileToastProvider><PrivateRoute><MobileProfile /></PrivateRoute></MobileToastProvider>} />
-          <Route path="/mobile/notifications" element={<MobileToastProvider><PrivateRoute><MobileNotifications /></PrivateRoute></MobileToastProvider>} />
+          {/* === ALL MOBILE ROUTES — single shared MobileToastProvider ===
+               One provider wraps every mobile page so the floating banner
+               stays alive across route changes. FcmBannerOverlay bridges
+               FCM foreground events → toast queue. RouterAwareNotificationSetup
+               registers the React Router navigate fn so push taps don't
+               cause a full page reload. */}
+          <Route
+            path="/mobile/*"
+            element={
+              <MobileToastProvider>
+                {/* Event bridge: FCM → toast queue. Renders nothing. */}
+                <FcmBannerOverlay />
+                {/* Push tap navigation bridge. Renders nothing. */}
+                <RouterAwareNotificationSetup />
+                <Routes>
+                  {/* Public mobile */}
+                  <Route path="login" element={<MobileLogin />} />
+                  <Route path="signup" element={<MobileSignup />} />
+                  <Route path="forgot-password" element={<MobileForgotPassword />} />
+                  <Route path="reset-password" element={<MobileResetPassword />} />
+                  {/* Protected mobile */}
+                  <Route path="" element={<MobileHomeWithOnboarding />} />
+                  <Route path="report" element={<PrivateRoute><MobileReport /></PrivateRoute>} />
+                  <Route path="history" element={<PrivateRoute><MobileHistory /></PrivateRoute>} />
+                  <Route path="profile" element={<PrivateRoute><MobileProfile /></PrivateRoute>} />
+                  <Route path="notifications" element={<PrivateRoute><MobileNotifications /></PrivateRoute>} />
+                </Routes>
+              </MobileToastProvider>
+            }
+          />
 
           {/* === PROTECTED ADMIN ROUTES (require ADMIN role) === */}
           <Route

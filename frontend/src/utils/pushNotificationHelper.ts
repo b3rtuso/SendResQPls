@@ -13,6 +13,51 @@ export interface FcmNotificationPayload {
   type?: string;
 }
 
+// ── Pending route store ──────────────────────────────────────────────────────
+// When the app is killed and the user taps a notification, Capacitor fires
+// pushNotificationActionPerformed before React Router is ready. We store the
+// intended route here and consume it once the router mounts.
+let _pendingRoute: string | null = null;
+
+export function setPendingRoute(path: string) {
+  _pendingRoute = path;
+}
+
+/** Called by RouterAwareNotificationSetup on mount — consumes the route once. */
+export function consumePendingRoute(): string | null {
+  const r = _pendingRoute;
+  _pendingRoute = null;
+  return r;
+}
+
+// ── Router callback registry ─────────────────────────────────────────────────
+// RouterAwareNotificationSetup (inside React Router) registers its navigate fn
+// here so the push listener can trigger in-app navigation without a page reload.
+let _navigate: ((path: string) => void) | null = null;
+
+export function registerPushNavigate(fn: (path: string) => void) {
+  _navigate = fn;
+}
+
+export function unregisterPushNavigate() {
+  _navigate = null;
+}
+
+/** Navigate using React Router if mounted, otherwise store as pending route. */
+function pushRoute(path: string) {
+  if (_navigate) {
+    _navigate(path);
+  } else {
+    // App not yet mounted (cold start) — store for deferred navigation
+    setPendingRoute(path);
+    // Fallback: if SPA hasn't loaded at all, use location.href
+    if (!document.getElementById('root')?.hasChildNodes()) {
+      window.location.href = path;
+    }
+  }
+}
+
+// ── Token save with retry ────────────────────────────────────────────────────
 /** Save push token to backend with up to 3 retries */
 async function saveTokenToBackend(token: string, attempt = 1): Promise<void> {
   try {
@@ -86,14 +131,17 @@ export async function setupPushNotifications(): Promise<void> {
     });
 
     // 6. User TAPS notification from status bar (app was background/closed)
+    // Uses pushRoute() instead of window.location.href to keep React Router alive.
     PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
       console.log('[Push] Notification tapped:', action.notification?.title);
       const data = action.notification?.data || {};
 
       if (data.type === 'NEW_INCIDENT' && data.incidentId) {
-        window.location.href = `/requests/${data.incidentId}`;
+        // Admin: go to the specific incident detail page
+        pushRoute(`/requests/${data.incidentId}`);
       } else if (data.incidentId) {
-        window.location.href = '/mobile/history';
+        // Citizen: go to their report history
+        pushRoute('/mobile/history');
       }
     });
 
@@ -103,3 +151,4 @@ export async function setupPushNotifications(): Promise<void> {
     console.error('[Push] ❌ Setup error:', error.message);
   }
 }
+

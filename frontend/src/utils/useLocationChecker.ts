@@ -13,9 +13,11 @@ export interface LocationCheckerResult {
   isGpsOn: boolean | null;
   isPermissionGranted: boolean | null;
   checking: boolean;
+  /** True while requestLocation() is actively probing — use to show a spinner on the button */
+  requesting: boolean;
   /** Re-probes the current location status silently (no browser dialog) */
   recheckLocation: () => Promise<boolean>;
-  /** Fires the browser's native location permission dialog directly (Google Maps style). Only redirects to settings if PERMISSION_DENIED. */
+  /** Two-phase native location probe (Google Maps style). Phase 1: network. Phase 2: GPS. Only redirects to settings if PERMISSION_DENIED. */
   requestLocation: () => Promise<boolean>;
   /** Only needed when status === 'PERMISSION_DENIED' — sends user to OS app settings to manually unblock */
   openLocationSettings: () => void;
@@ -59,6 +61,7 @@ export function useLocationChecker(): LocationCheckerResult {
   const [isGpsOn, setIsGpsOn] = useState<boolean | null>(null);
   const [isPermissionGranted, setIsPermissionGranted] = useState<boolean | null>(null);
   const [checking, setChecking] = useState<boolean>(false);
+  const [requesting, setRequesting] = useState<boolean>(false);
 
   const checkStatus = useCallback(async (): Promise<boolean> => {
     if (!navigator.geolocation) {
@@ -194,59 +197,83 @@ export function useLocationChecker(): LocationCheckerResult {
   }, [checkStatus]);
 
   /**
-   * Fire the browser's native location permission dialog directly — no settings redirect.
-   * This is the Google Maps approach: call getCurrentPosition() and let the OS handle the dialog.
+   * Two-phase native location probe — shows the OS location dialog inline (Google Maps style).
    *
-   * - If permission is 'prompt' (never asked)  → Browser shows native "Allow location?" popup ✅
-   * - If GPS is OFF                            → getCurrentPosition errors with POSITION_UNAVAILABLE;
-   *                                              on Android the OS may auto-show "Turn on GPS?" dialog ✅
-   * - If permission is 'denied' (blocked)      → immediately errors; caller should then call openAppSettings() ⚠️
+   * Phase 1 (network, low accuracy): Lets Android use Wi-Fi/cell location first.
+   *   Android may auto-show the "Turn on Location?" OS dialog during this attempt.
+   *
+   * Phase 2 (GPS, high accuracy): If phase 1 fails with POSITION_UNAVAILABLE,
+   *   retry with enableHighAccuracy: true — some Android versions trigger the GPS
+   *   enable system dialog on this second call.
+   *
+   * Only falls back to openAppSettings() if permission is PERMISSION_DENIED.
    */
-  const requestLocation = useCallback((): Promise<boolean> => {
-    return new Promise((resolve) => {
-      if (!navigator.geolocation) {
-        setStatus('GPS_OFF');
-        setIsLocationOn(false);
-        resolve(false);
-        return;
+  const requestLocation = useCallback(async (): Promise<boolean> => {
+    if (!navigator.geolocation) {
+      setStatus('GPS_OFF');
+      setIsLocationOn(false);
+      return false;
+    }
+
+    setRequesting(true);
+
+    // Promisified wrapper
+    const probe = (options: PositionOptions): Promise<GeolocationPosition> =>
+      new Promise((resolve, reject) =>
+        navigator.geolocation.getCurrentPosition(resolve, reject, options)
+      );
+
+    try {
+      // ── Phase 1: network-assisted (lower accuracy, allows cached & cell/wifi) ──
+      try {
+        await probe({ timeout: 10000, maximumAge: 30000, enableHighAccuracy: false });
+        setStatus('READY');
+        setIsLocationOn(true);
+        setIsGpsOn(true);
+        setIsPermissionGranted(true);
+        setRequesting(false);
+        return true;
+      } catch (err1: any) {
+        if (err1.code === 1 /* PERMISSION_DENIED */) {
+          // App permission explicitly blocked — stop, user must go to settings
+          setStatus('PERMISSION_DENIED');
+          setIsPermissionGranted(false);
+          setIsLocationOn(false);
+          setRequesting(false);
+          return false;
+        }
+        // POSITION_UNAVAILABLE or TIMEOUT → fall through to Phase 2
       }
 
-      setChecking(true);
-
-      navigator.geolocation.getCurrentPosition(
-        () => {
-          // Native dialog was accepted (or was already granted + GPS on)
-          setStatus('READY');
-          setIsLocationOn(true);
-          setIsGpsOn(true);
-          setIsPermissionGranted(true);
-          setChecking(false);
-          resolve(true);
-        },
-        (err) => {
-          setChecking(false);
-          if (err.code === err.PERMISSION_DENIED) {
-            // User blocked — need settings redirect
-            setStatus('PERMISSION_DENIED');
-            setIsPermissionGranted(false);
-            setIsLocationOn(false);
-            resolve(false);
-          } else if (err.code === err.POSITION_UNAVAILABLE) {
-            // Phone GPS is off — OS may have shown its own dialog already
-            setStatus('GPS_OFF');
-            setIsGpsOn(false);
-            setIsLocationOn(false);
-            resolve(false);
-          } else {
-            // Timeout or other
-            setStatus('GPS_OFF');
-            setIsLocationOn(false);
-            resolve(false);
-          }
-        },
-        { timeout: 12000, maximumAge: 0, enableHighAccuracy: true }
-      );
-    });
+      // ── Phase 2: GPS (high accuracy) — may trigger OS "Turn on GPS?" dialog ──
+      try {
+        await probe({ timeout: 12000, maximumAge: 0, enableHighAccuracy: true });
+        setStatus('READY');
+        setIsLocationOn(true);
+        setIsGpsOn(true);
+        setIsPermissionGranted(true);
+        setRequesting(false);
+        return true;
+      } catch (err2: any) {
+        if (err2.code === 1 /* PERMISSION_DENIED */) {
+          setStatus('PERMISSION_DENIED');
+          setIsPermissionGranted(false);
+          setIsLocationOn(false);
+        } else {
+          // GPS still unavailable after both phases
+          setStatus('GPS_OFF');
+          setIsGpsOn(false);
+          setIsLocationOn(false);
+        }
+        setRequesting(false);
+        return false;
+      }
+    } catch {
+      setStatus('GPS_OFF');
+      setIsLocationOn(false);
+      setRequesting(false);
+      return false;
+    }
   }, []);
 
   return {
@@ -255,6 +282,7 @@ export function useLocationChecker(): LocationCheckerResult {
     isGpsOn,
     isPermissionGranted,
     checking,
+    requesting,
     recheckLocation: checkStatus,
     requestLocation,
     openLocationSettings,

@@ -49,7 +49,7 @@ export default function MobileReport() {
   const [submittedIncident, setSubmittedIncident] = useState<any | null>(null);
 
   // Real-time location state via useLocationChecker (framework: Phone GPS ON? -> Allowed? -> Continue)
-  const { isLocationOn, status: locStatus, recheckLocation, requestLocation, openAppSettings } = useLocationChecker();
+  const { isLocationOn, status: locStatus, recheckLocation, requestLocation, requesting: locRequesting, openAppSettings } = useLocationChecker();
   const [showLocationGuideModal, setShowLocationGuideModal] = useState(false);
 
   // Emergency contacts from localStorage
@@ -949,6 +949,7 @@ export default function MobileReport() {
               ) : (
                 /* GPS off or not yet asked — fire the native browser dialog inline */
                 <button
+                  disabled={locRequesting}
                   onClick={async () => {
                     const ok = await requestLocation();
                     if (ok) {
@@ -959,14 +960,25 @@ export default function MobileReport() {
                   }}
                   style={{
                     width: '100%', padding: '14px', borderRadius: 14,
-                    background: 'linear-gradient(135deg, #F59E0B, #D97706)',
+                    background: locRequesting ? '#92400E' : 'linear-gradient(135deg, #F59E0B, #D97706)',
                     color: 'white', border: 'none',
-                    fontSize: 14, fontWeight: 800, cursor: 'pointer',
+                    fontSize: 14, fontWeight: 800,
+                    cursor: locRequesting ? 'not-allowed' : 'pointer',
                     boxShadow: '0 4px 16px rgba(245,158,11,0.3)',
                     fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    opacity: locRequesting ? 0.85 : 1,
                   }}
                 >
-                  <Navigation size={16} /> Enable Location
+                  {locRequesting ? (
+                    <>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ animation: 'spin 1s linear infinite' }}>
+                        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                      </svg>
+                      Detecting Location…
+                    </>
+                  ) : (
+                    <><Navigation size={16} /> Enable Location</>
+                  )}
                 </button>
               )}
 

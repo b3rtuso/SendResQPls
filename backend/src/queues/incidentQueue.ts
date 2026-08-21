@@ -104,6 +104,41 @@ export const incidentWorker = new Worker<IncidentJobData>(
       }
     }
 
+    // ── 3b. Notify the reporter that their report was processed ───────────────
+    if (messaging) {
+      try {
+        const reporter = await prisma.user.findUnique({
+          where: { id: incident.reporterId },
+          select: { pushToken: true },
+        });
+        if (reporter?.pushToken) {
+          await messaging.send({
+            token: reporter.pushToken,
+            notification: {
+              title: '✅ Report Received',
+              body: aiRecognized
+                ? `Your ${assessment.incidentType} report has been received. Our team will review it shortly.`
+                : 'Your report has been received. Our team needs to manually review it.',
+            },
+            data: {
+              incidentId: incident.id,
+              type: 'REPORT_CONFIRMED',
+              status: finalStatus,
+            },
+            android: {
+              priority: 'high',
+              notification: { sound: 'default', priority: 'high' },
+            },
+          });
+          console.log(`📱 Reporter confirmation push sent → incident ${incidentId}`);
+        }
+      } catch (reporterPushErr: any) {
+        // Non-fatal — log and continue
+        console.error(`⚠️ Reporter confirmation push failed: ${reporterPushErr.message}`);
+      }
+    }
+
+
     // ── 4. Broadcast SSE to admin web dashboard ───────────────────────────────
     // Import lazily to avoid circular dependency with incidentController
     const { broadcastSseEvent } = await import('../controllers/incidentController');

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Phone, AlertTriangle, Wind, Waves, Siren, Stethoscope, ChevronDown, MapPinOff, WifiOff, Navigation, Lock } from 'lucide-react';
+import { Phone, AlertTriangle, Wind, Waves, Siren, Stethoscope, ChevronDown, WifiOff, Navigation, Lock } from 'lucide-react';
 import BottomNav from '../../components/BottomNav';
 import FcmBannerOverlay from '../../components/FcmBannerOverlay';
 import { getMyIncidents, cachedGet } from '../../api/client';
@@ -35,7 +35,7 @@ export default function MobileHome() {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Real-time location state via useLocationChecker (framework: Phone GPS ON? -> Allowed? -> Continue)
-  const { isLocationOn, status: locStatus, recheckLocation, requestLocation, openAppSettings } = useLocationChecker();
+  const { isLocationOn, status: locStatus, recheckLocation, requestLocation, requesting: locRequesting, openAppSettings } = useLocationChecker();
   const [showLocModal, setShowLocModal] = useState(false);
 
   // Online/offline state
@@ -293,138 +293,94 @@ export default function MobileHome() {
           )}
         </div>
 
-        {/* ── GPS Location Reminder Card (Framework Branching) ── */}
+        {/* ── Location Status Strip (taste-skill redesign: flat navy, left-edge accent) ── */}
         {isLocationOn !== true && (
-          <div style={{ padding: '16px 20px 0' }}>
+          <div style={{ padding: '12px 20px 0' }}>
             <div
               onClick={() => setShowLocModal(true)}
               role="button"
               tabIndex={0}
               style={{
-                background: locStatus === 'PERMISSION_DENIED'
-                  ? 'linear-gradient(135deg, #EFF6FF 0%, #FEF2F2 100%)'
-                  : 'linear-gradient(135deg, #FFF7ED 0%, #FEF2F2 100%)',
-                border: `1.5px solid ${locStatus === 'PERMISSION_DENIED' ? '#93C5FD' : '#FDBA74'}`,
-                borderLeft: `4px solid ${locStatus === 'PERMISSION_DENIED' ? '#2563EB' : '#F97316'}`,
-                borderRadius: 18,
-                padding: '16px 16px 16px 18px',
+                background: '#0F2942',
+                borderLeft: `4px solid ${locStatus === 'PERMISSION_DENIED' ? '#3B82F6' : '#F59E0B'}`,
+                borderRadius: 14,
+                padding: '14px 16px',
                 display: 'flex',
-                alignItems: 'flex-start',
-                gap: 14,
+                alignItems: 'center',
+                gap: 12,
                 cursor: 'pointer',
-                animation: 'fadeUp 0.3s ease both',
-                boxShadow: locStatus === 'PERMISSION_DENIED'
-                  ? '0 4px 16px rgba(37, 99, 235, 0.12)'
-                  : '0 4px 16px rgba(249, 115, 22, 0.12)',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.18)',
               }}
             >
-              {/* Pulsing icon */}
-              <div style={{ position: 'relative', flexShrink: 0, marginTop: 2 }}>
-                <div style={{
-                  position: 'absolute', inset: -5, borderRadius: '50%',
-                  background: locStatus === 'PERMISSION_DENIED' ? 'rgba(37, 99, 235, 0.2)' : 'rgba(249, 115, 22, 0.2)',
-                  animation: 'radarPing 2s ease infinite',
-                  pointerEvents: 'none',
-                }} />
-                <div style={{
-                  width: 38, height: 38, borderRadius: 12,
-                  background: '#FFF',
-                  border: `1.5px solid ${locStatus === 'PERMISSION_DENIED' ? '#93C5FD' : '#FDBA74'}`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                }}>
-                  {locStatus === 'PERMISSION_DENIED' ? (
-                    <Lock size={18} color="#2563EB" strokeWidth={2.2} />
-                  ) : (
-                    <MapPinOff size={18} color="#F97316" strokeWidth={2.2} />
-                  )}
+              {/* Status dot */}
+              <div style={{
+                width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                background: locStatus === 'PERMISSION_DENIED' ? '#3B82F6' : '#F59E0B',
+                boxShadow: `0 0 0 3px ${locStatus === 'PERMISSION_DENIED' ? 'rgba(59,130,246,0.2)' : 'rgba(245,158,11,0.2)'}`,
+              }} />
+
+              {/* Text block */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12.5, fontWeight: 800, color: '#F8FAFC', letterSpacing: '-0.1px', marginBottom: 2 }}>
+                  {locStatus === 'PERMISSION_DENIED' ? 'Location permission blocked' : 'Location (GPS) is off'}
+                </div>
+                <div style={{ fontSize: 11.5, color: '#94A3B8', lineHeight: 1.4 }}>
+                  {locStatus === 'PERMISSION_DENIED'
+                    ? 'Tap to open App Settings and allow access.'
+                    : 'Turn on GPS so responders can find you.'}
                 </div>
               </div>
 
-              {/* Text */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{
-                  fontSize: 13, fontWeight: 800,
-                  color: locStatus === 'PERMISSION_DENIED' ? '#1E40AF' : '#9A3412',
-                  marginBottom: 3, letterSpacing: '-0.1px'
-                }}>
-                  {locStatus === 'PERMISSION_DENIED'
-                    ? '🔒 Location Permission Needed'
-                    : '📍 Phone Location (GPS) is OFF'}
-                </div>
-                <div style={{
-                  fontSize: 12,
-                  color: locStatus === 'PERMISSION_DENIED' ? '#1D4ED8' : '#C2410C',
-                  lineHeight: 1.45, marginBottom: 12
-                }}>
-                  {locStatus === 'PERMISSION_DENIED'
-                    ? 'SendResQPls is not allowed to access your location. Tap to grant permission in App Settings.'
-                    : 'Your phone GPS is turned off. Turn on location services so emergency responders can locate you.'}
-                </div>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
-                  {locStatus === 'PERMISSION_DENIED' ? (
-                    /* Permission was explicitly blocked — only option is OS settings */
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openAppSettings();
-                      }}
-                      style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 6,
-                        padding: '8px 14px', borderRadius: 10,
-                        background: '#2563EB', border: 'none',
-                        color: 'white', fontSize: 12, fontWeight: 800,
-                        cursor: 'pointer', fontFamily: 'inherit',
-                        boxShadow: '0 3px 10px rgba(37,99,235,0.35)',
-                      }}
-                    >
-                      <Lock size={13} />
-                      Open App Settings
-                    </button>
+              {/* Primary action button */}
+              {locStatus === 'PERMISSION_DENIED' ? (
+                <button
+                  onClick={(e) => { e.stopPropagation(); openAppSettings(); }}
+                  style={{
+                    flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 5,
+                    padding: '7px 12px', borderRadius: 8,
+                    background: '#3B82F6', border: 'none',
+                    color: 'white', fontSize: 12, fontWeight: 700,
+                    cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' as const,
+                  }}
+                >
+                  <Lock size={12} /> Settings
+                </button>
+              ) : (
+                <button
+                  disabled={locRequesting}
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    const ok = await requestLocation();
+                    if (ok) setShowLocModal(false);
+                  }}
+                  style={{
+                    flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 5,
+                    padding: '7px 12px', borderRadius: 8,
+                    background: locRequesting ? '#78350F' : '#F59E0B', border: 'none',
+                    color: 'white', fontSize: 12, fontWeight: 700,
+                    cursor: locRequesting ? 'not-allowed' : 'pointer',
+                    fontFamily: 'inherit', whiteSpace: 'nowrap' as const,
+                    opacity: locRequesting ? 0.85 : 1,
+                    transition: 'background 0.2s',
+                  }}
+                >
+                  {locRequesting ? (
+                    <>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ animation: 'spin 1s linear infinite' }}>
+                        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                      </svg>
+                      Detecting…
+                    </>
                   ) : (
-                    /* GPS off or not yet asked — fire the native browser dialog directly */
-                    <button
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        const ok = await requestLocation();
-                        if (ok) setShowLocModal(false);
-                      }}
-                      style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 6,
-                        padding: '8px 14px', borderRadius: 10,
-                        background: '#F97316', border: 'none',
-                        color: 'white', fontSize: 12, fontWeight: 800,
-                        cursor: 'pointer', fontFamily: 'inherit',
-                        boxShadow: '0 3px 10px rgba(249,115,22,0.35)',
-                      }}
-                    >
-                      <Navigation size={13} />
-                      Enable Location
-                    </button>
+                    <><Navigation size={12} /> Enable</>
                   )}
-                  <button
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      await recheckLocation();
-                    }}
-                    style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 6,
-                      padding: '8px 14px', borderRadius: 10,
-                      background: 'rgba(0,0,0,0.04)',
-                      border: `1px solid ${locStatus === 'PERMISSION_DENIED' ? '#BFDBFE' : '#FDBA74'}`,
-                      color: locStatus === 'PERMISSION_DENIED' ? '#1E40AF' : '#C2410C',
-                      fontSize: 12, fontWeight: 700,
-                      cursor: 'pointer', fontFamily: 'inherit',
-                    }}
-                  >
-                    <Navigation size={13} />
-                    Check Again
-                  </button>
-                </div>
-              </div>
+                </button>
+              )}
             </div>
           </div>
         )}
+
+
 
         {/* ── Emergency Hotlines ─────────────────────────── */}
         <div style={{ padding: '24px 20px 0' }}>
@@ -669,21 +625,33 @@ export default function MobileHome() {
               ) : (
                 /* GPS off or not yet asked — fire the native browser dialog directly */
                 <button
+                  disabled={locRequesting}
                   onClick={async () => {
                     const ok = await requestLocation();
                     if (ok) setShowLocModal(false);
                   }}
                   style={{
                     width: '100%', padding: '15px 20px',
-                    background: 'linear-gradient(135deg, #F97316, #EA580C)',
+                    background: locRequesting ? '#9A3412' : 'linear-gradient(135deg, #F97316, #EA580C)',
                     color: 'white', border: 'none', borderRadius: 16,
-                    fontSize: 15, fontWeight: 800, cursor: 'pointer',
+                    fontSize: 15, fontWeight: 800,
+                    cursor: locRequesting ? 'not-allowed' : 'pointer',
                     letterSpacing: '0.02em',
                     boxShadow: '0 4px 16px rgba(249,115,22,0.35)',
                     fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    opacity: locRequesting ? 0.85 : 1,
                   }}
                 >
-                  <Navigation size={16} /> Enable Location
+                  {locRequesting ? (
+                    <>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ animation: 'spin 1s linear infinite' }}>
+                        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                      </svg>
+                      Detecting Location…
+                    </>
+                  ) : (
+                    <><Navigation size={16} /> Enable Location</>
+                  )}
                 </button>
               )}
 

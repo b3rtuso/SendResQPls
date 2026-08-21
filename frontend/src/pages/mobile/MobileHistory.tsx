@@ -5,8 +5,11 @@ import { getMyIncidents, getIncidents } from '../../api/client';
 import type { Incident, Status } from '../../types';
 import BottomNav from '../../components/BottomNav';
 import FcmBannerOverlay from '../../components/FcmBannerOverlay';
+import { FCM_FOREGROUND_EVENT } from '../../utils/pushNotificationHelper';
+import type { FcmNotificationPayload } from '../../utils/pushNotificationHelper';
 import { getNearestBarangay } from '../../data/balayan-data';
 import { MobileHistorySkeleton } from '../../components/PageLoader';
+
 
 const STATUS_ICONS: Record<Status, any> = {
   PENDING: Clock,
@@ -164,7 +167,38 @@ export default function MobileHistory() {
 
   useEffect(() => { fetchHistory(); }, []);
 
-  // ── Body scroll-lock: prevent background from scrolling behind the modal ──
+  // ── FCM: patch in-place when admin updates a specific incident ─────────────
+  // When a push arrives with an incidentId + status, we update ONLY that row
+  // in local state — no full re-fetch, no stale data for other users' reports.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const payload = (e as CustomEvent<FcmNotificationPayload>).detail;
+      if (payload.incidentId && payload.status) {
+        setAllIncidents(prev =>
+          prev.map(inc =>
+            inc.id === payload.incidentId
+              ? { ...inc, status: payload.status as Status }
+              : inc
+          )
+        );
+      }
+    };
+    window.addEventListener(FCM_FOREGROUND_EVENT, handler);
+    return () => window.removeEventListener(FCM_FOREGROUND_EVENT, handler);
+  }, []);
+
+  // ── Visibility change: full refresh when user returns from background ───────
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchHistory();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
+
   useEffect(() => {
     if (selectedIncident) {
       // Lock

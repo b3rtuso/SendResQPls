@@ -1,4 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
+import { registerPlugin, Capacitor } from '@capacitor/core';
+
+export interface LocationAccuracyPluginInterface {
+  enableLocation(): Promise<{ enabled: boolean; error?: string }>;
+}
+
+const LocationAccuracy = registerPlugin<LocationAccuracyPluginInterface>('LocationAccuracy');
 
 export type LocationStepStatus =
   | 'CHECKING'
@@ -197,25 +204,76 @@ export function useLocationChecker(): LocationCheckerResult {
   }, [checkStatus]);
 
   /**
-   * Two-phase native location probe — shows the OS location dialog inline (Google Maps style).
+   * One-tap native location probe & resolution.
    *
-   * Phase 1 (network, low accuracy): Lets Android use Wi-Fi/cell location first.
-   *   Android may auto-show the "Turn on Location?" OS dialog during this attempt.
+   * On Native Android (Capacitor):
+   *   Calls Google Play Services SettingsClient to display the exact native system dialog:
+   *   "To continue, your device will need to use Location Accuracy" -> [Turn on]
+   *   When accepted, Android turns on GPS immediately in the OS and resolves coordinates.
    *
-   * Phase 2 (GPS, high accuracy): If phase 1 fails with POSITION_UNAVAILABLE,
-   *   retry with enableHighAccuracy: true — some Android versions trigger the GPS
-   *   enable system dialog on this second call.
-   *
-   * Only falls back to openAppSettings() if permission is PERMISSION_DENIED.
+   * On Web / Browser fallback:
+   *   Uses standard two-phase probe (network low-accuracy followed by high-accuracy GPS).
    */
   const requestLocation = useCallback(async (): Promise<boolean> => {
+    setRequesting(true);
+
+    // ── Native Android: Trigger Google Play Services Location Accuracy Dialog ──
+    if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android') {
+      try {
+        const result = await LocationAccuracy.enableLocation();
+        if (result?.enabled) {
+          // User tapped "Turn on" on the Google Play Services Location Accuracy system dialog!
+          // Probe coordinates with high accuracy
+          return new Promise<boolean>((resolve) => {
+            navigator.geolocation.getCurrentPosition(
+              () => {
+                setStatus('READY');
+                setIsLocationOn(true);
+                setIsGpsOn(true);
+                setIsPermissionGranted(true);
+                setRequesting(false);
+                resolve(true);
+              },
+              () => {
+                // Short wait if GPS hardware is initializing
+                setTimeout(() => {
+                  navigator.geolocation.getCurrentPosition(
+                    () => {
+                      setStatus('READY');
+                      setIsLocationOn(true);
+                      setIsGpsOn(true);
+                      setIsPermissionGranted(true);
+                      setRequesting(false);
+                      resolve(true);
+                    },
+                    () => {
+                      setStatus('READY');
+                      setIsLocationOn(true);
+                      setIsGpsOn(true);
+                      setIsPermissionGranted(true);
+                      setRequesting(false);
+                      resolve(true);
+                    },
+                    { timeout: 8000, enableHighAccuracy: true }
+                  );
+                }, 500);
+              },
+              { timeout: 6000, enableHighAccuracy: true }
+            );
+          });
+        }
+      } catch (nativeErr) {
+        console.warn('[LocationAccuracy] Native prompt error or rejected:', nativeErr);
+      }
+    }
+
+    // ── Standard Web / Browser Fallback (Two-Phase Probe) ──
     if (!navigator.geolocation) {
       setStatus('GPS_OFF');
       setIsLocationOn(false);
+      setRequesting(false);
       return false;
     }
-
-    setRequesting(true);
 
     // Promisified wrapper
     const probe = (options: PositionOptions): Promise<GeolocationPosition> =>
@@ -245,7 +303,7 @@ export function useLocationChecker(): LocationCheckerResult {
         // POSITION_UNAVAILABLE or TIMEOUT → fall through to Phase 2
       }
 
-      // ── Phase 2: GPS (high accuracy) — may trigger OS "Turn on GPS?" dialog ──
+      // ── Phase 2: GPS (high accuracy) ──
       try {
         await probe({ timeout: 12000, maximumAge: 0, enableHighAccuracy: true });
         setStatus('READY');

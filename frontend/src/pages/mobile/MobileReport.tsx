@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   ChevronLeft, AlertTriangle, Camera, Loader, WifiOff, Clock,
   RotateCcw, MapPin, ArrowRight, ShieldCheck,
-  MessageSquare, ChevronDown, Lock, Settings, Navigation
+  MessageSquare, ChevronDown, Lock, Navigation
 } from 'lucide-react';
 import { reportIncident } from '../../api/client';
 import { isWithinBalayan, getNearestBarangay, BARANGAYS } from '../../data/balayan-data';
@@ -49,7 +49,7 @@ export default function MobileReport() {
   const [submittedIncident, setSubmittedIncident] = useState<any | null>(null);
 
   // Real-time location state via useLocationChecker (framework: Phone GPS ON? -> Allowed? -> Continue)
-  const { isLocationOn, status: locStatus, recheckLocation, openLocationSettings, openAppSettings } = useLocationChecker();
+  const { isLocationOn, status: locStatus, recheckLocation, requestLocation, openAppSettings } = useLocationChecker();
   const [showLocationGuideModal, setShowLocationGuideModal] = useState(false);
 
   // Emergency contacts from localStorage
@@ -911,19 +911,19 @@ export default function MobileReport() {
                   <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                     <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#F59E0B', color: 'white', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>1</div>
                     <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.45 }}>
-                      Swipe down from the top of your phone screen to open <strong>Quick Settings</strong>.
+                      Tap <strong>Enable Location</strong> below — your phone will show a location prompt.
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                     <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#F59E0B', color: 'white', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>2</div>
                     <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.45 }}>
-                      Tap the <strong>📍 Location / GPS</strong> icon to turn it ON.
+                      If asked, tap <strong>Allow</strong> or turn on <strong>📍 Location / GPS</strong> in the popup.
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                     <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#F59E0B', color: 'white', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>3</div>
                     <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.45 }}>
-                      Return here and tap <strong>Check Location Now</strong>.
+                      The app will automatically detect your location once enabled.
                     </div>
                   </div>
                 </>
@@ -932,6 +932,7 @@ export default function MobileReport() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {locStatus === 'PERMISSION_DENIED' ? (
+                /* Permission blocked — must go to OS settings */
                 <button
                   onClick={() => openAppSettings()}
                   style={{
@@ -943,11 +944,19 @@ export default function MobileReport() {
                     fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                   }}
                 >
-                  <Settings size={16} /> Open App Settings
+                  <Lock size={16} /> Open App Settings
                 </button>
               ) : (
+                /* GPS off or not yet asked — fire the native browser dialog inline */
                 <button
-                  onClick={() => openLocationSettings()}
+                  onClick={async () => {
+                    const ok = await requestLocation();
+                    if (ok) {
+                      showToast({ type: 'success', priority: 'normal', title: 'Location Enabled!', message: 'GPS auto-tagging is now active.' });
+                      setShowLocationGuideModal(false);
+                    }
+                    // If still blocked, locStatus updates reactively — modal will shift to PERMISSION_DENIED state automatically
+                  }}
                   style={{
                     width: '100%', padding: '14px', borderRadius: 14,
                     background: 'linear-gradient(135deg, #F59E0B, #D97706)',
@@ -957,7 +966,7 @@ export default function MobileReport() {
                     fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                   }}
                 >
-                  <Settings size={16} /> Open Location Settings
+                  <Navigation size={16} /> Enable Location
                 </button>
               )}
 

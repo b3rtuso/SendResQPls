@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Phone, AlertTriangle, Wind, Waves, Siren, Stethoscope, ChevronDown, MapPinOff, WifiOff, Navigation, Settings, Lock } from 'lucide-react';
+import { Phone, AlertTriangle, Wind, Waves, Siren, Stethoscope, ChevronDown, MapPinOff, WifiOff, Navigation, Lock } from 'lucide-react';
 import BottomNav from '../../components/BottomNav';
 import FcmBannerOverlay from '../../components/FcmBannerOverlay';
 import { getMyIncidents, cachedGet } from '../../api/client';
@@ -35,7 +35,7 @@ export default function MobileHome() {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Real-time location state via useLocationChecker (framework: Phone GPS ON? -> Allowed? -> Continue)
-  const { isLocationOn, status: locStatus, recheckLocation, openLocationSettings, openAppSettings } = useLocationChecker();
+  const { isLocationOn, status: locStatus, recheckLocation, requestLocation, openAppSettings } = useLocationChecker();
   const [showLocModal, setShowLocModal] = useState(false);
 
   // Online/offline state
@@ -363,6 +363,7 @@ export default function MobileHome() {
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
                   {locStatus === 'PERMISSION_DENIED' ? (
+                    /* Permission was explicitly blocked — only option is OS settings */
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -377,14 +378,16 @@ export default function MobileHome() {
                         boxShadow: '0 3px 10px rgba(37,99,235,0.35)',
                       }}
                     >
-                      <Settings size={13} />
+                      <Lock size={13} />
                       Open App Settings
                     </button>
                   ) : (
+                    /* GPS off or not yet asked — fire the native browser dialog directly */
                     <button
-                      onClick={(e) => {
+                      onClick={async (e) => {
                         e.stopPropagation();
-                        openLocationSettings();
+                        const ok = await requestLocation();
+                        if (ok) setShowLocModal(false);
                       }}
                       style={{
                         display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -395,8 +398,8 @@ export default function MobileHome() {
                         boxShadow: '0 3px 10px rgba(249,115,22,0.35)',
                       }}
                     >
-                      <Settings size={13} />
-                      Open Location Settings
+                      <Navigation size={13} />
+                      Enable Location
                     </button>
                   )}
                   <button
@@ -627,19 +630,19 @@ export default function MobileHome() {
                   <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                     <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#DC2626', color: 'white', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>1</div>
                     <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.45 }}>
-                      Swipe down from the top of your phone screen to open <strong>Quick Settings</strong>.
+                      Tap <strong>Enable Location</strong> below — your phone will show a location prompt.
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                     <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#DC2626', color: 'white', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>2</div>
                     <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.45 }}>
-                      Tap the <strong>📍 Location / GPS</strong> icon to turn it ON.
+                      If asked, tap <strong>Allow</strong> or turn on <strong>📍 Location / GPS</strong> in the popup.
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                     <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#DC2626', color: 'white', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>3</div>
                     <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.45 }}>
-                      Return here and tap <strong>Check Location Now</strong>.
+                      The app will automatically detect your location once enabled.
                     </div>
                   </div>
                 </>
@@ -648,6 +651,7 @@ export default function MobileHome() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {locStatus === 'PERMISSION_DENIED' ? (
+                /* Permission was blocked — only way is to go to OS settings */
                 <button
                   onClick={() => openAppSettings()}
                   style={{
@@ -660,11 +664,15 @@ export default function MobileHome() {
                     fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                   }}
                 >
-                  <Settings size={16} /> Open App Settings
+                  <Lock size={16} /> Open App Settings
                 </button>
               ) : (
+                /* GPS off or not yet asked — fire the native browser dialog directly */
                 <button
-                  onClick={() => openLocationSettings()}
+                  onClick={async () => {
+                    const ok = await requestLocation();
+                    if (ok) setShowLocModal(false);
+                  }}
                   style={{
                     width: '100%', padding: '15px 20px',
                     background: 'linear-gradient(135deg, #F97316, #EA580C)',
@@ -675,7 +683,7 @@ export default function MobileHome() {
                     fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                   }}
                 >
-                  <Settings size={16} /> Open Location Settings
+                  <Navigation size={16} /> Enable Location
                 </button>
               )}
 

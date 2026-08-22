@@ -18,24 +18,25 @@ export default function BottomNav() {
       <style>{`
         /* ── Bottom Nav Shell ── */
         .bottom-nav {
-          position: fixed;
-          bottom: 0;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 100%;
-          max-width: 480px;
-          height: 68px;
-          display: flex;
-          align-items: center;
-          justify-content: space-around;
-          background: rgba(255, 255, 255, 0.96);
-          backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
-          border-top: 1px solid rgba(226, 232, 240, 0.9);
-          box-shadow: 0 -4px 24px rgba(15, 23, 42, 0.07);
-          z-index: 9999;
-          padding: 0 4px env(safe-area-inset-bottom, 0px);
-          box-sizing: border-box;
+          position: fixed !important;
+          bottom: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
+          margin: 0 auto !important;
+          width: 100% !important;
+          max-width: 480px !important;
+          height: 68px !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: space-around !important;
+          background: rgba(255, 255, 255, 0.96) !important;
+          backdrop-filter: blur(20px) !important;
+          -webkit-backdrop-filter: blur(20px) !important;
+          border-top: 1px solid rgba(226, 232, 240, 0.9) !important;
+          box-shadow: 0 -4px 24px rgba(15, 23, 42, 0.07) !important;
+          z-index: 99999 !important;
+          padding: 0 4px env(safe-area-inset-bottom, 0px) !important;
+          box-sizing: border-box !important;
         }
 
         /* ── Individual Tab ── */

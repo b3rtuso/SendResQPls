@@ -1590,17 +1590,15 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 .mobile-page-transition {
   width: 100%;
   min-height: 100dvh;
-  animation: mobilePageTransitionIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: mobilePageFadeIn 0.25s ease-out;
 }
 
-@keyframes mobilePageTransitionIn {
-  0% {
+@keyframes mobilePageFadeIn {
+  from {
     opacity: 0;
-    transform: translateY(22px);
   }
-  100% {
+  to {
     opacity: 1;
-    transform: none;
   }
 }
 

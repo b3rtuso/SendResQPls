@@ -29,118 +29,116 @@ export const incidentQueue = new Queue<IncidentJobData>('incident-processing', {
   },
 });
 
-// ─── Worker ────────────────────────────────────────────────────────────────────
+// ─── Direct Processor (Standalone Fallback) ──────────────────────────────────
 
 /**
- * incidentWorker — runs in the background.
- * For each job: runs AI, updates the incident, sends FCM push, broadcasts SSE.
- * The HTTP response has already returned to the user by the time this runs.
+ * processIncidentDirectly — runs AI classification, database update, FCM notifications,
+ * and SSE broadcasts. Can be called by BullMQ worker OR directly by the controller as a fallback.
  */
-export const incidentWorker = new Worker<IncidentJobData>(
-  'incident-processing',
-  async (job: Job<IncidentJobData>) => {
-    const { incidentId, imageUrl } = job.data;
-    console.log(`⚙️  Processing incident job ${job.id} → incident ${incidentId}`);
+export async function processIncidentDirectly(
+  incidentId: string,
+  imageUrl: string,
+  _latitude?: number,
+  _longitude?: number
+) {
+  console.log(`⚙️  Processing incident AI & dispatch directly → incident ${incidentId}`);
 
-    // ── 1. Run AI classification ───────────────────────────────────────────────
-    const assessment = await runAIAnalysis(imageUrl);
-    const aiRecognized: boolean = assessment.recognized ?? isRecognizedIncident(assessment.incidentType);
-    const aiConfidence: string = assessment.confidence || (aiRecognized ? 'medium' : 'low');
+  // ── 1. Run AI classification ───────────────────────────────────────────────
+  const assessment = await runAIAnalysis(imageUrl);
+  const aiRecognized: boolean = assessment.recognized ?? isRecognizedIncident(assessment.incidentType);
+  const aiConfidence: string = assessment.confidence || (aiRecognized ? 'medium' : 'low');
 
-    // Map AI suggestion to a valid Department enum value
-    let recommended: any = 'RESCUE';
-    const aiSuggestion = (assessment.recommendedDept || '').toUpperCase();
-    if (aiSuggestion.includes('FIRE') || aiSuggestion.includes('BFP')) recommended = 'BFP';
-    else if (aiSuggestion.includes('POLICE') || aiSuggestion.includes('PNP')) recommended = 'PNP';
-    else if (aiSuggestion.includes('MEDICAL') || aiSuggestion.includes('AMBULANCE')) recommended = 'MEDICAL';
-    else if (aiSuggestion.includes('ENGINEERING') || aiSuggestion.includes('ROAD')) recommended = 'ENGINEERING';
+  // Map AI suggestion to a valid Department enum value
+  let recommended: any = 'RESCUE';
+  const aiSuggestion = (assessment.recommendedDept || '').toUpperCase();
+  if (aiSuggestion.includes('FIRE') || aiSuggestion.includes('BFP')) recommended = 'BFP';
+  else if (aiSuggestion.includes('POLICE') || aiSuggestion.includes('PNP')) recommended = 'PNP';
+  else if (aiSuggestion.includes('MEDICAL') || aiSuggestion.includes('AMBULANCE')) recommended = 'MEDICAL';
+  else if (aiSuggestion.includes('ENGINEERING') || aiSuggestion.includes('ROAD')) recommended = 'ENGINEERING';
 
-    const finalStatus = aiRecognized ? 'PENDING' : 'REVIEWING';
+  const finalStatus = aiRecognized ? 'PENDING' : 'REVIEWING';
 
-    // ── 2. Update the incident record with AI results ─────────────────────────
-    const incident = await prisma.incident.update({
-      where: { id: incidentId },
-      data: {
-        aiDetectedType: assessment.incidentType,
-        aiRecommendedDept: aiRecognized ? recommended : undefined,
-        status: finalStatus,
-        adminNotes: aiRecognized
-          ? undefined
-          : `⚠️ AI could not recognize this incident (confidence: ${aiConfidence}). Admin review required.`,
-      },
-    });
+  // ── 2. Update the incident record with AI results ─────────────────────────
+  const incident = await prisma.incident.update({
+    where: { id: incidentId },
+    data: {
+      aiDetectedType: assessment.incidentType,
+      aiRecommendedDept: aiRecognized ? recommended : undefined,
+      status: finalStatus,
+      adminNotes: aiRecognized
+        ? undefined
+        : `⚠️ AI could not recognize this incident (confidence: ${aiConfidence}). Admin review required.`,
+    },
+  });
 
-    console.log(`✅ Incident ${incidentId} updated | Type: ${assessment.incidentType} | Recognized: ${aiRecognized} | Status: ${finalStatus}`);
+  console.log(`✅ Incident ${incidentId} updated | Type: ${assessment.incidentType} | Recognized: ${aiRecognized} | Status: ${finalStatus}`);
 
-    // ── 3. Notify admin devices via FCM ───────────────────────────────────────
-    if (messaging) {
-      try {
-        const admins = await prisma.user.findMany({
-          where: { role: 'ADMIN', pushToken: { not: null } },
-          select: { pushToken: true },
+  // ── 3. Notify admin devices via FCM ───────────────────────────────────────
+  if (messaging) {
+    try {
+      const admins = await prisma.user.findMany({
+        where: { role: 'ADMIN', pushToken: { not: null } },
+        select: { pushToken: true },
+      });
+      const adminTokens = admins.map((a: any) => a.pushToken!).filter(Boolean);
+      if (adminTokens.length > 0) {
+        await messaging.sendEachForMulticast({
+          tokens: adminTokens,
+          notification: {
+            title: aiRecognized ? '🚨 Bagong Emergency Report!' : '⚠️ Hindi Nakilala ang Incident!',
+            body: aiRecognized
+              ? `${assessment.incidentType} na na-detect sa Balayan. I-review na agad!`
+              : `May bagong report na hindi nakilala ng AI. Kailangan ng admin decision.`,
+          },
+          data: {
+            incidentId: incident.id,
+            type: aiRecognized ? 'NEW_INCIDENT' : 'UNRECOGNIZED_INCIDENT',
+            dept: recommended,
+          },
+          android: { notification: { sound: 'default', priority: 'high' } },
         });
-        const adminTokens = admins.map((a: any) => a.pushToken!).filter(Boolean);
-        if (adminTokens.length > 0) {
-          await messaging.sendEachForMulticast({
-            tokens: adminTokens,
-            notification: {
-              title: aiRecognized ? '🚨 Bagong Emergency Report!' : '⚠️ Hindi Nakilala ang Incident!',
-              body: aiRecognized
-                ? `${assessment.incidentType} na na-detect sa Balayan. I-review na agad!`
-                : `May bagong report na hindi nakilala ng AI. Kailangan ng admin decision.`,
-            },
-            data: {
-              incidentId: incident.id,
-              type: aiRecognized ? 'NEW_INCIDENT' : 'UNRECOGNIZED_INCIDENT',
-              dept: recommended,
-            },
-            android: { notification: { sound: 'default', priority: 'high' } },
-          });
-          console.log(`📱 Admin push sent to ${adminTokens.length} device(s)`);
-        }
-      } catch (pushErr: any) {
-        // Non-fatal — log and continue
-        console.error(`⚠️ Admin push notification failed: ${pushErr.message}`);
+        console.log(`📱 Admin push sent to ${adminTokens.length} device(s)`);
       }
+    } catch (pushErr: any) {
+      console.error(`⚠️ Admin push notification failed: ${pushErr.message}`);
     }
+  }
 
-    // ── 3b. Notify the reporter that their report was processed ───────────────
-    if (messaging) {
-      try {
-        const reporter = await prisma.user.findUnique({
-          where: { id: incident.reporterId },
-          select: { pushToken: true },
+  // ── 3b. Notify the reporter that their report was processed ───────────────
+  if (messaging) {
+    try {
+      const reporter = await prisma.user.findUnique({
+        where: { id: incident.reporterId },
+        select: { pushToken: true },
+      });
+      if (reporter?.pushToken) {
+        await messaging.send({
+          token: reporter.pushToken,
+          notification: {
+            title: '✅ Report Received',
+            body: aiRecognized
+              ? `Your ${assessment.incidentType} report has been received. Our team will review it shortly.`
+              : 'Your report has been received. Our team needs to manually review it.',
+          },
+          data: {
+            incidentId: incident.id,
+            type: 'REPORT_CONFIRMED',
+            status: finalStatus,
+          },
+          android: {
+            priority: 'high',
+            notification: { sound: 'default', priority: 'high' },
+          },
         });
-        if (reporter?.pushToken) {
-          await messaging.send({
-            token: reporter.pushToken,
-            notification: {
-              title: '✅ Report Received',
-              body: aiRecognized
-                ? `Your ${assessment.incidentType} report has been received. Our team will review it shortly.`
-                : 'Your report has been received. Our team needs to manually review it.',
-            },
-            data: {
-              incidentId: incident.id,
-              type: 'REPORT_CONFIRMED',
-              status: finalStatus,
-            },
-            android: {
-              priority: 'high',
-              notification: { sound: 'default', priority: 'high' },
-            },
-          });
-          console.log(`📱 Reporter confirmation push sent → incident ${incidentId}`);
-        }
-      } catch (reporterPushErr: any) {
-        // Non-fatal — log and continue
-        console.error(`⚠️ Reporter confirmation push failed: ${reporterPushErr.message}`);
+        console.log(`📱 Reporter confirmation push sent → incident ${incidentId}`);
       }
+    } catch (reporterPushErr: any) {
+      console.error(`⚠️ Reporter confirmation push failed: ${reporterPushErr.message}`);
     }
+  }
 
-
-    // ── 4. Broadcast SSE to admin web dashboard ───────────────────────────────
-    // Import lazily to avoid circular dependency with incidentController
+  // ── 4. Broadcast SSE to admin web dashboard ───────────────────────────────
+  try {
     const { broadcastSseEvent } = await import('../controllers/incidentController');
     if (aiRecognized) {
       broadcastSseEvent('new_incident', {
@@ -159,10 +157,30 @@ export const incidentWorker = new Worker<IncidentJobData>(
         createdAt: incident.createdAt,
       });
     }
+  } catch (sseErr: any) {
+    console.error(`⚠️ SSE broadcast failed: ${sseErr.message}`);
+  }
+}
+
+// ─── Worker ────────────────────────────────────────────────────────────────────
+
+/**
+ * incidentWorker — runs in the background.
+ * For each job: runs AI, updates the incident, sends FCM push, broadcasts SSE.
+ * Polling delays tuned for serverless Redis (Upstash) command quotas.
+ */
+export const incidentWorker = new Worker<IncidentJobData>(
+  'incident-processing',
+  async (job: Job<IncidentJobData>) => {
+    const { incidentId, imageUrl, latitude, longitude } = job.data;
+    await processIncidentDirectly(incidentId, imageUrl, latitude, longitude);
   },
   {
     connection: redis,
-    concurrency: 5, // Process up to 5 AI jobs simultaneously
+    concurrency: 5,
+    drainDelay: 30000,        // Wait 30s when queue is empty instead of tight polling
+    stalledInterval: 120000,  // Check stalled jobs every 2 min
+    lockDuration: 60000,      // 60s lock for long Gemini vision queries
   }
 );
 

@@ -33,7 +33,7 @@ export default function BottomNav() {
           -webkit-backdrop-filter: blur(20px);
           border-top: 1px solid rgba(226, 232, 240, 0.9);
           box-shadow: 0 -4px 24px rgba(15, 23, 42, 0.07);
-          z-index: 1000;
+          z-index: 9999;
           padding: 0 4px env(safe-area-inset-bottom, 0px);
           box-sizing: border-box;
         }

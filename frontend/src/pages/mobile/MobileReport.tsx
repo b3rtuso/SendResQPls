@@ -38,6 +38,7 @@ export default function MobileReport() {
   const [sending, setSending] = useState(false);
   const [flushing, setFlushing] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
+  const isSubmittingRef = useRef(false);
 
   // Pre-flight review, fallback location & success modal states
   const [showReviewModal, setShowReviewModal] = useState(false);
@@ -231,7 +232,8 @@ export default function MobileReport() {
   };
 
   const executeSubmit = async () => {
-    if (!photo || !detectedLocation) return;
+    if (isSubmittingRef.current || sending || !photo || !detectedLocation) return;
+    isSubmittingRef.current = true;
     setShowReviewModal(false);
     setSending(true);
 
@@ -264,6 +266,7 @@ export default function MobileReport() {
           offline: true,
         });
         setSending(false);
+        isSubmittingRef.current = false;
         return;
       }
 
@@ -299,6 +302,7 @@ export default function MobileReport() {
       showToast({ type: 'error', priority: 'important', title: 'Report failed to send', message: detail });
     } finally {
       setSending(false);
+      isSubmittingRef.current = false;
     }
   };
 

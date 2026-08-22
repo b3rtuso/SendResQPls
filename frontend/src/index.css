@@ -1590,24 +1590,17 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 .mobile-page-transition {
   width: 100%;
   min-height: 100dvh;
-  animation: mobilePageTransitionIn 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
-  will-change: transform, opacity, filter;
+  animation: mobilePageTransitionIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 @keyframes mobilePageTransitionIn {
   0% {
     opacity: 0;
-    transform: translateY(28px) scale(0.965);
-    filter: blur(4px);
-  }
-  50% {
-    opacity: 0.85;
-    filter: blur(0px);
+    transform: translateY(22px);
   }
   100% {
     opacity: 1;
-    transform: translateY(0) scale(1);
-    filter: blur(0px);
+    transform: none;
   }
 }
 
@@ -1615,24 +1608,17 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 .mobile-section-transition {
   width: 100%;
   min-height: 100dvh;
-  animation: mobileSectionSlideIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
-  will-change: transform, opacity, filter;
+  animation: mobileSectionSlideIn 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 @keyframes mobileSectionSlideIn {
   0% {
     opacity: 0;
-    transform: translateX(45px) scale(0.98);
-    filter: blur(3px);
-  }
-  60% {
-    opacity: 0.9;
-    filter: blur(0px);
+    transform: translateX(35px);
   }
   100% {
     opacity: 1;
-    transform: translateX(0) scale(1);
-    filter: blur(0px);
+    transform: none;
   }
 }
 

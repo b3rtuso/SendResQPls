@@ -7,7 +7,7 @@ import { syncDepartmentStatuses } from './departmentController';
 import { messaging } from '../config/firebase';
 import { AuthRequest } from '../middleware/auth';
 import { withRLS } from '../utils/rlsQuery';
-import { incidentQueue } from '../queues/incidentQueue';
+import { incidentQueue, processIncidentDirectly } from '../queues/incidentQueue';
 
 // ─── SSE: Admin real-time new-incident notifications ──────────────────────────
 // Stores all connected admin browser clients
@@ -220,14 +220,21 @@ export const reportIncident = async (req: AuthRequest, res: Response) => {
     });
 
     // ② Enqueue the AI classification job — non-blocking, fires in the background
-    await incidentQueue.add('classify', {
-      incidentId: incident.id,
-      imageUrl,
-      latitude: lat,
-      longitude: lng,
-    });
-
-    console.log(`📥 Incident ${incident.id} saved. AI job enqueued.`);
+    try {
+      await incidentQueue.add('classify', {
+        incidentId: incident.id,
+        imageUrl,
+        latitude: lat,
+        longitude: lng,
+      });
+      console.log(`📥 Incident ${incident.id} saved. AI job enqueued.`);
+    } catch (queueErr: any) {
+      console.warn(`⚠️ Redis queue unavailable (${queueErr.message}). Fallback to direct background execution for incident ${incident.id}`);
+      // Fallback: process directly in the background without throwing an error or failing the user's report
+      processIncidentDirectly(incident.id, imageUrl, lat, lng).catch((err) => {
+        console.error(`❌ Fallback background execution failed for incident ${incident.id}:`, err.message);
+      });
+    }
 
     // ③ Respond immediately — user gets confirmation in < 300ms
     return res.status(201).json({

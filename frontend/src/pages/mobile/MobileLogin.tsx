@@ -267,7 +267,11 @@ export default function MobileLogin() {
             <span style={{ fontSize: 12.5, fontWeight: 600, color: '#475569' }}>Remember me</span>
           </label>
           <button
-            onClick={() => navigate('/mobile/forgot-password')}
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              navigate('/mobile/forgot-password');
+            }}
             style={{ background: 'none', border: 'none', color: '#2563EB', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
           >
             Forgot password?

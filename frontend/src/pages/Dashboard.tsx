@@ -932,20 +932,21 @@ export default function Dashboard() {
                       style={{ '--pulse-color': '#22C55E', background: '#22C55E', marginLeft: 'auto' } as any}
                     />
                   </div>
-                  <a href={tel} style={{ textDecoration: 'none', display: 'block' }}>
-                    <button style={{
+                  <button
+                    type="button"
+                    onClick={() => { window.location.href = tel; }}
+                    style={{
                       width: '100%', padding: '8px', borderRadius: 8,
-                      background: '#F8FAFC', border: 'none', cursor: 'pointer',
+                      background: '#F8FAFC', border: '1px solid #E2E8F0', cursor: 'pointer',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                       fontSize: 12, fontWeight: 700, color: '#475569',
                       transition: 'all 0.15s', fontFamily: 'inherit',
                     }}
-                      onMouseEnter={e => { e.currentTarget.style.background = '#2563EB'; e.currentTarget.style.color = 'white'; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = '#F8FAFC'; e.currentTarget.style.color = '#475569'; }}
-                    >
-                      <Phone size={13} /> Call
-                    </button>
-                  </a>
+                    onMouseEnter={e => { e.currentTarget.style.background = '#2563EB'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = '#2563EB'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = '#F8FAFC'; e.currentTarget.style.color = '#475569'; e.currentTarget.style.borderColor = '#E2E8F0'; }}
+                  >
+                    <Phone size={13} /> Call
+                  </button>
                 </div>
               ))}
             </div>

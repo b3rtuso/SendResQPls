@@ -145,6 +145,12 @@ export default function Departments() {
     }
   };
 
+  const handleCall = (contactNumber: string) => {
+    const cleaned = contactNumber.replace(/[^0-9+]/g, '');
+    if (!cleaned) return;
+    window.location.href = `tel:${cleaned}`;
+  };
+
   const handleCopy = (dept: DepartmentInfo) => {
     const textToCopy = `${dept.fullName}\nHead: ${dept.headOfficer}\nContact: ${dept.contact}\nEmail: ${dept.email}\nStatus: ${dept.status}`;
     navigator.clipboard.writeText(textToCopy).then(() => {
@@ -362,20 +368,21 @@ export default function Departments() {
 
                   {/* Quick actions panel */}
                   <div style={{ display: 'flex', gap: 8, borderTop: '1px solid var(--border-light)', paddingTop: 14, marginTop: 'auto' }}>
-                    <a href={`tel:${dept.contact.replace(/[^0-9]/g, '')}`} style={{ flex: 1, textDecoration: 'none' }}>
-                      <button style={{
-                        width: '100%', padding: '9px 0', borderRadius: 8,
+                    <button
+                      type="button"
+                      onClick={() => handleCall(dept.contact)}
+                      style={{
+                        flex: 1, padding: '9px 0', borderRadius: 8,
                         background: 'var(--bg-body)', border: '1px solid var(--border)',
                         cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                         fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)',
                         transition: 'all 0.15s', fontFamily: 'inherit',
                       }}
-                        onMouseEnter={e => { e.currentTarget.style.background = theme.color; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'transparent'; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'var(--bg-body)'; e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.borderColor = 'var(--border)'; }}
-                      >
-                        <Phone size={13} /> Call Unit
-                      </button>
-                    </a>
+                      onMouseEnter={e => { e.currentTarget.style.background = theme.color; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'transparent'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'var(--bg-body)'; e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.borderColor = 'var(--border)'; }}
+                    >
+                      <Phone size={13} /> Call Unit
+                    </button>
                     
                     <button 
                       onClick={() => handleCopy(dept)}

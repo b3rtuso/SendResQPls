@@ -122,16 +122,15 @@ export const getMyIncidents = async (req: AuthRequest, res: Response) => {
       return res.status(403).json({ error: 'You can only view your own incidents' });
     }
 
-    // DB layer: RLS policy enforces the same rule at the Postgres level
-    const incidents = await withRLS(req.user!.userId, req.user!.role, (tx) =>
-      tx.incident.findMany({
-        where: { reporterId: userId },
-        include: {
-          activities: { orderBy: { createdAt: 'asc' } },
-        },
-        orderBy: { createdAt: 'desc' },
-      })
-    );
+    const incidents = await prisma.incident.findMany({
+      where: { reporterId: userId },
+      include: {
+        reporter: { select: { id: true, name: true, email: true, phoneNumber: true, role: true } },
+        resolutionForm: true,
+        activities: { orderBy: { createdAt: 'asc' } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
 
     res.json(incidents);
   } catch (error: any) {
@@ -422,9 +421,12 @@ export const updateIncidentStatus = async (req: AuthRequest, res: Response) => {
             android: {
               priority: 'high', // Ensures heads-up banner even when screen is on
               notification: {
+                channelId: 'emergency_alerts',
                 sound: 'default',
                 priority: 'high',
                 clickAction: 'FCM_PLUGIN_ACTIVITY',
+                defaultSound: true,
+                defaultVibrateTimings: true,
               },
             },
           });

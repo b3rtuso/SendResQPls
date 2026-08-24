@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AlertCircle, MapPin, RefreshCw, ChevronLeft, Loader2, CheckCircle2, Clock, ShieldCheck, XCircle, AlertTriangle, PlusCircle, X, Phone, Siren, ChevronRight, Check } from 'lucide-react';
-import { getMyIncidents, getIncidents, getIncident } from '../../api/client';
+import { getMyIncidents, getIncidents, getIncident, invalidateCache } from '../../api/client';
 import type { Incident, Status } from '../../types';
 import BottomNav from '../../components/BottomNav';
 import { FCM_FOREGROUND_EVENT } from '../../utils/pushNotificationHelper';
@@ -158,9 +158,12 @@ export default function MobileHistory() {
     }
   }, [selectedIncident]);
 
-  const fetchHistory = async () => {
+  const fetchHistory = async (forceNetwork = false) => {
     setLoading(true);
     try {
+      if (forceNetwork) {
+        invalidateCache('incidents');
+      }
       const userId = localStorage.getItem('userId');
       let res;
       if (userId) {
@@ -171,8 +174,10 @@ export default function MobileHistory() {
       const data: Incident[] = res.data || [];
       setAllIncidents(data);
       setPage(1);
-    } catch {
-      setAllIncidents([]);
+    } catch (err) {
+      console.warn('[MobileHistory] Fetch history error:', err);
+      // Keep existing data if available
+      setAllIncidents(prev => (prev.length > 0 ? prev : []));
     } finally {
       setLoading(false);
     }
@@ -327,7 +332,7 @@ export default function MobileHistory() {
     if (pullDistanceRef.current > 60) {
       setRefreshing(true);
       updatePullDistance(50);
-      await fetchHistory();
+      await fetchHistory(true);
       setRefreshing(false);
     }
     updatePullDistance(0);

@@ -119,7 +119,17 @@ export async function processIncidentDirectly(
             type: aiRecognized ? 'NEW_INCIDENT' : 'UNRECOGNIZED_INCIDENT',
             dept: recommended,
           },
-          android: { notification: { sound: 'default', priority: 'high' } },
+          android: {
+            priority: 'high',
+            notification: {
+              channelId: 'emergency_alerts',
+              sound: 'default',
+              priority: 'high',
+              clickAction: 'FCM_PLUGIN_ACTIVITY',
+              defaultSound: true,
+              defaultVibrateTimings: true,
+            },
+          },
         });
         console.log(`📱 Admin push sent to ${adminTokens.length} device(s)`);
       }
@@ -151,7 +161,14 @@ export async function processIncidentDirectly(
           },
           android: {
             priority: 'high',
-            notification: { sound: 'default', priority: 'high' },
+            notification: {
+              channelId: 'emergency_alerts',
+              sound: 'default',
+              priority: 'high',
+              clickAction: 'FCM_PLUGIN_ACTIVITY',
+              defaultSound: true,
+              defaultVibrateTimings: true,
+            },
           },
         });
         console.log(`📱 Reporter confirmation push sent → incident ${incidentId}`);

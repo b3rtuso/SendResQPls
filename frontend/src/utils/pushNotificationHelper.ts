@@ -99,17 +99,35 @@ export async function setupPushNotifications(): Promise<void> {
       return;
     }
 
-    // 2. Register with FCM
+    // 2. Create high-importance notification channel for Android (enables heads-up banner & sound)
+    try {
+      await PushNotifications.createChannel({
+        id: 'emergency_alerts',
+        name: 'Emergency Alerts & Status Updates',
+        description: 'Real-time emergency alerts and report status updates from MDRRMO',
+        importance: 5, // 5 = IMPORTANCE_HIGH (Heads-Up Banner)
+        visibility: 1, // 1 = VISIBILITY_PUBLIC
+        sound: 'default',
+        vibration: true,
+        lights: true,
+        lightColor: '#EF4444',
+      });
+      console.log('[Push] ✅ Android notification channel emergency_alerts registered');
+    } catch (chErr: any) {
+      console.warn('[Push] Notification channel creation skipped/error:', chErr?.message);
+    }
+
+    // 3. Register with FCM
     console.log('[Push] Registering with FCM...');
     await PushNotifications.register();
 
-    // 3. Handle FCM token — save to backend with retry
+    // 4. Handle FCM token — save to backend with retry
     PushNotifications.addListener('registration', async (token) => {
       console.log(`[Push] ✅ FCM token received: ${token.value.slice(0, 20)}...`);
       await saveTokenToBackend(token.value);
     });
 
-    // 4. Registration errors
+    // 5. Registration errors
     PushNotifications.addListener('registrationError', (error) => {
       console.error('[Push] ❌ Registration error:', error.error);
     });

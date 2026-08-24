@@ -403,7 +403,10 @@ export default function MobileHistory() {
         /* ── Delivery Tracker Sheet ── */
         .srq-tracker-overlay {
           position: fixed;
-          inset: 0;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
           background: rgba(15, 23, 42, 0.7);
           backdrop-filter: blur(8px);
           -webkit-backdrop-filter: blur(8px);
@@ -411,7 +414,10 @@ export default function MobileHistory() {
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 20px;
+          padding-top: max(env(safe-area-inset-top, 0px), 16px);
+          padding-left: 16px;
+          padding-right: 16px;
+          padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px) + 20px);
           box-sizing: border-box;
           animation: trackerFadeIn 0.22s ease;
         }
@@ -420,7 +426,7 @@ export default function MobileHistory() {
           max-width: 440px;
           background: white;
           border-radius: 24px;
-          max-height: 85vh;
+          max-height: calc(100dvh - 68px - env(safe-area-inset-bottom, 0px) - max(env(safe-area-inset-top, 0px), 16px) - 44px);
           overflow-y: auto;
           box-shadow: 0 20px 60px rgba(15, 23, 42, 0.35);
           animation: modalScaleIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);

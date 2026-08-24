@@ -201,7 +201,7 @@ export default function MobileNotifications() {
               return (
                 <div
                   key={`${n.id}-${i}`}
-                  onClick={() => { handleMarkRead(n.id); navigate('/mobile/history'); }}
+                  onClick={() => { handleMarkRead(n.id); navigate(`/mobile/history?incidentId=${n.id}`); }}
                   style={{
                     display: 'flex', alignItems: 'flex-start', gap: 12,
                     padding: '14px 16px',

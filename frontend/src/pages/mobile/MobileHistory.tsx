@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AlertCircle, MapPin, RefreshCw, ChevronLeft, Loader2, CheckCircle2, Clock, ShieldCheck, XCircle, AlertTriangle, PlusCircle, X, Phone, Siren, ChevronRight, Check } from 'lucide-react';
-import { getMyIncidents, getIncidents } from '../../api/client';
+import { getMyIncidents, getIncidents, getIncident } from '../../api/client';
 import type { Incident, Status } from '../../types';
 import BottomNav from '../../components/BottomNav';
 import { FCM_FOREGROUND_EVENT } from '../../utils/pushNotificationHelper';
@@ -116,6 +116,9 @@ const PAGE_SIZE = 6;
 
 export default function MobileHistory() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const targetIncidentId = searchParams.get('incidentId');
+
   const [allIncidents, setAllIncidents] = useState<Incident[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -176,6 +179,24 @@ export default function MobileHistory() {
   };
 
   useEffect(() => { fetchHistory(); }, []);
+
+  // ── Auto-open Track Status modal when navigating with ?incidentId=<id> ──
+  useEffect(() => {
+    if (!targetIncidentId) return;
+
+    // Check if incident is already in loaded list
+    const found = allIncidents.find(i => i.id === targetIncidentId);
+    if (found) {
+      setSelectedIncident(found);
+    } else if (!loading) {
+      // If list finished loading and not found in recent list, fetch directly
+      getIncident(targetIncidentId)
+        .then(res => {
+          if (res.data) setSelectedIncident(res.data);
+        })
+        .catch(() => {});
+    }
+  }, [targetIncidentId, allIncidents, loading]);
 
   // ── FCM: patch in-place when admin updates a specific incident ─────────────
   // When a push arrives with an incidentId + status, we update ONLY that row
@@ -1024,7 +1045,7 @@ export default function MobileHistory() {
               display: 'flex',
               gap: 12,
               alignItems: 'center',
-              margin: '16px 0',
+              margin: '16px 0 12px',
             }}>
               {selectedIncident.photoUrl ? (
                 <img
@@ -1068,6 +1089,110 @@ export default function MobileHistory() {
                     "{selectedIncident.adminNotes}"
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* ── ACTIVITY TIMELINE ── */}
+            <div style={{
+              background: '#F8FAFC',
+              border: '1px solid #E2E8F0',
+              borderRadius: 18,
+              padding: '16px 14px',
+              margin: '12px 0 16px',
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: 14,
+                paddingBottom: 8,
+                borderBottom: '1px solid #E2E8F0',
+              }}>
+                <div style={{ fontSize: 11.5, fontWeight: 900, color: '#0F172A', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                  ACTIVITY TIMELINE
+                </div>
+                <span style={{
+                  fontSize: 10,
+                  fontWeight: 800,
+                  color: '#2563EB',
+                  background: '#EFF6FF',
+                  border: '1px solid #DBEAFE',
+                  padding: '2px 8px',
+                  borderRadius: 6,
+                }}>
+                  {(() => {
+                    const activities = selectedIncident.activities && selectedIncident.activities.length > 0
+                      ? selectedIncident.activities
+                      : [
+                          { id: '1', title: `Incident reported by ${selectedIncident.reporter?.name || 'Citizen'} via mobile app`, createdAt: selectedIncident.createdAt },
+                          ...(selectedIncident.aiDetectedType && selectedIncident.aiDetectedType !== 'Processing...' ? [{ id: '2', title: `AI analysis completed — ${selectedIncident.aiDetectedType.toUpperCase()} detected`, createdAt: new Date(new Date(selectedIncident.createdAt).getTime() + 3000).toISOString() }] : []),
+                          ...(selectedIncident.aiRecommendedDept ? [{ id: '3', title: `Auto-assigned to ${selectedIncident.aiRecommendedDept} based on AI recommendation`, createdAt: new Date(new Date(selectedIncident.createdAt).getTime() + 5000).toISOString() }] : []),
+                          ...(selectedIncident.status !== 'PENDING' ? [{ id: '4', title: `Status changed to ${selectedIncident.status}`, createdAt: selectedIncident.updatedAt }] : []),
+                          ...(selectedIncident.adminNotes ? [{ id: '5', title: `Admin note: "${selectedIncident.adminNotes}"`, createdAt: selectedIncident.updatedAt }] : []),
+                        ];
+                    return `${activities.length} Events`;
+                  })()}
+                </span>
+              </div>
+
+              <div style={{ position: 'relative', paddingLeft: 18 }}>
+                <div style={{
+                  position: 'absolute',
+                  left: 4,
+                  top: 6,
+                  bottom: 8,
+                  width: 2,
+                  background: '#CBD5E1',
+                }} />
+
+                {(() => {
+                  const formatTimelineDate = (dateInput: string | Date) => {
+                    const d = new Date(dateInput);
+                    if (isNaN(d.getTime())) return '';
+                    const datePart = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                    const timePart = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+                    return `${datePart} • ${timePart}`;
+                  };
+
+                  const activities: Array<{ id: string; title: string; description?: string; createdAt: string }> =
+                    selectedIncident.activities && selectedIncident.activities.length > 0
+                      ? selectedIncident.activities
+                      : [
+                          { id: '1', title: `Incident reported by ${selectedIncident.reporter?.name || 'Citizen'} via mobile app`, description: undefined, createdAt: selectedIncident.createdAt },
+                          ...(selectedIncident.aiDetectedType && selectedIncident.aiDetectedType !== 'Processing...' ? [{ id: '2', title: `AI analysis completed — ${selectedIncident.aiDetectedType.toUpperCase()} detected`, description: undefined, createdAt: new Date(new Date(selectedIncident.createdAt).getTime() + 3000).toISOString() }] : []),
+                          ...(selectedIncident.aiRecommendedDept ? [{ id: '3', title: `Auto-assigned to ${selectedIncident.aiRecommendedDept} based on AI recommendation`, description: undefined, createdAt: new Date(new Date(selectedIncident.createdAt).getTime() + 5000).toISOString() }] : []),
+                          ...(selectedIncident.status !== 'PENDING' ? [{ id: '4', title: `Status changed to ${selectedIncident.status}`, description: undefined, createdAt: selectedIncident.updatedAt }] : []),
+                          ...(selectedIncident.adminNotes ? [{ id: '5', title: `Admin note: "${selectedIncident.adminNotes}"`, description: undefined, createdAt: selectedIncident.updatedAt }] : []),
+                        ];
+
+                  return activities.map((item, idx) => (
+                    <div key={item.id || idx} style={{ position: 'relative', marginBottom: idx === activities.length - 1 ? 0 : 16 }}>
+                      <div style={{
+                        position: 'absolute',
+                        left: -18,
+                        top: 3,
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        background: '#2563EB',
+                        border: '2px solid white',
+                        boxShadow: '0 0 0 1px #93C5FD',
+                      }} />
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <span style={{ color: '#2563EB', fontSize: 12 }}>●</span>
+                        <span>{formatTimelineDate(item.createdAt)}</span>
+                      </div>
+                      <div style={{ fontSize: 12.5, fontWeight: 700, color: '#0F172A', marginTop: 3, lineHeight: 1.45 }}>
+                        {item.title}
+                      </div>
+                      {item.description && (
+                        <div style={{ fontSize: 11.5, color: '#64748B', marginTop: 2, fontStyle: 'italic' }}>
+                          {item.description}
+                        </div>
+                      )}
+                    </div>
+                  ));
+                })()}
               </div>
             </div>
 

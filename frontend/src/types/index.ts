@@ -52,6 +52,15 @@ export interface ResolutionForm {
   turnoverStatus?: string;
 }
 
+export interface IncidentActivity {
+  id: string;
+  incidentId: string;
+  title: string;
+  description?: string;
+  type: string; // 'REPORTED' | 'AI_ANALYSIS' | 'ASSIGNED' | 'STATUS_CHANGE' | 'ADMIN_NOTE'
+  createdAt: string;
+}
+
 export interface Incident {
   id: string;
   latitude: number;
@@ -65,6 +74,7 @@ export interface Incident {
   reporterId: string;
   reporter?: User;
   resolutionForm?: ResolutionForm;
+  activities?: IncidentActivity[];
   createdAt: string;
   updatedAt: string;
 }

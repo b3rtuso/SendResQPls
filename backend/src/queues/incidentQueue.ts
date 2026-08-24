@@ -71,6 +71,30 @@ export async function processIncidentDirectly(
     },
   });
 
+  // Log AI analysis completed activity
+  try {
+    const detectedLabel = (assessment.incidentType || 'Emergency').toUpperCase();
+    await prisma.incidentActivity.create({
+      data: {
+        incidentId,
+        title: `AI analysis completed — ${detectedLabel} detected`,
+        type: 'AI_ANALYSIS',
+      },
+    });
+
+    if (aiRecognized && recommended) {
+      await prisma.incidentActivity.create({
+        data: {
+          incidentId,
+          title: `Auto-assigned to ${recommended} based on AI recommendation`,
+          type: 'ASSIGNED',
+        },
+      });
+    }
+  } catch (actErr: any) {
+    console.warn(`⚠️ Failed to log AI activity for incident ${incidentId}:`, actErr.message);
+  }
+
   console.log(`✅ Incident ${incidentId} updated | Type: ${assessment.incidentType} | Recognized: ${aiRecognized} | Status: ${finalStatus}`);
 
   // ── 3. Notify admin devices via FCM ───────────────────────────────────────

@@ -140,8 +140,8 @@ export async function setupPushNotifications(): Promise<void> {
         // Admin: go to the specific incident detail page
         pushRoute(`/requests/${data.incidentId}`);
       } else if (data.incidentId) {
-        // Citizen: go to their report history
-        pushRoute('/mobile/history');
+        // Citizen: go to report history and automatically open Track Status modal
+        pushRoute(`/mobile/history?incidentId=${data.incidentId}`);
       }
     });
 

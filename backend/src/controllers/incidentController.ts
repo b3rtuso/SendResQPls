@@ -98,6 +98,7 @@ export const getIncidents = async (req: Request, res: Response) => {
       include: {
         reporter: { select: { id: true, name: true, email: true, phoneNumber: true, role: true } },
         resolutionForm: true,
+        activities: { orderBy: { createdAt: 'asc' } },
       },
       orderBy: { createdAt: 'desc' },  // newest first — dashboard recent incidents + admin list
     });
@@ -125,6 +126,9 @@ export const getMyIncidents = async (req: AuthRequest, res: Response) => {
     const incidents = await withRLS(req.user!.userId, req.user!.role, (tx) =>
       tx.incident.findMany({
         where: { reporterId: userId },
+        include: {
+          activities: { orderBy: { createdAt: 'asc' } },
+        },
         orderBy: { createdAt: 'desc' },
       })
     );
@@ -166,6 +170,7 @@ export const getIncident = async (req: AuthRequest, res: Response) => {
       include: {
         reporter: { select: { id: true, name: true, email: true, phoneNumber: true, role: true } },
         resolutionForm: true,
+        activities: { orderBy: { createdAt: 'asc' } },
       },
     });
 
@@ -206,6 +211,9 @@ export const reportIncident = async (req: AuthRequest, res: Response) => {
     // Cloudinary URL is already available — multer-storage-cloudinary uploaded it before this handler ran
     const imageUrl = req.file.path;
 
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+    const reporterName = user?.name || 'Citizen';
+
     // ① Save incident to DB immediately with 'PENDING' status and placeholder AI fields.
     //    The worker will update these once AI classification finishes.
     const incident = await prisma.incident.create({
@@ -216,6 +224,15 @@ export const reportIncident = async (req: AuthRequest, res: Response) => {
         photoUrl: imageUrl,
         aiDetectedType: 'Processing...', // Worker will update this
         status: 'PENDING',
+        activities: {
+          create: {
+            title: `Incident reported by ${reporterName} via mobile app`,
+            type: 'REPORTED',
+          },
+        },
+      },
+      include: {
+        activities: true,
       },
     });
 
@@ -261,6 +278,12 @@ export const updateIncidentStatus = async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const { status, adminNotes, assignedDepartment, resolutionForm } = req.body;
 
+    const current = await prisma.incident.findUnique({
+      where: { id },
+      select: { status: true, assignedDepartment: true, adminNotes: true },
+    });
+    if (!current) return res.status(404).json({ error: 'Incident not found' });
+
     const data: any = {};
     if (adminNotes) data.adminNotes = adminNotes;
     if (assignedDepartment) data.assignedDepartment = assignedDepartment;
@@ -268,8 +291,6 @@ export const updateIncidentStatus = async (req: AuthRequest, res: Response) => {
     // ── One-way status progression guard ─────────────────────────────────────
     if (status) {
       const STATUS_ORDER = ['PENDING', 'REVIEWING', 'DISPATCHED', 'RESOLVED'];
-      const current = await prisma.incident.findUnique({ where: { id }, select: { status: true } });
-      if (!current) return res.status(404).json({ error: 'Incident not found' });
 
       const currentIdx = STATUS_ORDER.indexOf(current.status);
       const newIdx     = STATUS_ORDER.indexOf(status);
@@ -292,10 +313,41 @@ export const updateIncidentStatus = async (req: AuthRequest, res: Response) => {
     }
     // ─────────────────────────────────────────────────────────────────────────
 
+    // Log activity records for status, department, and notes
+    if (assignedDepartment && current.assignedDepartment !== assignedDepartment) {
+      await prisma.incidentActivity.create({
+        data: {
+          incidentId: id,
+          title: `Assigned to ${assignedDepartment}`,
+          type: 'ASSIGNED',
+        },
+      });
+    }
+
+    if (status && current.status !== status) {
+      await prisma.incidentActivity.create({
+        data: {
+          incidentId: id,
+          title: `Status changed to ${status}`,
+          type: 'STATUS_CHANGE',
+        },
+      });
+    }
+
+    if (adminNotes && current.adminNotes !== adminNotes) {
+      await prisma.incidentActivity.create({
+        data: {
+          incidentId: id,
+          title: `Admin note: "${adminNotes}"`,
+          type: 'ADMIN_NOTE',
+        },
+      });
+    }
+
     const updated = await prisma.incident.update({
       where: { id },
       data,
-      include: { reporter: true, resolutionForm: true },
+      include: { reporter: true, resolutionForm: true, activities: { orderBy: { createdAt: 'asc' } } },
     });
 
     // Save or update resolution questionnaire form if provided

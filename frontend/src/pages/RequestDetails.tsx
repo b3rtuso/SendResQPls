@@ -654,47 +654,65 @@ export default function RequestDetails() {
             </div>
           </div>
 
-          {/* Right Column - Timeline (derived from real data) */}
+          {/* Right Column - Activity Timeline */}
           <div className="card" style={{ height: 'fit-content' }}>
-            <div className="card-header"><h3>Activity Timeline</h3></div>
+            <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h3 style={{ fontSize: 14, fontWeight: 800, margin: 0, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--text-primary)' }}>
+                ACTIVITY TIMELINE
+              </h3>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#2563EB', background: '#EFF6FF', padding: '2px 8px', borderRadius: 6, border: '1px solid #DBEAFE' }}>
+                {(() => {
+                  const activities = incident.activities && incident.activities.length > 0
+                    ? incident.activities
+                    : [
+                        { id: '1', title: `Incident reported by ${incident.reporter?.name || 'Citizen'} via mobile app`, createdAt: incident.createdAt },
+                        ...(incident.aiDetectedType && incident.aiDetectedType !== 'Processing...' ? [{ id: '2', title: `AI analysis completed — ${incident.aiDetectedType.toUpperCase()} detected`, createdAt: new Date(new Date(incident.createdAt).getTime() + 3000).toISOString() }] : []),
+                        ...(incident.aiRecommendedDept ? [{ id: '3', title: `Auto-assigned to ${incident.aiRecommendedDept} based on AI recommendation`, createdAt: new Date(new Date(incident.createdAt).getTime() + 5000).toISOString() }] : []),
+                        ...(incident.status !== 'PENDING' ? [{ id: '4', title: `Status changed to ${incident.status}`, createdAt: incident.updatedAt }] : []),
+                        ...(incident.adminNotes ? [{ id: '5', title: `Admin note: "${incident.adminNotes}"`, createdAt: incident.updatedAt }] : []),
+                      ];
+                  return `${activities.length} Events`;
+                })()}
+              </span>
+            </div>
             <div className="card-body">
               <div className="timeline">
-                <div className="timeline-item">
-                  <div className="tl-time">{new Date(incident.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                  <div className="tl-text">
-                    Incident reported by {incident.reporter?.name || 'citizen'} via mobile app
-                  </div>
-                </div>
-                <div className="timeline-item">
-                  <div className="tl-time">{new Date(new Date(incident.createdAt).getTime() + 3000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                  <div className="tl-text">
-                    AI analysis completed — {incident.aiDetectedType || 'Unknown'} detected
-                  </div>
-                </div>
-                {incident.aiRecommendedDept && (
-                  <div className="timeline-item">
-                    <div className="tl-time">{new Date(new Date(incident.createdAt).getTime() + 5000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                    <div className="tl-text">
-                      Auto-assigned to {incident.aiRecommendedDept} based on AI recommendation
+                {(() => {
+                  const formatTimelineDate = (dateInput: string | Date) => {
+                    const d = new Date(dateInput);
+                    if (isNaN(d.getTime())) return '';
+                    const datePart = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                    const timePart = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+                    return `${datePart} • ${timePart}`;
+                  };
+
+                  const activities = incident.activities && incident.activities.length > 0
+                    ? incident.activities
+                    : [
+                        { id: '1', title: `Incident reported by ${incident.reporter?.name || 'Citizen'} via mobile app`, description: undefined, createdAt: incident.createdAt },
+                        ...(incident.aiDetectedType && incident.aiDetectedType !== 'Processing...' ? [{ id: '2', title: `AI analysis completed — ${incident.aiDetectedType.toUpperCase()} detected`, description: undefined, createdAt: new Date(new Date(incident.createdAt).getTime() + 3000).toISOString() }] : []),
+                        ...(incident.aiRecommendedDept ? [{ id: '3', title: `Auto-assigned to ${incident.aiRecommendedDept} based on AI recommendation`, description: undefined, createdAt: new Date(new Date(incident.createdAt).getTime() + 5000).toISOString() }] : []),
+                        ...(incident.status !== 'PENDING' ? [{ id: '4', title: `Status changed to ${incident.status}`, description: undefined, createdAt: incident.updatedAt }] : []),
+                        ...(incident.adminNotes ? [{ id: '5', title: `Admin note: "${incident.adminNotes}"`, description: undefined, createdAt: incident.updatedAt }] : []),
+                      ];
+
+                  return activities.map((item, idx) => (
+                    <div className="timeline-item" key={item.id || idx}>
+                      <div className="tl-time" style={{ fontWeight: 700, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+                        <span style={{ color: '#2563EB', fontSize: 14 }}>●</span>
+                        <span>{formatTimelineDate(item.createdAt)}</span>
+                      </div>
+                      <div className="tl-text" style={{ marginTop: 4, fontSize: 13, lineHeight: 1.5, color: 'var(--text-primary)', fontWeight: 600 }}>
+                        {item.title}
+                      </div>
+                      {item.description && (
+                        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2, fontStyle: 'italic' }}>
+                          {item.description}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                )}
-                {incident.status !== 'PENDING' && (
-                  <div className="timeline-item">
-                    <div className="tl-time">{new Date(incident.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                    <div className="tl-text">
-                      Status changed to <strong>{incident.status}</strong>
-                    </div>
-                  </div>
-                )}
-                {incident.adminNotes && (
-                  <div className="timeline-item">
-                    <div className="tl-time">{new Date(incident.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                    <div className="tl-text">
-                      Admin note: "{incident.adminNotes}"
-                    </div>
-                  </div>
-                )}
+                  ));
+                })()}
               </div>
             </div>
           </div>

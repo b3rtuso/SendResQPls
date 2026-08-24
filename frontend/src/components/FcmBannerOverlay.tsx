@@ -48,7 +48,7 @@ export default function FcmBannerOverlay() {
         // Admin-facing incidents don't apply here; mobile users go to history
         navigateTo = '/mobile/history';
       } else if (payload.incidentId) {
-        navigateTo = '/mobile/history';
+        navigateTo = `/mobile/history?incidentId=${payload.incidentId}`;
       }
 
       push({

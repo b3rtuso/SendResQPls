@@ -160,7 +160,7 @@ export default function MobileToastCard({ toast, onDismiss, index }: MobileToast
       navigate(toast.navigateTo);
     } else if (toast.incidentId) {
       onDismiss(toast.id);
-      navigate('/mobile/history');
+      navigate(`/mobile/history?incidentId=${toast.incidentId}`);
     }
   };
 

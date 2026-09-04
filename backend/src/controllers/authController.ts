@@ -28,7 +28,7 @@ export const sendCode = async (req: Request, res: Response) => {
 
     // Generate 6-digit code
     const code = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+    const expiresAt = Date.now() + 60 * 1000; // 60 seconds (1 minute)
 
     // Store it
     verificationCodes.set(email, { code, expiresAt });

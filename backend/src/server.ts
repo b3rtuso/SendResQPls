@@ -6,6 +6,7 @@ import rateLimit from 'express-rate-limit';
 import incidentRoutes from './routes/incidentRoutes';
 import authRoutes from './routes/authRoutes';
 import departmentRoutes from './routes/departmentRoutes';
+import callLogRoutes from './routes/callLogRoutes';
 import { incidentWorker } from './queues/incidentQueue'; // Start background AI worker
 
 import { prisma } from './config/db';
@@ -20,25 +21,48 @@ app.set('trust proxy', 1);
 
 // ── Security Headers (helmet) ──────────────────────────────────────────────────
 // Sets X-Content-Type-Options, X-Frame-Options, HSTS, and 11 other headers.
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
 
-// ── CORS — only allow our own frontend origins ────────────────────────────────
+// ── CORS — allow our production & preview frontend origins ─────────────────────
 const allowedOrigins = [
   process.env.FRONTEND_URL,           // production frontend (set in Render env vars)
   'http://localhost:5173',            // Vite dev server
   'http://localhost:4173',            // Vite preview
+  'http://localhost:3000',
+  'capacitor://localhost',
+  'http://localhost',
 ].filter(Boolean) as string[];
+
+const isOriginAllowed = (origin?: string): boolean => {
+  // Allow server-to-server requests (no origin header, e.g. curl, Postman, mobile webview native bridges)
+  if (!origin) return true;
+
+  // Exact match with known static whitelist
+  if (allowedOrigins.includes(origin)) return true;
+
+  // Allow all Vercel deployments (production domain, preview branches, PR previews)
+  if (/^https:\/\/([a-zA-Z0-9-_]+\.)?vercel\.app$/.test(origin)) return true;
+  if (/^https:\/\/[a-zA-Z0-9-_]+-b3rtusos-projects\.vercel\.app$/.test(origin)) return true;
+
+  // Local development / mobile emulators on any port
+  if (/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return true;
+
+  return false;
+};
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow server-to-server requests (no origin) and whitelisted origins
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (isOriginAllowed(origin)) {
       callback(null, true);
     } else {
-      callback(new Error(`CORS blocked: origin '${origin}' is not allowed`));
+      callback(null, false);
     }
   },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
 }));
 
 app.use(express.json());
@@ -98,6 +122,7 @@ app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/incidents', incidentRoutes);
 app.use('/api/incidents/create', reportLimiter); // tighter limit for new report submissions
 app.use('/api/departments', departmentRoutes);
+app.use('/api/call-logs', callLogRoutes);
 
 // Auto-seed default MDRRMO admin on startup if no admin exists in the database
 async function seedDefaultAdmin() {

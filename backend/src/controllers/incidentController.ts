@@ -222,6 +222,8 @@ export const reportIncident = async (req: AuthRequest, res: Response) => {
         longitude: lng,
         photoUrl: imageUrl,
         aiDetectedType: 'Processing...', // Worker will update this
+        severity: 'MEDIUM',
+        urgencyScore: 50,
         status: 'PENDING',
         activities: {
           create: {
@@ -275,7 +277,7 @@ export const reportIncident = async (req: AuthRequest, res: Response) => {
 export const updateIncidentStatus = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { status, adminNotes, assignedDepartment, resolutionForm } = req.body;
+    const { status, adminNotes, assignedDepartment, resolutionForm, severity, urgencyScore } = req.body;
 
     const current = await prisma.incident.findUnique({
       where: { id },
@@ -284,8 +286,10 @@ export const updateIncidentStatus = async (req: AuthRequest, res: Response) => {
     if (!current) return res.status(404).json({ error: 'Incident not found' });
 
     const data: any = {};
-    if (adminNotes) data.adminNotes = adminNotes;
-    if (assignedDepartment) data.assignedDepartment = assignedDepartment;
+    if (adminNotes !== undefined) data.adminNotes = adminNotes;
+    if (assignedDepartment !== undefined) data.assignedDepartment = assignedDepartment;
+    if (severity) data.severity = severity;
+    if (urgencyScore !== undefined) data.urgencyScore = parseInt(urgencyScore);
 
     // ── One-way status progression guard ─────────────────────────────────────
     if (status) {

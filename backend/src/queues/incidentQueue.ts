@@ -64,6 +64,8 @@ export async function processIncidentDirectly(
     data: {
       aiDetectedType: assessment.incidentType,
       aiRecommendedDept: aiRecognized ? recommended : undefined,
+      severity: assessment.severity || 'MEDIUM',
+      urgencyScore: assessment.urgencyScore || 50,
       status: finalStatus,
       adminNotes: aiRecognized
         ? undefined
@@ -186,6 +188,8 @@ export async function processIncidentDirectly(
         id: incident.id,
         aiDetectedType: assessment.incidentType,
         aiRecommendedDept: recommended,
+        severity: assessment.severity || 'MEDIUM',
+        urgencyScore: assessment.urgencyScore || 50,
         status: 'PENDING',
         createdAt: incident.createdAt,
       });
@@ -194,6 +198,8 @@ export async function processIncidentDirectly(
         id: incident.id,
         aiDetectedType: assessment.incidentType,
         aiConfidence,
+        severity: assessment.severity || 'LOW',
+        urgencyScore: assessment.urgencyScore || 20,
         status: 'REVIEWING',
         createdAt: incident.createdAt,
       });

@@ -35,6 +35,10 @@ model Incident {
   status                Status      @default(PENDING)
   adminNotes            String?     // Notes added by the MDRRMO dispatcher
   
+  // Severity & Urgency Ranking
+  severity              String?     // "CRITICAL" | "HIGH" | "MEDIUM" | "LOW"
+  urgencyScore          Int?        // 0 to 100
+
   reporterId            String
   reporter              User            @relation(fields: [reporterId], references: [id])
   
@@ -155,4 +159,20 @@ model DepartmentInfo {
   status         String   @default("Available") // Available, On Standby, Deployed
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+}
+
+model CallLog {
+  id          String   @id @default(uuid())
+  requestId   String?  // Linked Incident ID or "DIRECT"
+  callerName  String   // Name of the dispatcher/admin placing the call
+  department  String   // e.g., "BFP", "PNP", "Medical EMS", or contact name
+  contact     String   // Target phone number
+  duration    String   @default("0:45") // Duration or status e.g. "1:20"
+  status      String   @default("Accepted") // "Accepted" | "No Response" | "Declined"
+  timestamp   DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([timestamp])
+  @@index([requestId])
 }

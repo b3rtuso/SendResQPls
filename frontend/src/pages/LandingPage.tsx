@@ -146,14 +146,16 @@ export default function LandingPage() {
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         :root {
-          --bg:      #0D1B2A;
-          --surface: #112236;
+          --bg:      #0F1F38;
+          --surface: #152A4A;
           --red:     #E63946;
           --yellow:  #F4D03F;
           --blue:    #2563EB;
           --blue-dk: #1D4ED8;
+          --header-gradient: linear-gradient(160deg, #0F1F38 0%, #1D4ED8 60%, #2563EB 100%);
+          --primary-gradient: linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%);
           --white:   #FFFFFF;
-          --text-muted: rgba(255,255,255,0.65);
+          --text-muted: rgba(255,255,255,0.7);
           --divider: rgba(255,255,255,0.12);
           --font:    'Inter Tight', system-ui, sans-serif;
         }
@@ -174,10 +176,11 @@ export default function LandingPage() {
           justify-content: space-between;
           padding: 0 clamp(16px, 4vw, 72px);
           height: 64px;
-          border-bottom: 1px solid var(--divider);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.15);
           position: sticky;
           top: 0;
-          background: var(--bg);
+          background: linear-gradient(160deg, #0F1F38 0%, #1D4ED8 60%, #2563EB 100%);
+          box-shadow: 0 4px 20px rgba(15, 31, 56, 0.4);
           z-index: 100;
         }
         .lp-nav-logo {
@@ -226,10 +229,10 @@ export default function LandingPage() {
         }
         .lp-nav-location {
           font-size: 12px;
-          font-weight: 500;
+          font-weight: 600;
           letter-spacing: 0.1em;
           text-transform: uppercase;
-          color: var(--text-muted);
+          color: rgba(255, 255, 255, 0.85);
           white-space: nowrap;
         }
 
@@ -239,6 +242,7 @@ export default function LandingPage() {
           grid-template-columns: 1fr 1fr;
           min-height: calc(100dvh - 64px);
           border-bottom: 1px solid var(--divider);
+          background: radial-gradient(circle at 18% 30%, rgba(29, 78, 216, 0.22) 0%, transparent 65%);
         }
 
         /* Hero left */
@@ -337,22 +341,30 @@ export default function LandingPage() {
           gap: 10px;
           padding: 14px 28px;
           min-height: 48px;
-          background: var(--blue);
+          background: linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%);
           color: var(--white);
           font-family: var(--font);
           font-size: 14px;
           font-weight: 700;
           letter-spacing: 0.05em;
           text-transform: uppercase;
-          border: none;
-          border-radius: 0;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          border-radius: 8px;
           cursor: pointer;
           text-decoration: none;
           white-space: nowrap;
-          transition: background 0.15s linear, transform 0.1s ease;
+          box-shadow: 0 4px 18px rgba(37, 99, 235, 0.4);
+          transition: all 0.2s ease;
         }
-        .btn-primary:hover { background: var(--blue-dk); }
-        .btn-primary:active { transform: translateY(1px); }
+        .btn-primary:hover {
+          background: linear-gradient(135deg, #1e40af 0%, #1D4ED8 100%);
+          box-shadow: 0 6px 24px rgba(37, 99, 235, 0.55);
+          transform: translateY(-1px);
+        }
+        .btn-primary:active {
+          transform: translateY(1px);
+          box-shadow: 0 2px 10px rgba(37, 99, 235, 0.35);
+        }
 
         .btn-outline {
           display: inline-flex;
@@ -639,10 +651,11 @@ export default function LandingPage() {
           transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
         .lp-faq-item.open .lp-faq-icon {
-          background: var(--blue);
-          border-color: var(--blue);
+          background: linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%);
+          border-color: #2563EB;
           color: #FFFFFF;
           transform: rotate(45deg);
+          box-shadow: 0 2px 10px rgba(37, 99, 235, 0.4);
         }
         .lp-faq-body {
           padding-left: clamp(30px, 4.5vw, 56px);
@@ -718,7 +731,7 @@ export default function LandingPage() {
           letter-spacing: 0.04em;
           text-transform: uppercase;
           margin-bottom: 16px;
-          background: #2563EB;
+          background: linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%);
           color: #FFFFFF;
           box-shadow: 0 4px 14px rgba(37,99,235,0.5);
           animation: alFadeSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);

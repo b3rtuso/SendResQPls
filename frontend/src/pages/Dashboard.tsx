@@ -161,12 +161,12 @@ export default function Dashboard() {
   const pointerStartX = useRef<number | null>(null);
   const isPointerDownRef = useRef(false);
 
-  // Auto-advance carousel every 8 seconds when not hovered and not dragging
+  // Auto-advance carousel every 5 seconds when not hovered and not dragging
   useEffect(() => {
     if (isCarouselHovered || isDragging) return;
     const timer = setInterval(() => {
       setCarouselSlide(prev => (prev === 0 ? 1 : 0));
-    }, 8000);
+    }, 5000);
     return () => clearInterval(timer);
   }, [isCarouselHovered, isDragging]);
 
@@ -540,32 +540,6 @@ export default function Dashboard() {
                       {topLocations.length} Key Hotspots
                     </span>
                   )}
-
-                  {/* Slide Indicator Dots */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '0 2px' }}>
-                    <span
-                      onClick={() => setCarouselSlide(0)}
-                      style={{
-                        width: carouselSlide === 0 ? 16 : 6, height: 6,
-                        borderRadius: 999,
-                        background: carouselSlide === 0 ? '#2563EB' : '#CBD5E1',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                      }}
-                      title="Incident Risk Forecast"
-                    />
-                    <span
-                      onClick={() => setCarouselSlide(1)}
-                      style={{
-                        width: carouselSlide === 1 ? 16 : 6, height: 6,
-                        borderRadius: 999,
-                        background: carouselSlide === 1 ? '#2563EB' : '#CBD5E1',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                      }}
-                      title="Top Incident Locations"
-                    />
-                  </div>
                 </div>
               </div>
 
@@ -820,6 +794,50 @@ export default function Dashboard() {
                 >
                   <ChevronRight size={18} />
                 </button>
+              </div>
+
+              {/* Centered Pagination Dots below on the middle part */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                marginTop: 14,
+              }}>
+                <button
+                  type="button"
+                  onClick={() => setCarouselSlide(0)}
+                  aria-label="Slide 1: Incident Risk Forecast"
+                  title="Incident Risk Forecast"
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    padding: 0,
+                    border: 'none',
+                    background: carouselSlide === 0 ? '#2563EB' : '#CBD5E1',
+                    cursor: 'pointer',
+                    transition: 'background 0.2s ease',
+                    boxShadow: carouselSlide === 0 ? '0 0 0 2px rgba(37, 99, 235, 0.2)' : 'none',
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setCarouselSlide(1)}
+                  aria-label="Slide 2: Top Incident Locations"
+                  title="Top Incident Locations"
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    padding: 0,
+                    border: 'none',
+                    background: carouselSlide === 1 ? '#2563EB' : '#CBD5E1',
+                    cursor: 'pointer',
+                    transition: 'background 0.2s ease',
+                    boxShadow: carouselSlide === 1 ? '0 0 0 2px rgba(37, 99, 235, 0.2)' : 'none',
+                  }}
+                />
               </div>
             </div>
           );

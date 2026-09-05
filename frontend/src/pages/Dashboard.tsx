@@ -11,6 +11,8 @@ import {
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
 import type { Incident, Status } from '../types';
 import { getIncidents, getIncidentStats, invalidateCache } from '../api/client';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { getNearestBarangay } from '../data/balayan-data';
 import { normalizeIncidentType } from '../utils/normalizeIncidentType';
 import { dashboardChartData, monthlyByType2024, monthlyByType2025, yearlyTotals, monthlyDetails } from '../data/mdrrmo-data';
@@ -514,14 +516,14 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
-            <button
+            <Button
               onClick={() => navigate('/requests')}
               style={{
                 zIndex: 1, background: 'white', color: '#DC2626',
                 border: 'none', borderRadius: 10, padding: '10px 20px',
-                fontWeight: 700, fontSize: 14, cursor: 'pointer',
+                fontWeight: 700, fontSize: 14,
                 display: 'flex', alignItems: 'center', gap: 6,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.15)', fontFamily: 'inherit',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
                 transition: 'transform 0.15s',
                 flexShrink: 0,
               }}
@@ -529,7 +531,7 @@ export default function Dashboard() {
               onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
             >
               View All <ArrowRight size={16} />
-            </button>
+            </Button>
             {/* Decorative skew strip */}
             <div style={{ position: 'absolute', right: -20, top: 0, width: 120, height: '100%', background: 'rgba(255,255,255,0.05)', transform: 'skewX(-12deg)' }} />
           </div>
@@ -866,33 +868,35 @@ export default function Dashboard() {
                               : '—'}
                           </td>
                           <td style={{ padding: '13px 18px' }}>
-                            <span style={{
+                            <Badge style={{
                               padding: '3px 9px', borderRadius: 6,
                               background: ss.bg, color: ss.color,
                               fontSize: 10, fontWeight: 800, letterSpacing: '0.06em',
                               textTransform: 'uppercase',
+                              border: 'none',
                             }}>
                               {ss.label}
-                            </span>
+                            </Badge>
                           </td>
                           <td style={{ padding: '13px 18px', color: '#94A3B8', fontSize: 12, whiteSpace: 'nowrap' }}>
                             {timeAgo(inc.createdAt)}
                           </td>
                           <td style={{ padding: '13px 18px' }}>
-                            <button
+                            <Button
+                              size="sm"
+                              variant="outline"
                               onClick={e => { e.stopPropagation(); navigate(`/requests/${inc.id}`); }}
                               style={{
-                                padding: '5px 12px', borderRadius: 7,
+                                padding: '5px 12px', borderRadius: 7, height: 'auto',
                                 background: 'var(--primary-bg)', color: 'var(--primary)',
                                 border: '1px solid rgba(37,99,235,0.2)', fontSize: 11.5, fontWeight: 700,
-                                cursor: 'pointer', fontFamily: 'inherit',
                                 transition: 'all 0.15s',
                               }}
                               onMouseEnter={e => { e.currentTarget.style.background = 'var(--primary)'; e.currentTarget.style.color = 'white'; }}
                               onMouseLeave={e => { e.currentTarget.style.background = 'var(--primary-bg)'; e.currentTarget.style.color = 'var(--primary)'; }}
                             >
                               View
-                            </button>
+                            </Button>
                           </td>
                         </tr>
                       );
@@ -932,21 +936,22 @@ export default function Dashboard() {
                       style={{ '--pulse-color': '#22C55E', background: '#22C55E', marginLeft: 'auto' } as any}
                     />
                   </div>
-                  <button
+                  <Button
                     type="button"
+                    variant="outline"
                     onClick={() => { window.location.href = tel; }}
                     style={{
-                      width: '100%', padding: '8px', borderRadius: 8,
-                      background: '#F8FAFC', border: '1px solid #E2E8F0', cursor: 'pointer',
+                      width: '100%', padding: '8px', borderRadius: 8, height: 'auto',
+                      background: '#F8FAFC', border: '1px solid #E2E8F0',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                       fontSize: 12, fontWeight: 700, color: '#475569',
-                      transition: 'all 0.15s', fontFamily: 'inherit',
+                      transition: 'all 0.15s',
                     }}
                     onMouseEnter={e => { e.currentTarget.style.background = '#2563EB'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = '#2563EB'; }}
                     onMouseLeave={e => { e.currentTarget.style.background = '#F8FAFC'; e.currentTarget.style.color = '#475569'; e.currentTarget.style.borderColor = '#E2E8F0'; }}
                   >
                     <Phone size={13} /> Call
-                  </button>
+                  </Button>
                 </div>
               ))}
             </div>
@@ -1195,7 +1200,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Modal Footer */}
+            {/* Footer */}
             <div style={{
               padding: '16px 24px',
               borderTop: '1px solid #F1F5F9',
@@ -1204,43 +1209,37 @@ export default function Dashboard() {
               justifyContent: 'space-between',
               background: '#FAFAFB',
             }}>
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => {
                   setShowComputationModal(false);
                   navigate('/analytics');
                 }}
                 style={{
-                  background: 'none',
-                  border: 'none',
                   color: '#2563EB',
                   fontSize: 13,
                   fontWeight: 700,
-                  cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   gap: 6,
-                  fontFamily: 'inherit',
                 }}
               >
                 <ExternalLink size={14} /> Open Full Historical Analytics
-              </button>
+              </Button>
 
-              <button
+              <Button
                 onClick={() => setShowComputationModal(false)}
                 style={{
                   background: '#2563EB',
                   color: 'white',
-                  border: 'none',
                   padding: '9px 18px',
                   borderRadius: 10,
                   fontSize: 13,
                   fontWeight: 700,
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
                 }}
               >
                 Done
-              </button>
+              </Button>
             </div>
           </div>
         </div>

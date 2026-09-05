@@ -3,7 +3,7 @@ import {
   register, login, sendCode, verifyCode,
   getProfile, updateProfile, changePassword,
   forgotPassword, resetPassword,
-  createAdmin, listAdmins, deactivateAdmin
+  createAdmin, listAdmins, deactivateAdmin, deleteAdmin
 } from '../controllers/authController';
 import { requireAuth, requireAdmin } from '../middleware/auth';
 
@@ -26,5 +26,6 @@ router.patch('/password', requireAuth, changePassword);
 router.post('/admin/create', requireAdmin, createAdmin);
 router.get('/admins', requireAdmin, listAdmins);
 router.patch('/admin/:id/deactivate', requireAdmin, deactivateAdmin);
+router.delete('/admin/:id', requireAdmin, deleteAdmin);
 
 export default router;

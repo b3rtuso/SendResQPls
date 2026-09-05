@@ -4,9 +4,12 @@ import Header from '../components/Header';
 import { RequestDetailsSkeleton } from '../components/PageLoader';
 import Toast, { type ToastType } from '../components/Toast';
 import { ArrowLeft, AlertTriangle, Brain, MapPin, Camera, User, Clock, ExternalLink, X, Phone, Building2, CheckCircle2 } from 'lucide-react';
-import { updateIncidentStatus, getIncident as fetchIncident, reverseGeocode } from '../api/client';
+import { updateIncidentStatus, getIncident as fetchIncident, reverseGeocode, createCallLog } from '../api/client';
 import type { Status, Incident, ResolutionForm } from '../types';
 import ResolutionFormModal from '../components/ResolutionFormModal';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import { getNearestBarangay } from '../data/balayan-data';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
@@ -230,6 +233,31 @@ export default function RequestDetails() {
     }
   };
 
+  const handleCallDept = (_e: React.MouseEvent, dept: any) => {
+    const adminName = localStorage.getItem('userName') || 'MDRRMO Dispatcher';
+    createCallLog({
+      requestId: id,
+      callerName: adminName,
+      department: dept.abbr || dept.name,
+      contact: dept.contact,
+      status: 'Accepted',
+    }).catch(() => {});
+    showToast('info', `Calling ${dept.name}`, `Initiated call to ${dept.contact}. Call log recorded.`);
+  };
+
+  const handleCallReporter = () => {
+    if (!incident?.reporter?.phoneNumber) return;
+    const adminName = localStorage.getItem('userName') || 'MDRRMO Dispatcher';
+    createCallLog({
+      requestId: id,
+      callerName: adminName,
+      department: `Citizen (${incident.reporter.name || 'Reporter'})`,
+      contact: incident.reporter.phoneNumber,
+      status: 'Accepted',
+    }).catch(() => {});
+    showToast('info', `Calling Reporter`, `Initiated call to ${incident.reporter.phoneNumber}. Call log recorded.`);
+  };
+
   const openLocation = () => {
     if (incident) {
       window.open(
@@ -281,9 +309,9 @@ export default function RequestDetails() {
           />
         )}
 
-        <button className="btn btn-outline btn-sm" onClick={() => navigate('/requests')} style={{ marginBottom: 20 }}>
+        <Button variant="outline" size="sm" onClick={() => navigate('/requests')} style={{ marginBottom: 20, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           <ArrowLeft size={16} /> Back to Requests
-        </button>
+        </Button>
 
         <div className="grid-3-1 fade-in">
           {/* Left Column */}
@@ -314,7 +342,44 @@ export default function RequestDetails() {
                 <div>
                   <strong style={{ fontSize: 12, color: 'var(--text-muted)' }}>STATUS</strong>
                   <div style={{ fontSize: 16, fontWeight: 700, marginTop: 4 }}>
-                    <span className={`badge ${currentStatus.toLowerCase()}`}>{currentStatus}</span>
+                    <Badge className={`badge ${currentStatus.toLowerCase()}`}>{currentStatus}</Badge>
+                  </div>
+                </div>
+                <div style={{ gridColumn: 'span 2', marginTop: 4 }}>
+                  <strong style={{ fontSize: 12, color: 'var(--text-muted)' }}>SEVERITY & URGENCY RANKING</strong>
+                  <div style={{ fontSize: 14, fontWeight: 800, marginTop: 6, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    {(() => {
+                      const sev = incident.severity || 'MEDIUM';
+                      const score = incident.urgencyScore ?? 50;
+                      const sevColors: Record<string, { bg: string; color: string; border: string }> = {
+                        CRITICAL: { bg: '#FEE2E2', color: '#DC2626', border: '#FECACA' },
+                        HIGH:     { bg: '#FFEDD5', color: '#EA580C', border: '#FED7AA' },
+                        MEDIUM:   { bg: '#DBEAFE', color: '#2563EB', border: '#BFDBFE' },
+                        LOW:      { bg: '#F1F5F9', color: '#64748B', border: '#E2E8F0' },
+                      };
+                      const s = sevColors[sev] || sevColors.MEDIUM;
+                      return (
+                        <>
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 5,
+                            padding: '4px 10px',
+                            borderRadius: 8,
+                            fontSize: 12.5,
+                            fontWeight: 800,
+                            background: s.bg,
+                            color: s.color,
+                            border: `1.5px solid ${s.border}`,
+                          }}>
+                            {sev === 'CRITICAL' ? '🚨' : sev === 'HIGH' ? '⚡' : '🛡️'} {sev} PRIORITY
+                          </span>
+                          <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text-secondary)' }}>
+                            Urgency Score: <strong style={{ color: 'var(--text-primary)' }}>{score}/100</strong>
+                          </span>
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
@@ -434,18 +499,19 @@ export default function RequestDetails() {
                     <User size={16} />
                     <strong>Reporter:</strong> {incident.reporter?.name || 'Unknown'} ({incident.reporter?.email || incident.reporterId.slice(0, 8) + '...'})
                   </div>
-                  {incident.reporter?.phoneNumber && (
-                    <div className="dept-detail">
-                      <Phone size={16} />
-                      <strong>Phone:</strong>
-                      <a
-                        href={`tel:${incident.reporter.phoneNumber}`}
-                        style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}
-                      >
-                        {incident.reporter.phoneNumber}
-                      </a>
-                    </div>
-                  )}
+                    {incident.reporter?.phoneNumber && (
+                      <div className="dept-detail">
+                        <Phone size={16} />
+                        <strong>Phone:</strong>
+                        <a
+                          href={`tel:${incident.reporter.phoneNumber}`}
+                          onClick={() => handleCallReporter()}
+                          style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}
+                        >
+                          {incident.reporter.phoneNumber}
+                        </a>
+                      </div>
+                    )}
                   <div className="dept-detail">
                     <Clock size={16} />
                     <strong>Reported:</strong> {new Date(incident.createdAt).toLocaleString()}
@@ -543,7 +609,7 @@ export default function RequestDetails() {
                         <div style={{ display: 'flex', gap: 6 }}>
                           <a
                             href={`tel:${dept.contact.replace(/[^0-9+]/g, '')}`}
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={(e) => handleCallDept(e, dept)}
                             style={{
                               flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                               padding: '9px 0', borderRadius: 8, fontSize: 13, fontWeight: 700,
@@ -556,7 +622,9 @@ export default function RequestDetails() {
                           >
                             <Phone size={13} /> Call
                           </a>
-                          <button
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={(e) => {
                               e.stopPropagation();
                               navigator.clipboard.writeText(dept.contact).then(() => {
@@ -567,12 +635,12 @@ export default function RequestDetails() {
                               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
                               padding: '9px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600,
                               background: 'var(--bg-body)', color: 'var(--text-secondary)',
-                              border: '1px solid var(--border)', cursor: 'pointer',
-                              transition: 'all 0.2s ease', fontFamily: 'var(--font)',
+                              border: '1px solid var(--border)',
+                              height: 'auto',
                             }}
                           >
                             📋 Copy
-                          </button>
+                          </Button>
                         </div>
                       </div>
                     );
@@ -639,7 +707,7 @@ export default function RequestDetails() {
                 )}
                 <div className="form-group" style={{ marginTop: 16 }}>
                   <label>Admin Notes</label>
-                  <textarea
+                  <Textarea
                     className="form-control"
                     rows={3}
                     placeholder="Add notes about this incident..."
@@ -647,9 +715,9 @@ export default function RequestDetails() {
                     onChange={(e) => setNotes(e.target.value)}
                   />
                 </div>
-                <button className="btn btn-primary" disabled={saving} onClick={handleSaveNotes}>
+                <Button className="btn btn-primary" disabled={saving} onClick={handleSaveNotes}>
                   {saving ? 'Saving...' : 'Save Changes'}
-                </button>
+                </Button>
               </div>
             </div>
           </div>

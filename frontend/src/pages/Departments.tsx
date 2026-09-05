@@ -7,11 +7,15 @@ import {
   Plus, Edit2, Trash2,
 } from 'lucide-react';
 import type { DepartmentInfo } from '../types';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   getDepartments,
   createDepartment,
   updateDepartment,
   deleteDepartment,
+  createCallLog,
 } from '../api/client';
 
 const statusClass: Record<string, string> = {
@@ -145,9 +149,21 @@ export default function Departments() {
     }
   };
 
-  const handleCall = (contactNumber: string) => {
-    const cleaned = contactNumber.replace(/[^0-9+]/g, '');
+  const handleCall = (dept: DepartmentInfo) => {
+    const cleaned = (dept.contact || '').replace(/[^0-9+]/g, '');
     if (!cleaned) return;
+    try {
+      const adminName = localStorage.getItem('userName') || 'MDRRMO Dispatcher';
+      createCallLog({
+        requestId: 'DIRECT_DISPATCH',
+        callerName: adminName,
+        department: dept.name ? `${dept.name} (${dept.fullName})` : dept.fullName,
+        contact: dept.contact,
+        status: 'Accepted',
+      }).catch(() => {});
+    } catch {
+      /* non-blocking */
+    }
     window.location.href = `tel:${cleaned}`;
   };
 
@@ -255,13 +271,13 @@ export default function Departments() {
               />
             </div>
             
-            <button 
+            <Button 
               onClick={handleOpenAddModal}
               className="btn btn-primary"
               style={{ display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}
             >
               <Plus size={16} /> Add Department
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -370,7 +386,7 @@ export default function Departments() {
                   <div style={{ display: 'flex', gap: 8, borderTop: '1px solid var(--border-light)', paddingTop: 14, marginTop: 'auto' }}>
                     <button
                       type="button"
-                      onClick={() => handleCall(dept.contact)}
+                      onClick={() => handleCall(dept)}
                       style={{
                         flex: 1, padding: '9px 0', borderRadius: 8,
                         background: 'var(--bg-body)', border: '1px solid var(--border)',
@@ -485,81 +501,66 @@ export default function Departments() {
                 {/* Code & Full Name */}
                 <div className="form-grid-2">
                   <div className="form-group" style={{ margin: 0 }}>
-                    <label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Dept Code</label>
-                    <input 
-                      type="text" 
+                    <Label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Dept Code</Label>
+                    <Input
+                      type="text"
                       placeholder="e.g. PCG"
                       required
-                      disabled={!!editingDept} // Code name cannot be edited if updating
+                      disabled={!!editingDept}
                       value={name}
                       onChange={e => setName(e.target.value.toUpperCase())}
-                      style={{
-                        width: '100%', padding: '10px 12px', borderRadius: 8,
-                        border: '1px solid var(--border)', fontSize: 14, outline: 'none',
-                        background: editingDept ? 'var(--border-light)' : 'white'
-                      }}
+                      className="w-full text-sm"
+                      style={{ background: editingDept ? 'var(--border-light)' : 'white' }}
                     />
                   </div>
                   <div className="form-group" style={{ margin: 0 }}>
-                    <label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Full Agency Name</label>
-                    <input 
-                      type="text" 
+                    <Label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Full Agency Name</Label>
+                    <Input
+                      type="text"
                       placeholder="e.g. Philippine Coast Guard"
                       required
                       value={fullName}
                       onChange={e => setFullName(e.target.value)}
-                      style={{
-                        width: '100%', padding: '10px 12px', borderRadius: 8,
-                        border: '1px solid var(--border)', fontSize: 14, outline: 'none'
-                      }}
+                      className="w-full text-sm"
                     />
                   </div>
                 </div>
 
                 {/* Head Officer */}
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Officer-In-Charge (Head)</label>
-                  <input 
-                    type="text" 
+                  <Label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Officer-In-Charge (Head)</Label>
+                  <Input
+                    type="text"
                     placeholder="e.g. CG Capt. Juan dela Cruz"
                     required
                     value={headOfficer}
                     onChange={e => setHeadOfficer(e.target.value)}
-                    style={{
-                      width: '100%', padding: '10px 12px', borderRadius: 8,
-                      border: '1px solid var(--border)', fontSize: 14, outline: 'none'
-                    }}
+                    className="w-full text-sm"
                   />
                 </div>
 
                 {/* Contact & Email */}
                 <div className="form-grid-2">
                   <div className="form-group" style={{ margin: 0 }}>
-                    <label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Contact Number</label>
-                    <input 
-                      type="text" 
+                    <Label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Contact Number</Label>
+                    <Input
+                      type="text"
                       placeholder="e.g. (043) 211-1234"
                       required
                       value={contact}
                       onChange={e => setContact(e.target.value)}
-                      style={{
-                        width: '100%', padding: '10px 12px', borderRadius: 8,
-                        border: '1px solid var(--border)', fontSize: 14, outline: 'none'
-                      }}
+                      className="w-full text-sm"
                     />
                   </div>
                   <div className="form-group" style={{ margin: 0 }}>
-                    <label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Email Address</label>
-                    <input 
-                      type="email" 
+                    <Label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Email Address</Label>
+                    <Input
+                      type="email"
                       placeholder="e.g. unit@gmail.com"
                       required
                       value={email}
                       onChange={e => setEmail(e.target.value)}
-                      style={{
-                        width: '100%', padding: '10px 12px', borderRadius: 8,
-                        border: '1px solid var(--border)', fontSize: 14, outline: 'none'
-                      }}
+                      className="w-full text-sm"
                     />
                   </div>
                 </div>
@@ -567,21 +568,18 @@ export default function Departments() {
                 {/* Personnel & Status */}
                 <div className="form-grid-2">
                   <div className="form-group" style={{ margin: 0 }}>
-                    <label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Active Personnel Count</label>
-                    <input 
-                      type="number" 
+                    <Label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Active Personnel Count</Label>
+                    <Input
+                      type="number"
                       required
                       min={0}
                       value={personnelCount}
                       onChange={e => setPersonnelCount(parseInt(e.target.value) || 0)}
-                      style={{
-                        width: '100%', padding: '10px 12px', borderRadius: 8,
-                        border: '1px solid var(--border)', fontSize: 14, outline: 'none'
-                      }}
+                      className="w-full text-sm"
                     />
                   </div>
                   <div className="form-group" style={{ margin: 0 }}>
-                    <label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Deployment Status</label>
+                    <Label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Deployment Status</Label>
                     <select
                       value={status}
                       onChange={e => setStatus(e.target.value)}
@@ -600,16 +598,13 @@ export default function Departments() {
 
                 {/* Equipment Tags */}
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Assigned Equipment (Comma-separated)</label>
-                  <input 
-                    type="text" 
+                  <Label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Assigned Equipment (Comma-separated)</Label>
+                  <Input
+                    type="text"
                     placeholder="e.g. Patrol Boat, Life Vests, Rescue Rope"
                     value={equipmentInput}
                     onChange={e => setEquipmentInput(e.target.value)}
-                    style={{
-                      width: '100%', padding: '10px 12px', borderRadius: 8,
-                      border: '1px solid var(--border)', fontSize: 14, outline: 'none'
-                    }}
+                    className="w-full text-sm"
                   />
                 </div>
 
@@ -617,29 +612,30 @@ export default function Departments() {
 
               {/* Modal Footer / Buttons */}
               <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 32, borderTop: '1px solid var(--border-light)', paddingTop: 20, flexWrap: 'wrap' }}>
-                <button 
+                <Button 
                   type="button" 
+                  variant="outline"
                   onClick={() => setShowModal(false)}
                   style={{
-                    padding: '10px 20px', borderRadius: 8, border: '1px solid var(--border)',
-                    background: 'var(--bg-body)', color: 'var(--text-secondary)',
-                    fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit'
+                    padding: '10px 20px', borderRadius: 8,
+                    color: 'var(--text-secondary)',
+                    fontWeight: 600, fontSize: 13,
                   }}
                 >
                   Cancel
-                </button>
-                <button 
+                </Button>
+                <Button 
                   type="submit" 
                   disabled={saving}
                   style={{
-                    padding: '10px 24px', borderRadius: 8, border: 'none',
+                    padding: '10px 24px', borderRadius: 8,
                     background: 'var(--primary-dark)', color: 'white',
-                    fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
+                    fontWeight: 700, fontSize: 13,
                     boxShadow: '0 4px 12px rgba(37, 99, 235, 0.2)'
                   }}
                 >
                   {saving ? 'Saving...' : 'Save Department'}
-                </button>
+                </Button>
               </div>
 
             </form>

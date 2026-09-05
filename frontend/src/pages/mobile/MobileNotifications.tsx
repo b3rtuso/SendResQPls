@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, AlertCircle, Truck, ShieldCheck, XCircle, Clock, ChevronLeft, CheckCheck, Trash2, ArrowRight } from 'lucide-react';
 import BottomNav from '../../components/BottomNav';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 // Pull notifications from localStorage (written by MobileHome polling)
 const NOTIF_KEY = 'srq_notifications';
@@ -70,10 +72,9 @@ export default function MobileNotifications() {
     <div className="mobile-shell" style={{ background: '#F8FAFC' }}>
       <div className="mobile-page" style={{ flex: 1, paddingBottom: 85 }}>
         {/* Header (flush top, matching Home header gradient) */}
-        <div style={{
-          background: 'linear-gradient(155deg, #0F1F38 0%, #1E3A5F 40%, #2563EB 100%)',
-          margin: 0,
-          padding: '24px 20px 20px',
+        <div className="mobile-header-bar" style={{
+          background: 'linear-gradient(135deg, #0F1F38 0%, #1A365D 60%, #1E40AF 100%)',
+          padding: '16px 20px',
           display: 'flex',
           alignItems: 'center',
           gap: 12,
@@ -82,7 +83,9 @@ export default function MobileNotifications() {
           borderRadius: '0 0 24px 24px',
           marginBottom: 16,
         }}>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => navigate('/mobile')}
             style={{
               width: 36,
@@ -93,26 +96,25 @@ export default function MobileNotifications() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              cursor: 'pointer',
               color: 'white',
               padding: 0,
             }}
             aria-label="Back"
           >
             <ChevronLeft size={20} />
-          </button>
+          </Button>
           <div style={{ flex: 1 }}>
             <h1 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: 'white', letterSpacing: '-0.2px', display: 'flex', alignItems: 'center', gap: 8 }}>
               Alerts & Updates
               {unreadCount > 0 && (
-                <span style={{
+                <Badge style={{
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                   background: '#EF4444', color: 'white', fontSize: 10, fontWeight: 800,
                   minWidth: 18, height: 18, borderRadius: 9, padding: '0 4px',
                   border: '1.5px solid rgba(255,255,255,0.25)',
                 }}>
                   {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
+                </Badge>
               )}
             </h1>
             <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', margin: '2px 0 0' }}>Real-time notifications on your reports</p>
@@ -135,27 +137,31 @@ export default function MobileNotifications() {
             </span>
             <div style={{ display: 'flex', gap: 8 }}>
               {unreadCount > 0 && (
-                <button
+                <Button
+                  size="sm"
+                  variant="outline"
                   onClick={handleMarkAllRead}
                   style={{
                     background: 'white', border: '1px solid #E2E8F0', borderRadius: 8,
                     padding: '5px 10px', fontSize: 11.5, fontWeight: 700, color: '#2563EB',
-                    cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
+                    display: 'flex', alignItems: 'center', gap: 4, height: 'auto',
                   }}
                 >
                   <CheckCheck size={13} /> Mark all read
-                </button>
+                </Button>
               )}
-              <button
+              <Button
+                size="sm"
+                variant="outline"
                 onClick={handleClearAll}
                 style={{
                   background: 'white', border: '1px solid #E2E8F0', borderRadius: 8,
                   padding: '5px 10px', fontSize: 11.5, fontWeight: 700, color: '#94A3B8',
-                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
+                  display: 'flex', alignItems: 'center', gap: 4, height: 'auto',
                 }}
               >
                 <Trash2 size={13} /> Clear
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -181,17 +187,19 @@ export default function MobileNotifications() {
             <div style={{ fontSize: 13, color: '#64748B', lineHeight: 1.5, maxWidth: 260, marginBottom: 18 }}>
               You will receive alerts here whenever your emergency reports are reviewed or dispatched.
             </div>
-            <button
+            <Button
+              variant="outline"
               onClick={() => navigate('/mobile/history')}
               style={{
                 padding: '10px 18px', borderRadius: 12,
                 background: '#F1F5F9', border: '1px solid #E2E8F0',
                 fontSize: 13, fontWeight: 700, color: '#0F172A',
-                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+                display: 'flex', alignItems: 'center', gap: 6,
+                minHeight: 44,
               }}
             >
               View Report History <ArrowRight size={14} />
-            </button>
+            </Button>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -211,8 +219,7 @@ export default function MobileNotifications() {
                     cursor: 'pointer',
                     position: 'relative',
                     transition: 'all 0.15s ease',
-                    border: `1px solid ${!n.read ? meta.border + '50' : '#E2E8F0'}`,
-                    borderLeft: `4px solid ${!n.read ? meta.border : '#CBD5E1'}`,
+                    border: '1px solid #E2E8F0',
                   }}
                 >
                   {/* Icon square with tinted bg */}

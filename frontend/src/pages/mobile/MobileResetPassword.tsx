@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Lock, EyeOff, Eye, CheckCircle2, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { resetPassword } from '../../api/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function MobileResetPassword() {
   const navigate = useNavigate();
@@ -258,7 +261,7 @@ export default function MobileResetPassword() {
 
             {/* New Password */}
             <div style={{ marginBottom: 14 }}>
-              <label style={{
+              <Label htmlFor="reset-new-password" style={{
                 display: 'block',
                 fontSize: 12.5,
                 fontWeight: 700,
@@ -267,7 +270,7 @@ export default function MobileResetPassword() {
                 letterSpacing: '0.01em',
               }}>
                 New Password
-              </label>
+              </Label>
               <div style={wrapStyle('new', !!error)}>
                 <span style={{
                   position: 'absolute',
@@ -278,7 +281,8 @@ export default function MobileResetPassword() {
                 }}>
                   <Lock size={17} />
                 </span>
-                <input
+                <Input
+                  id="reset-new-password"
                   type={showPass ? 'text' : 'password'}
                   className={error ? 'mr-input-error' : ''}
                   placeholder="At least 6 characters"
@@ -297,14 +301,15 @@ export default function MobileResetPassword() {
                     background: 'transparent',
                     outline: 'none',
                     fontSize: 15,
-                    fontFamily: 'inherit',
                     color: '#0F172A',
                     padding: '16px 52px 16px 46px',
                     boxSizing: 'border-box',
                   }}
                 />
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon"
                   onClick={() => setShowPass(!showPass)}
                   aria-label={showPass ? 'Hide password' : 'Show password'}
                   style={{
@@ -312,24 +317,17 @@ export default function MobileResetPassword() {
                     right: 4,
                     width: 44,
                     height: 44,
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
                     color: '#94A3B8',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderRadius: 10,
                   }}
                 >
                   {showPass ? <Eye size={18} /> : <EyeOff size={18} />}
-                </button>
+                </Button>
               </div>
             </div>
 
             {/* Confirm Password */}
             <div style={{ marginBottom: 20 }}>
-              <label style={{
+              <Label htmlFor="reset-confirm-password" style={{
                 display: 'block',
                 fontSize: 12.5,
                 fontWeight: 700,
@@ -338,7 +336,7 @@ export default function MobileResetPassword() {
                 letterSpacing: '0.01em',
               }}>
                 Confirm New Password
-              </label>
+              </Label>
               <div style={wrapStyle('confirm', !!error)}>
                 <span style={{
                   position: 'absolute',
@@ -349,7 +347,8 @@ export default function MobileResetPassword() {
                 }}>
                   <Lock size={17} />
                 </span>
-                <input
+                <Input
+                  id="reset-confirm-password"
                   type={showPass ? 'text' : 'password'}
                   className={error ? 'mr-input-error' : ''}
                   placeholder="Repeat new password"
@@ -368,7 +367,6 @@ export default function MobileResetPassword() {
                     background: 'transparent',
                     outline: 'none',
                     fontSize: 15,
-                    fontFamily: 'inherit',
                     color: '#0F172A',
                     padding: '16px 16px 16px 46px',
                     boxSizing: 'border-box',
@@ -377,7 +375,7 @@ export default function MobileResetPassword() {
               </div>
             </div>
 
-            <button type="submit" className="mr-auth-btn" disabled={loading || !token}>
+            <Button type="submit" className="mr-auth-btn" disabled={loading || !token} style={{ minHeight: 48 }}>
               {loading ? (
                 <>
                   <span className="mr-spin" /> Updating Password…
@@ -385,7 +383,7 @@ export default function MobileResetPassword() {
               ) : (
                 'Save New Password'
               )}
-            </button>
+            </Button>
           </form>
         )}
       </div>

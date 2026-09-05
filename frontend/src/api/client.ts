@@ -144,5 +144,33 @@ export const createAdmin = (data: { name: string; email: string; password: strin
   api.post('/auth/admin/create', data);
 export const toggleAdminStatus = (id: string) =>
   api.patch(`/auth/admin/${id}/deactivate`);
+export const deleteAdmin = (id: string) =>
+  api.delete(`/auth/admin/${id}`);
+
+// === CALL LOGS ===
+export const getCallLogs = (status?: string, search?: string) => {
+  const params = new URLSearchParams();
+  if (status && status !== 'ALL') params.append('status', status);
+  if (search) params.append('search', search);
+  const qs = params.toString() ? `?${params.toString()}` : '';
+  return cachedGet(`/call-logs${qs}`, 5000);
+};
+
+export const createCallLog = (data: {
+  requestId?: string;
+  callerName?: string;
+  department: string;
+  contact: string;
+  duration?: string;
+  status?: string;
+}) => api.post('/call-logs', data).then(res => {
+  invalidateCache('call-logs');
+  return res;
+});
+
+export const deleteCallLog = (id: string) => api.delete(`/call-logs/${id}`).then(res => {
+  invalidateCache('call-logs');
+  return res;
+});
 
 export default api;

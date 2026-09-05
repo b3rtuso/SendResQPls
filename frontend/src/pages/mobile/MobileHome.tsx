@@ -5,6 +5,8 @@ import BottomNav from '../../components/BottomNav';
 import { getMyIncidents, cachedGet } from '../../api/client';
 import { setupPushNotifications } from '../../utils/pushNotificationHelper';
 import { getStoredNotifications, saveNotifications, type StoredNotif } from './MobileNotifications';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 
 const hotlines = [
@@ -189,20 +191,21 @@ export default function MobileHome() {
               </div>
             </div>
             {/* Clickable Avatar redirects to Profile */}
-            <button
+            <div
               onClick={() => navigate('/mobile/profile')}
-              style={{
-                width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
-                background: 'rgba(255,255,255,0.18)', border: '1.5px solid rgba(255,255,255,0.3)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontWeight: 800, fontSize: 13, color: 'white',
-                backdropFilter: 'blur(4px)', cursor: 'pointer', padding: 0,
-                fontFamily: 'inherit', outline: 'none',
-              }}
+              style={{ cursor: 'pointer' }}
               aria-label="Profile"
             >
-              {initials}
-            </button>
+              <Avatar style={{
+                width: 38, height: 38,
+                background: 'rgba(255,255,255,0.18)', border: '1.5px solid rgba(255,255,255,0.3)',
+                fontWeight: 800, fontSize: 13, color: 'white',
+              }}>
+                <AvatarFallback style={{ background: 'transparent', color: 'white' }}>
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+            </div>
           </div>
           {/* Greeting row */}
           <div>
@@ -298,30 +301,30 @@ export default function MobileHome() {
               role="button"
               tabIndex={0}
               style={{
-                background: '#0F2942',
-                borderLeft: `4px solid ${locStatus === 'PERMISSION_DENIED' ? '#3B82F6' : '#F59E0B'}`,
+                background: '#FFFFFF',
+                border: '1px solid #E2E8F0',
                 borderRadius: 14,
                 padding: '14px 16px',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 12,
                 cursor: 'pointer',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.18)',
+                boxShadow: '0 2px 10px rgba(15, 23, 42, 0.06)',
               }}
             >
               {/* Status dot */}
               <div style={{
                 width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-                background: locStatus === 'PERMISSION_DENIED' ? '#3B82F6' : '#F59E0B',
-                boxShadow: `0 0 0 3px ${locStatus === 'PERMISSION_DENIED' ? 'rgba(59,130,246,0.2)' : 'rgba(245,158,11,0.2)'}`,
+                background: locStatus === 'PERMISSION_DENIED' ? '#2563EB' : '#F59E0B',
+                boxShadow: `0 0 0 3px ${locStatus === 'PERMISSION_DENIED' ? 'rgba(37,99,235,0.15)' : 'rgba(245,158,11,0.15)'}`,
               }} />
 
               {/* Text block */}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 12.5, fontWeight: 800, color: '#F8FAFC', letterSpacing: '-0.1px', marginBottom: 2 }}>
+                <div style={{ fontSize: 12.5, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.1px', marginBottom: 2 }}>
                   {locStatus === 'PERMISSION_DENIED' ? 'Location permission blocked' : 'Location (GPS) is off'}
                 </div>
-                <div style={{ fontSize: 11.5, color: '#94A3B8', lineHeight: 1.4 }}>
+                <div style={{ fontSize: 11.5, color: '#64748B', lineHeight: 1.4 }}>
                   {locStatus === 'PERMISSION_DENIED'
                     ? 'Tap to open App Settings and allow access.'
                     : 'Turn on GPS so responders can find you.'}
@@ -330,20 +333,22 @@ export default function MobileHome() {
 
               {/* Primary action button */}
               {locStatus === 'PERMISSION_DENIED' ? (
-                <button
+                <Button
+                  size="sm"
                   onClick={(e) => { e.stopPropagation(); openAppSettings(); }}
                   style={{
                     flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 5,
-                    padding: '7px 12px', borderRadius: 8,
-                    background: '#3B82F6', border: 'none',
+                    padding: '7px 12px', borderRadius: 8, height: 'auto',
+                    background: '#2563EB', border: 'none',
                     color: 'white', fontSize: 12, fontWeight: 700,
-                    cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' as const,
+                    whiteSpace: 'nowrap' as const,
                   }}
                 >
                   <Lock size={12} /> Settings
-                </button>
+                </Button>
               ) : (
-                <button
+                <Button
+                  size="sm"
                   disabled={locRequesting}
                   onClick={async (e) => {
                     e.stopPropagation();
@@ -352,13 +357,11 @@ export default function MobileHome() {
                   }}
                   style={{
                     flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 5,
-                    padding: '7px 12px', borderRadius: 8,
-                    background: locRequesting ? '#78350F' : '#F59E0B', border: 'none',
+                    padding: '7px 12px', borderRadius: 8, height: 'auto',
+                    background: locRequesting ? '#D97706' : '#F59E0B', border: 'none',
                     color: 'white', fontSize: 12, fontWeight: 700,
-                    cursor: locRequesting ? 'not-allowed' : 'pointer',
-                    fontFamily: 'inherit', whiteSpace: 'nowrap' as const,
+                    whiteSpace: 'nowrap' as const,
                     opacity: locRequesting ? 0.85 : 1,
-                    transition: 'background 0.2s',
                   }}
                 >
                   {locRequesting ? (
@@ -371,7 +374,7 @@ export default function MobileHome() {
                   ) : (
                     <><Navigation size={12} /> Enable GPS</>
                   )}
-                </button>
+                </Button>
               )}
             </div>
           </div>
@@ -606,23 +609,24 @@ export default function MobileHome() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {locStatus === 'PERMISSION_DENIED' ? (
                 /* Permission was blocked — only way is to go to OS settings */
-                <button
+                <Button
                   onClick={() => openAppSettings()}
                   style={{
                     width: '100%', padding: '15px 20px',
                     background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
                     color: 'white', border: 'none', borderRadius: 16,
-                    fontSize: 15, fontWeight: 800, cursor: 'pointer',
+                    fontSize: 15, fontWeight: 800,
                     letterSpacing: '0.02em',
                     boxShadow: '0 4px 16px rgba(37,99,235,0.35)',
-                    fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    minHeight: 48,
                   }}
                 >
                   <Lock size={16} /> Open App Settings
-                </button>
+                </Button>
               ) : (
                 /* GPS off or not yet asked — fire the native browser dialog directly */
-                <button
+                <Button
                   disabled={locRequesting}
                   onClick={async () => {
                     const ok = await requestLocation();
@@ -633,11 +637,11 @@ export default function MobileHome() {
                     background: locRequesting ? '#9A3412' : 'linear-gradient(135deg, #F97316, #EA580C)',
                     color: 'white', border: 'none', borderRadius: 16,
                     fontSize: 15, fontWeight: 800,
-                    cursor: locRequesting ? 'not-allowed' : 'pointer',
                     letterSpacing: '0.02em',
                     boxShadow: '0 4px 16px rgba(249,115,22,0.35)',
-                    fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                     opacity: locRequesting ? 0.85 : 1,
+                    minHeight: 48,
                   }}
                 >
                   {locRequesting ? (
@@ -650,10 +654,11 @@ export default function MobileHome() {
                   ) : (
                     <><Navigation size={16} /> Enable GPS</>
                   )}
-                </button>
+                </Button>
               )}
 
-              <button
+              <Button
+                variant="outline"
                 onClick={async () => {
                   const ok = await recheckLocation();
                   if (ok) {
@@ -664,25 +669,26 @@ export default function MobileHome() {
                   width: '100%', padding: '13px 20px',
                   background: '#F1F5F9', color: '#1E293B',
                   border: '1.5px solid #CBD5E1', borderRadius: 16,
-                  fontSize: 14, fontWeight: 700, cursor: 'pointer',
-                  fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  fontSize: 14, fontWeight: 700,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  minHeight: 48,
                 }}
               >
                 <Navigation size={15} /> Check Location Now
-              </button>
+              </Button>
 
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => setShowLocModal(false)}
                 style={{
                   width: '100%', padding: '11px 20px',
-                  background: 'none', color: '#64748B',
-                  border: 'none', borderRadius: 16,
-                  fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                  fontFamily: 'inherit',
+                  color: '#64748B',
+                  borderRadius: 16,
+                  fontSize: 13, fontWeight: 600,
                 }}
               >
                 Not now
-              </button>
+              </Button>
             </div>
           </div>
         </div>

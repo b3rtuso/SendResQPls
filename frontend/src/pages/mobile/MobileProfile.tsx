@@ -7,6 +7,9 @@ import {
 import { updateProfile, changePassword } from '../../api/client';
 import { useMobileToast } from '../../components/MobileToastProvider';
 import BottomNav from '../../components/BottomNav';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 type Section = 'main' | 'account' | 'contacts' | 'notifications' | 'help';
 
@@ -189,25 +192,29 @@ export default function MobileProfile() {
           textAlign: 'center', color: 'white', width: '100%', boxSizing: 'border-box',
         }}>
           {/* Avatar */}
-          <div style={{
+          <Avatar style={{
             width: 'clamp(72px, 20vw, 96px)', height: 'clamp(72px, 20vw, 96px)',
-            borderRadius: '50%', margin: '0 auto 12px',
+            margin: '0 auto 12px',
             background: 'rgba(255,255,255,0.18)', border: '3px solid rgba(255,255,255,0.35)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 'clamp(24px, 7vw, 34px)', fontWeight: 800, letterSpacing: '-1px',
-          }}>{initials}</div>
+            fontSize: 'clamp(24px, 7vw, 34px)', fontWeight: 800,
+          }}>
+            <AvatarFallback style={{ background: 'transparent', color: 'white' }}>
+              {initials}
+            </AvatarFallback>
+          </Avatar>
 
           <h2 style={{ fontSize: 'clamp(20px, 5.5vw, 26px)', fontWeight: 800, margin: '0 0 4px', lineHeight: 1.2 }}>{name}</h2>
           <p style={{ fontSize: 'clamp(12px, 3.5vw, 14px)', opacity: 0.75, margin: '0 0 2px', wordBreak: 'break-all' }}>{email || 'No email address'}</p>
           <p style={{ fontSize: 'clamp(12px, 3.5vw, 14px)', opacity: 0.75, margin: '0 0 14px' }}>{phone || 'No phone number'}</p>
 
-          <div style={{
+          <Badge style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
             background: 'rgba(255,255,255,0.15)', padding: '6px 16px',
             borderRadius: 20, fontSize: 11, fontWeight: 700, letterSpacing: '0.5px',
+            border: 'none', color: 'white',
           }}>
             <Shield size={12} /> VERIFIED CITIZEN
-          </div>
+          </Badge>
         </div>
 
         {/* Menu */}
@@ -246,15 +253,16 @@ export default function MobileProfile() {
 
         {/* Logout */}
         <div style={{ padding: '16px clamp(14px, 4vw, 20px) 8px' }}>
-          <button onClick={handleLogout} style={{
+          <Button variant="destructive" onClick={handleLogout} style={{
             width: '100%', padding: 'clamp(12px, 3.5vw, 15px)',
             borderRadius: 14, background: '#FEF2F2', color: '#DC2626',
             border: '1.5px solid #FECACA', fontSize: 'clamp(13px, 3.8vw, 15px)',
-            fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font)',
+            fontWeight: 700,
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            minHeight: 48,
           }}>
             <LogOut size={17} /> Log Out
-          </button>
+          </Button>
         </div>
       </div>
       <BottomNav />

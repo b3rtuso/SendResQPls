@@ -6,6 +6,7 @@ import {
   MessageSquare, ChevronDown, Lock, Navigation
 } from 'lucide-react';
 import { reportIncident } from '../../api/client';
+import { Button } from '@/components/ui/button';
 import { isWithinBalayan, getNearestBarangay, BARANGAYS } from '../../data/balayan-data';
 import { useNetworkStatus } from '../../utils/useNetworkStatus';
 import { compressImage } from '../../utils/imageCompressor';
@@ -379,7 +380,9 @@ export default function MobileReport() {
           boxShadow: '0 6px 24px rgba(15, 31, 56, 0.35)',
           borderRadius: '0 0 24px 24px',
         }}>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => navigate('/mobile')}
             style={{
               width: 36,
@@ -390,14 +393,13 @@ export default function MobileReport() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              cursor: 'pointer',
               color: 'white',
               padding: 0,
             }}
             aria-label="Go back"
           >
             <ChevronLeft size={20} />
-          </button>
+          </Button>
           <div>
             <h1 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: 'white', letterSpacing: '-0.2px' }}>Emergency Alert</h1>
             <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', margin: '2px 0 0' }}>MDRRMO Balayan Command Center</p>
@@ -597,7 +599,7 @@ export default function MobileReport() {
         </div>
 
         {/* Submit Button */}
-        <button
+        <Button
           onClick={handleOpenReview}
           disabled={!photo || sending || flushing || resolvingLoc || compressing}
           style={{
@@ -609,24 +611,27 @@ export default function MobileReport() {
             border: 'none',
             fontSize: 16,
             fontWeight: 800,
-            cursor: !photo || sending || flushing || resolvingLoc || compressing ? 'not-allowed' : 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             gap: 10,
             boxShadow: !photo ? 'none' : '0 6px 24px rgba(220,38,38,0.4)',
-            fontFamily: 'inherit',
             transition: 'all 0.2s ease',
+            minHeight: 54,
           }}
         >
           {resolvingLoc ? (
             <><Loader size={20} className="spin" /> VERIFYING LOCATION…</>
           ) : sending ? (
             <><Loader size={20} className="spin" /> DISPATCHING REPORT…</>
+          ) : flushing ? (
+            <><Loader size={20} className="spin" /> SYNCING QUEUED REPORTS…</>
+          ) : !isOnline ? (
+            <>QUEUE REPORT OFFLINE <ArrowRight size={18} /></>
           ) : (
-            <><AlertTriangle size={20} /> REVIEW & SUBMIT REPORT</>
+            <>DISPATCH EMERGENCY ALERT <ArrowRight size={18} /></>
           )}
-        </button>
+        </Button>
       </div>
 
       {/* ── Manual Barangay Selection Modal (Screen-Centered Dialog) ── */}

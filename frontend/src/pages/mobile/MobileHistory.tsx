@@ -6,6 +6,7 @@ import type { Incident, Status } from '../../types';
 import BottomNav from '../../components/BottomNav';
 import { FCM_FOREGROUND_EVENT } from '../../utils/pushNotificationHelper';
 import type { FcmNotificationPayload } from '../../utils/pushNotificationHelper';
+import { Button } from '@/components/ui/button';
 import { getNearestBarangay } from '../../data/balayan-data';
 import { MobileHistorySkeleton } from '../../components/PageLoader';
 
@@ -541,7 +542,9 @@ export default function MobileHistory() {
           )}
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => navigate('/mobile')}
               style={{
                 width: 36,
@@ -552,14 +555,13 @@ export default function MobileHistory() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                cursor: 'pointer',
                 color: 'white',
                 padding: 0,
               }}
               aria-label="Back"
             >
               <ChevronLeft size={20} />
-            </button>
+            </Button>
             <div>
               <h1 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: 'white', letterSpacing: '-0.2px' }}>Report History</h1>
               <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', margin: '2px 0 0' }}>Tap any report to view live response status</p>

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Camera, AlertTriangle, ShieldCheck, MapPin, Navigation } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const ONBOARDING_KEY = 'srq_onboarding_done';
 
@@ -619,29 +620,33 @@ export default function MobileOnboarding({ onDone }: { onDone: () => void }) {
         {/* ── Action Buttons (No Arrow Icons) ── */}
         {isLast ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%' }}>
-            <button
+            <Button
               type="button"
               className="onb-action-btn"
               onClick={handleGetStarted}
+              style={{ minHeight: 48 }}
             >
               Get Started
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="outline"
               className="onb-secondary-btn"
               onClick={handleCreateAccount}
+              style={{ minHeight: 48 }}
             >
               Create an Account
-            </button>
+            </Button>
           </div>
         ) : (
-          <button
+          <Button
             type="button"
             className="onb-action-btn"
             onClick={goNext}
+            style={{ minHeight: 48 }}
           >
             Next
-          </button>
+          </Button>
         )}
       </div>
     </div>

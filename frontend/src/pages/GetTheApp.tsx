@@ -29,13 +29,13 @@ export default function GetTheApp() {
 
         :root {
           --bg:      #0F1F38;
-          --surface: #152A4A;
+          --surface: #172E54;
           --red:     #E63946;
           --yellow:  #F4D03F;
           --blue:    #2563EB;
           --blue-dk: #1D4ED8;
           --white:   #FFFFFF;
-          --text-muted: rgba(255,255,255,0.7);
+          --text-muted: rgba(255,255,255,0.72);
           --divider: rgba(255,255,255,0.12);
           --font:    'Inter Tight', system-ui, sans-serif;
         }
@@ -57,9 +57,8 @@ export default function GetTheApp() {
           justify-content: space-between;
           padding: 0 clamp(20px, 5vw, 72px);
           height: 64px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+          border-bottom: 1px solid var(--divider);
           background: linear-gradient(160deg, #0F1F38 0%, #1D4ED8 60%, #2563EB 100%);
-          box-shadow: 0 4px 20px rgba(15, 31, 56, 0.4);
           position: sticky;
           top: 0;
           z-index: 100;
@@ -203,29 +202,20 @@ export default function GetTheApp() {
           align-items: center;
           gap: 12px;
           padding: 16px 36px;
-          background: linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%);
+          background: var(--blue);
           color: var(--white);
           font-family: var(--font);
           font-size: 15px;
           font-weight: 800;
           letter-spacing: 0.06em;
           text-transform: uppercase;
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          border-radius: 8px;
+          border: none;
           cursor: pointer;
           text-decoration: none;
-          box-shadow: 0 4px 18px rgba(37, 99, 235, 0.4);
-          transition: all 0.2s ease;
+          transition: background 0.15s linear, transform 0.1s ease;
         }
-        .btn-download:hover {
-          background: linear-gradient(135deg, #1e40af 0%, #1D4ED8 100%);
-          box-shadow: 0 6px 24px rgba(37, 99, 235, 0.55);
-          transform: translateY(-1px);
-        }
-        .btn-download:active {
-          transform: translateY(1px);
-          box-shadow: 0 2px 10px rgba(37, 99, 235, 0.35);
-        }
+        .btn-download:hover { background: var(--blue-dk); }
+        .btn-download:active { transform: translateY(1px); }
 
         .gta-meta-text {
           font-size: 12px;

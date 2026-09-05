@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { login as apiLogin } from '../api/client';
 import { Lock, Eye, EyeOff, AlertTriangle, Clock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function AdminLogin() {
   const navigate = useNavigate();
@@ -376,7 +379,8 @@ export default function AdminLogin() {
 
             {/* Email field */}
             <div style={{ marginBottom: 16 }}>
-              <label
+              <Label
+                htmlFor="admin-email"
                 style={{
                   display: 'block',
                   fontSize: 12.5,
@@ -387,7 +391,7 @@ export default function AdminLogin() {
                 }}
               >
                 Admin Email Address
-              </label>
+              </Label>
               <div style={wrapStyle('email')}>
                 <span
                   style={{
@@ -412,7 +416,8 @@ export default function AdminLogin() {
                     <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
                   </svg>
                 </span>
-                <input
+                <Input
+                  id="admin-email"
                   type="email"
                   className={error ? 'al-input-error' : ''}
                   placeholder="admin@balayan.gov.ph"
@@ -429,7 +434,8 @@ export default function AdminLogin() {
 
             {/* Password field */}
             <div style={{ marginBottom: 24 }}>
-              <label
+              <Label
+                htmlFor="admin-password"
                 style={{
                   display: 'block',
                   fontSize: 12.5,
@@ -440,7 +446,7 @@ export default function AdminLogin() {
                 }}
               >
                 Password
-              </label>
+              </Label>
               <div style={wrapStyle('pass')}>
                 <span
                   style={{
@@ -453,7 +459,8 @@ export default function AdminLogin() {
                 >
                   <Lock size={18} />
                 </span>
-                <input
+                <Input
+                  id="admin-password"
                   type={showPass ? 'text' : 'password'}
                   className={error ? 'al-input-error' : ''}
                   placeholder="••••••••"
@@ -465,28 +472,29 @@ export default function AdminLogin() {
                   style={{ ...inputStyle(), paddingRight: 48 }}
                   autoComplete="current-password"
                 />
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon"
                   onClick={() => setShowPass(!showPass)}
                   style={{
                     position: 'absolute',
-                    right: 12,
+                    right: 4,
                     background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
                     color: '#94A3B8',
-                    display: 'flex',
                     padding: 4,
+                    height: 32,
+                    width: 32,
                   }}
                   aria-label={showPass ? 'Hide password' : 'Show password'}
                 >
                   {showPass ? <Eye size={18} /> : <EyeOff size={18} />}
-                </button>
+                </Button>
               </div>
             </div>
 
             {/* Login button */}
-            <button type="submit" className="al-auth-btn" disabled={loading}>
+            <Button type="submit" className="al-auth-btn" disabled={loading}>
               {loading ? (
                 <>
                   <span className="al-spin" /> Authenticating...
@@ -494,28 +502,22 @@ export default function AdminLogin() {
               ) : (
                 'Access Command Center'
               )}
-            </button>
+            </Button>
 
             {/* Return to landing page */}
             <div style={{ textAlign: 'center', marginTop: 20 }}>
-              <button
+              <Button
                 type="button"
+                variant="ghost"
                 onClick={() => navigate('/')}
                 style={{
-                  background: 'none',
-                  border: 'none',
                   color: '#64748B',
                   fontSize: 13,
                   fontWeight: 600,
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                  transition: 'color 0.15s',
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = '#2563EB')}
-                onMouseLeave={(e) => (e.currentTarget.style.color = '#64748B')}
               >
                 Return to Main Page
-              </button>
+              </Button>
             </div>
           </form>
 

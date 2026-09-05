@@ -379,3 +379,49 @@ export const deactivateAdmin = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ error: 'Failed to update admin account status' });
   }
 };
+
+// DELETE /api/auth/admin/:id — Permanently delete an admin account & credentials (admin only)
+export const deleteAdmin = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // 1. Prevent self-deletion
+    if (id === req.user!.userId) {
+      return res.status(400).json({ error: 'You cannot delete your own account.' });
+    }
+
+    // 2. Verify admin exists
+    const target = await prisma.user.findUnique({ where: { id } });
+    if (!target) {
+      return res.status(404).json({ error: 'Admin account not found.' });
+    }
+    if (target.role !== 'ADMIN') {
+      return res.status(400).json({ error: 'Only administrator accounts can be deleted here.' });
+    }
+
+    // 3. Prevent deleting the only remaining active admin
+    const activeAdminCount = await prisma.user.count({
+      where: { role: 'ADMIN', isActive: true, NOT: { id } }
+    });
+    if (activeAdminCount === 0) {
+      return res.status(400).json({ error: 'Cannot delete the only remaining active administrator account.' });
+    }
+
+    // 4. Check for linked incident reports to prevent foreign key violations
+    const incidentCount = await prisma.incident.count({ where: { reporterId: id } });
+    if (incidentCount > 0) {
+      return res.status(400).json({
+        error: `Cannot delete admin: this account is linked to ${incidentCount} incident report(s). Please deactivate the account instead.`
+      });
+    }
+
+    // 5. Permanently remove the admin and their credentials from the database
+    await prisma.user.delete({ where: { id } });
+
+    console.log(`🗑️ Admin ${target.email} (ID: ${id}) permanently deleted by ${req.user!.userId}`);
+    res.json({ message: `Administrator account for ${target.name} (${target.email}) permanently deleted.` });
+  } catch (error: any) {
+    console.error('❌ Delete admin error:', error.message);
+    res.status(500).json({ error: 'Failed to delete administrator account' });
+  }
+};

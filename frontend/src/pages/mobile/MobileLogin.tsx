@@ -3,6 +3,9 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { login as apiLogin } from '../../api/client';
 import { setupPushNotifications } from '../../utils/pushNotificationHelper';
 import { Lock, Eye, EyeOff, AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function MobileLogin() {
   const navigate = useNavigate();
@@ -167,12 +170,13 @@ export default function MobileLogin() {
 
         {/* Email field */}
         <div style={{ marginBottom: emailError && emailError !== 'error' ? 6 : 14 }}>
-          <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: emailError ? '#DC2626' : '#374151', marginBottom: 6, letterSpacing: '0.01em' }}>Email Address</label>
+          <Label htmlFor="mobile-email" style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: emailError ? '#DC2626' : '#374151', marginBottom: 6, letterSpacing: '0.01em' }}>Email Address</Label>
           <div style={wrapStyle('email', !!emailError)}>
             <span style={{ position: 'absolute', left: 14, color: emailError ? '#EF4444' : focusField === 'email' ? '#2563EB' : '#94A3B8', display: 'flex', transition: 'color 0.18s' }}>
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
             </span>
-            <input
+            <Input
+              id="mobile-email"
               type="email"
               className={emailError ? 'ml-input-error' : ''}
               placeholder="juan@example.com"
@@ -199,12 +203,13 @@ export default function MobileLogin() {
 
         {/* Password field */}
         <div style={{ marginBottom: passError && passError !== 'error' ? 4 : 8 }}>
-          <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: passError ? '#DC2626' : '#374151', marginBottom: 6, letterSpacing: '0.01em' }}>Password</label>
+          <Label htmlFor="mobile-password" style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: passError ? '#DC2626' : '#374151', marginBottom: 6, letterSpacing: '0.01em' }}>Password</Label>
           <div style={wrapStyle('pass', !!passError)}>
             <span style={{ position: 'absolute', left: 14, color: passError ? '#EF4444' : focusField === 'pass' ? '#2563EB' : '#94A3B8', display: 'flex', transition: 'color 0.18s' }}>
               <Lock size={17} />
             </span>
-            <input
+            <Input
+              id="mobile-password"
               type={showPass ? 'text' : 'password'}
               className={passError ? 'ml-input-error' : ''}
               placeholder="••••••••"
@@ -221,21 +226,20 @@ export default function MobileLogin() {
               style={{ ...inputStyle(), paddingRight: 52 }}
             />
             {/* 44×44 tap target for eye toggle */}
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon"
               onClick={() => setShowPass(!showPass)}
               aria-label={showPass ? 'Hide password' : 'Show password'}
               style={{
                 position: 'absolute', right: 4,
                 width: 44, height: 44,
-                background: 'none', border: 'none',
-                cursor: 'pointer', color: '#94A3B8',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                borderRadius: 10, transition: 'color 0.15s',
+                color: '#94A3B8',
               }}
             >
               {showPass ? <Eye size={18} /> : <EyeOff size={18} />}
-            </button>
+            </Button>
           </div>
         </div>
         {passError && passError !== 'error' && (
@@ -279,12 +283,12 @@ export default function MobileLogin() {
         </div>
 
         {/* Login button */}
-        <button type="submit" className="ml-auth-btn" disabled={loading}>
+        <Button type="submit" className="ml-auth-btn" disabled={loading} style={{ minHeight: 48 }}>
           {loading
             ? <><span className="ml-spin" /> Please wait...</>
             : 'Log In'
           }
-        </button>
+        </Button>
 
         {/* Footer */}
         <p style={{ textAlign: 'center', marginTop: 20, fontSize: 13.5, color: '#64748B' }}>

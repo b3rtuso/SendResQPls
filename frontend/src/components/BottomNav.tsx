@@ -29,11 +29,9 @@ export default function BottomNav() {
           display: flex !important;
           align-items: center !important;
           justify-content: space-around !important;
-          background: linear-gradient(160deg, #0F1F38 0%, #1D4ED8 60%, #2563EB 100%) !important;
-          backdrop-filter: blur(20px) !important;
-          -webkit-backdrop-filter: blur(20px) !important;
-          border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
-          box-shadow: 0 -6px 24px rgba(15, 31, 56, 0.45) !important;
+          background: #FFFFFF !important;
+          border-top: 1px solid #E2E8F0 !important;
+          box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05) !important;
           z-index: 99999 !important;
           padding: 0 4px env(safe-area-inset-bottom, 0px) !important;
           box-sizing: border-box !important;
@@ -49,7 +47,7 @@ export default function BottomNav() {
           text-decoration: none;
           font-size: 9.5px;
           font-weight: 600;
-          color: rgba(255, 255, 255, 0.65);
+          color: #94A3B8;
           padding: 6px 0;
           min-width: 60px;
           min-height: 56px;
@@ -62,13 +60,9 @@ export default function BottomNav() {
           cursor: pointer;
         }
 
-        .bn-tab:hover {
-          color: rgba(255, 255, 255, 0.9);
-        }
-
-        /* Active state — crisp white with bold weight */
+        /* Active state — default blue */
         .bn-tab.active {
-          color: #FFFFFF;
+          color: #2563EB;
           font-weight: 800;
         }
 
@@ -86,20 +80,20 @@ export default function BottomNav() {
           width: 4px;
           height: 4px;
           border-radius: 50%;
-          background: #FFFFFF;
+          background: #2563EB;
           opacity: 0;
           transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
         /* Report tab active — red */
         .bn-report-tab.active {
-          color: #FECACA;
+          color: #DC2626;
         }
         .bn-report-tab.active .bn-dot {
-          background: #EF4444;
+          background: #DC2626;
         }
 
-        /* Icon wrapper — subtle luminous glass background on active */
+        /* Icon wrapper — subtle background on active */
         .bn-icon-wrap {
           width: 34px;
           height: 34px;
@@ -111,14 +105,12 @@ export default function BottomNav() {
           position: relative;
         }
         .bn-tab.active .bn-icon-wrap {
-          background: rgba(255, 255, 255, 0.2);
-          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+          background: rgba(37, 99, 235, 0.12);
           transform: translateY(-2px) scale(1.08);
           animation: bnTabActiveBounce 0.36s cubic-bezier(0.34, 1.56, 0.64, 1) both;
         }
         .bn-report-tab.active .bn-icon-wrap {
-          background: rgba(239, 68, 68, 0.35);
-          box-shadow: 0 2px 10px rgba(220, 38, 38, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+          background: rgba(220, 38, 38, 0.12);
         }
 
         @keyframes bnTabActiveBounce {
@@ -153,8 +145,8 @@ export default function BottomNav() {
           line-height: 17px;
           text-align: center;
           padding: 0 4px;
-          border: 2px solid #0F1F38;
-          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+          border: 2px solid white;
+          box-shadow: 0 2px 6px rgba(239, 68, 68, 0.45);
           animation: badgePop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
         }
 

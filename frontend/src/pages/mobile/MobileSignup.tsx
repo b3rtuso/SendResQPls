@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { User, Phone, Mail, Lock, EyeOff, Eye, CheckCircle } from 'lucide-react';
 import { register as apiRegister, sendVerificationCode, verifyCode } from '../../api/client';
 import { useMobileToast } from '../../components/MobileToastProvider';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function MobileSignup() {
   const navigate = useNavigate();
@@ -193,28 +196,28 @@ export default function MobileSignup() {
 
         <form autoComplete="on" onSubmit={(e) => e.preventDefault()} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div className="input-group">
-            <label>Full Name</label>
+            <Label>Full Name</Label>
             <div className="input-wrapper">
               <User size={18} className="input-icon" />
-              <input autoComplete="name" placeholder="Juan Dela Cruz" value={form.name} onChange={(e) => update('name', e.target.value)} />
+              <Input autoComplete="name" placeholder="Juan Dela Cruz" value={form.name} onChange={(e) => update('name', e.target.value)} />
             </div>
           </div>
 
           <div className="input-group">
-            <label>Phone Number</label>
+            <Label>Phone Number</Label>
             <div className="input-wrapper">
               <Phone size={18} className="input-icon" />
-              <input type="tel" autoComplete="tel" placeholder="+63 900 000 0000" value={form.phone} onChange={(e) => update('phone', e.target.value.replace(/[^0-9+ ]/g, ''))} />
+              <Input type="tel" autoComplete="tel" placeholder="+63 900 000 0000" value={form.phone} onChange={(e) => update('phone', e.target.value.replace(/[^0-9+ ]/g, ''))} />
             </div>
           </div>
 
           {/* Email + Send Code */}
           <div className="input-group">
-            <label>Email Address</label>
+            <Label>Email Address</Label>
             <div style={{ display: 'flex', gap: 8, alignItems: 'stretch', flexWrap: 'nowrap' }}>
               <div className="input-wrapper" style={{ flex: 1, minWidth: 0 }}>
                 <Mail size={18} className="input-icon" style={{ flexShrink: 0 }} />
-                <input
+                <Input
                   type="email"
                   autoComplete="email"
                   placeholder="juan@example.com"
@@ -227,7 +230,7 @@ export default function MobileSignup() {
                   style={verified ? { color: '#22C55E', fontWeight: 600 } : undefined}
                 />
               </div>
-              <button
+              <Button
                 type="button"
                 onClick={handleSendCode}
                 disabled={sendingCode || cooldown > 0 || verified || !form.email}
@@ -255,7 +258,7 @@ export default function MobileSignup() {
                 ) : (
                   'Send Code'
                 )}
-              </button>
+              </Button>
             </div>
             {sendingCode && (
               <p style={{ fontSize: 11, color: '#64748B', marginTop: 6, lineHeight: 1.4 }}>
@@ -272,11 +275,11 @@ export default function MobileSignup() {
           {/* Verification Code Input */}
           {codeSent && !verified && (
             <div className="input-group" style={{ animation: 'fadeIn 0.3s ease' }}>
-              <label>Verification Code</label>
+              <Label>Verification Code</Label>
               <div style={{ display: 'flex', gap: 8, alignItems: 'stretch', flexWrap: 'nowrap' }}>
                 <div className="input-wrapper" style={{ flex: 1, minWidth: 0 }}>
                   <Lock size={18} className="input-icon" />
-                  <input
+                  <Input
                     type="text"
                     autoComplete="one-time-code"
                     placeholder="Enter the code"
@@ -286,7 +289,7 @@ export default function MobileSignup() {
                     style={{ letterSpacing: 2, fontWeight: 700, fontSize: 18, paddingLeft: 46 }}
                   />
                 </div>
-                <button
+                <Button
                   type="button"
                   onClick={handleVerifyCode}
                   disabled={verifying || codeInput.length !== 6}
@@ -295,43 +298,43 @@ export default function MobileSignup() {
                     padding: '0 16px', borderRadius: 12,
                     fontSize: 13, fontWeight: 700,
                     background: '#3B82F6', color: 'white',
-                    border: 'none', cursor: 'pointer',
+                    border: 'none',
                     opacity: (verifying || codeInput.length !== 6) ? 0.5 : 1,
-                    fontFamily: 'var(--font)', minHeight: 50,
+                    minHeight: 50,
                   }}
                 >
                   {verifying ? '...' : 'Verify'}
-                </button>
+                </Button>
               </div>
             </div>
           )}
 
           <div className="input-group">
-            <label>Password</label>
+            <Label>Password</Label>
             <div className="input-wrapper">
               <Lock size={18} className="input-icon" />
-              <input
+              <Input
                 type={showPass ? 'text' : 'password'}
                 autoComplete="new-password"
                 placeholder="••••••••"
                 value={form.password}
                 onChange={(e) => update('password', e.target.value)}
               />
-              <button type="button" className="toggle-pass" onClick={() => setShowPass(!showPass)}>
+              <Button type="button" variant="ghost" size="icon" className="toggle-pass" onClick={() => setShowPass(!showPass)} style={{ width: 44, height: 44 }}>
                 {showPass ? <Eye size={18} /> : <EyeOff size={18} />}
-              </button>
+              </Button>
             </div>
           </div>
 
-          <button
+          <Button
             type="button"
             className="auth-btn signup"
             onClick={handleSignup}
             disabled={loading || !verified}
-            style={{ marginTop: 8, opacity: !verified ? 0.5 : 1 }}
+            style={{ marginTop: 8, opacity: !verified ? 0.5 : 1, minHeight: 48 }}
           >
             {loading ? 'Creating...' : 'Create Account'}
-          </button>
+          </Button>
         </form>
 
         <p className="auth-footer" style={{ marginTop: 24 }}>

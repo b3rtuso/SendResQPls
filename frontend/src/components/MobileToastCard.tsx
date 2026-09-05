@@ -32,7 +32,6 @@ const STATUS_COLOR: Record<string, string> = {
 export default function MobileToastCard({ toast, onDismiss, index }: MobileToastCardProps) {
   const navigate = useNavigate();
   const [phase, setPhase] = useState<'enter' | 'visible' | 'exit'>('enter');
-  const [progress, setProgress] = useState(100);
 
   // Swipe state
   const [swipeX, setSwipeX] = useState(0);
@@ -41,7 +40,6 @@ export default function MobileToastCard({ toast, onDismiss, index }: MobileToast
 
   // Timer refs
   const timerRef   = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const rafRef     = useRef<number | null>(null);
   const startRef   = useRef<number | null>(null);
   const pausedAt   = useRef<number | null>(null);  // remaining ms when paused
   const isPaused   = useRef(false);
@@ -57,24 +55,8 @@ export default function MobileToastCard({ toast, onDismiss, index }: MobileToast
   const triggerExit = () => {
     if (phase === 'exit') return;
     setPhase('exit');
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
     if (timerRef.current) clearTimeout(timerRef.current);
     setTimeout(() => onDismiss(toast.id), 300);
-  };
-
-  // Progress bar RAF
-  const startProgress = (remaining: number) => {
-    if (duration === 0) return;
-    startRef.current = performance.now();
-    const tick = (now: number) => {
-      const elapsed = now - (startRef.current ?? now);
-      const pct = Math.max(0, (remaining - elapsed) / duration * 100);
-      setProgress(pct);
-      if (pct > 0 && !isPaused.current) {
-        rafRef.current = requestAnimationFrame(tick);
-      }
-    };
-    rafRef.current = requestAnimationFrame(tick);
   };
 
   const startTimer = (remaining: number) => {
@@ -87,8 +69,6 @@ export default function MobileToastCard({ toast, onDismiss, index }: MobileToast
     if (duration === 0 || isPaused.current) return;
     isPaused.current = true;
     if (timerRef.current) clearTimeout(timerRef.current);
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    // How much time has already elapsed?
     const elapsed = startRef.current ? performance.now() - startRef.current : 0;
     pausedAt.current = Math.max(0, duration - elapsed);
   };
@@ -98,7 +78,6 @@ export default function MobileToastCard({ toast, onDismiss, index }: MobileToast
     isPaused.current = false;
     const remaining = pausedAt.current ?? duration;
     startRef.current = performance.now();
-    startProgress(remaining);
     startTimer(remaining);
   };
 
@@ -107,13 +86,12 @@ export default function MobileToastCard({ toast, onDismiss, index }: MobileToast
     const enterT = setTimeout(() => setPhase('visible'), 20);
     // Start auto-dismiss
     if (duration > 0) {
-      startProgress(duration);
+      startRef.current = performance.now();
       startTimer(duration);
     }
     return () => {
       clearTimeout(enterT);
       if (timerRef.current) clearTimeout(timerRef.current);
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -141,7 +119,6 @@ export default function MobileToastCard({ toast, onDismiss, index }: MobileToast
       setSwipeX(swipeX > 0 ? 400 : -400);
       setPhase('exit');
       if (timerRef.current) clearTimeout(timerRef.current);
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
       setTimeout(() => onDismiss(toast.id), 280);
     } else {
       // Snap back
@@ -276,18 +253,6 @@ export default function MobileToastCard({ toast, onDismiss, index }: MobileToast
           <X size={12} strokeWidth={2.5} />
         </button>
       </div>
-
-      {/* Progress bar */}
-      {duration > 0 && (
-        <div style={{ height: 2, background: '#F1F5F9' }}>
-          <div style={{
-            height: '100%', width: `${progress}%`,
-            background: `linear-gradient(to right, ${accent}88, ${accent})`,
-            transition: 'width 0.1s linear',
-            borderRadius: '0 2px 2px 0',
-          }} />
-        </div>
-      )}
 
       {/* Swipe hint overlay (appears when swipe starts) */}
       {Math.abs(swipeX) > 15 && (

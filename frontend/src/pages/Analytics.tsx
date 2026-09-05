@@ -9,6 +9,8 @@ import {
   TrendingUp, FileText, Download, MapPin, BarChart3, Calendar, Loader2, CheckCircle2,
   Flame, Waves, Stethoscope, Activity, ShieldAlert, Info, Car, Wind, Mountain, AlertTriangle
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -923,14 +925,14 @@ export default function Analytics() {
                       onChange={e => setSelectedDay(e.target.value)}
                     />
                   </div>
-                  <button
+                  <Button
                     className="btn btn-primary"
                     style={{ width: '100%', justifyContent: 'center', gap: 8, background: downloadDone === 'daily' ? 'var(--success)' : undefined, transition: 'background 0.3s' }}
                     onClick={() => handleDownload('daily')}
                     disabled={downloading === 'daily'}
                   >
                     {downloading === 'daily' ? <><Loader2 size={15} className="spin" /> Generating…</> : downloadDone === 'daily' ? <><CheckCircle2 size={15} /> Downloaded!</> : <><Download size={15} /> Download .docx</>}
-                  </button>
+                  </Button>
                   <div style={{ fontSize: 10.5, color: 'var(--text-muted)', fontFamily: 'var(--font)', textAlign: 'center' }}>Microsoft Word · MDRRMO soft copy format</div>
                 </div>
               </div>
@@ -959,14 +961,14 @@ export default function Analytics() {
                       onChange={e => setSelectedWeek(e.target.value)}
                     />
                   </div>
-                  <button
+                  <Button
                     className="btn btn-primary"
                     style={{ width: '100%', justifyContent: 'center', gap: 8, background: downloadDone === 'weekly' ? 'var(--success)' : '#F59E0B', borderColor: '#D97706', transition: 'background 0.3s' }}
                     onClick={() => handleDownload('weekly')}
                     disabled={downloading === 'weekly'}
                   >
                     {downloading === 'weekly' ? <><Loader2 size={15} className="spin" /> Generating…</> : downloadDone === 'weekly' ? <><CheckCircle2 size={15} /> Downloaded!</> : <><Download size={15} /> Download .docx</>}
-                  </button>
+                  </Button>
                   <div style={{ fontSize: 10.5, color: 'var(--text-muted)', fontFamily: 'var(--font)', textAlign: 'center' }}>Microsoft Word · MDRRMO soft copy format</div>
                 </div>
               </div>
@@ -995,14 +997,14 @@ export default function Analytics() {
                       onChange={e => setSelectedMonth(e.target.value)}
                     />
                   </div>
-                  <button
+                  <Button
                     className="btn btn-primary"
                     style={{ width: '100%', justifyContent: 'center', gap: 8, background: downloadDone === 'monthly' ? 'var(--success)' : '#22C55E', borderColor: '#16A34A', transition: 'background 0.3s' }}
                     onClick={() => handleDownload('monthly')}
                     disabled={downloading === 'monthly'}
                   >
                     {downloading === 'monthly' ? <><Loader2 size={15} className="spin" /> Generating…</> : downloadDone === 'monthly' ? <><CheckCircle2 size={15} /> Downloaded!</> : <><Download size={15} /> Download .docx</>}
-                  </button>
+                  </Button>
                   <div style={{ fontSize: 10.5, color: 'var(--text-muted)', fontFamily: 'var(--font)', textAlign: 'center' }}>Microsoft Word · MDRRMO soft copy format</div>
                 </div>
               </div>
@@ -1023,9 +1025,9 @@ export default function Analytics() {
                   <option value="Annual">Annual</option>
                 </select>
               </div>
-              <button className="btn btn-primary btn-sm" onClick={() => generateFullReport()}>
+              <Button size="sm" className="btn btn-primary btn-sm" onClick={() => generateFullReport()}>
                 <Download size={14} /> Export Full Report (CSV)
-              </button>
+              </Button>
             </div>
 
             <div className="card" style={{ marginBottom: 24 }}>
@@ -1045,15 +1047,15 @@ export default function Analytics() {
                       <td style={{ fontWeight: 600 }}>{r.id}</td>
                       <td>{r.title}</td>
                       <td>
-                        <span className={`badge ${r.type === 'Annual' ? 'resolved' : r.type === 'Monthly' ? 'reviewing' : 'dispatched'}`}>
+                        <Badge className={`badge ${r.type === 'Annual' ? 'resolved' : r.type === 'Monthly' ? 'reviewing' : 'dispatched'}`}>
                           {r.type}
-                        </span>
+                        </Badge>
                       </td>
                       <td>{r.generated}</td>
                       <td>
-                        <button className="btn btn-outline btn-sm" onClick={() => downloadReport(r.id)}>
+                        <Button size="sm" variant="outline" className="btn btn-outline btn-sm" onClick={() => downloadReport(r.id)}>
                           <Download size={14} /> Download CSV
-                        </button>
+                        </Button>
                       </td>
                     </tr>
                   ))}

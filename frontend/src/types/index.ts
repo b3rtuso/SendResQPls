@@ -61,6 +61,8 @@ export interface IncidentActivity {
   createdAt: string;
 }
 
+export type Severity = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+
 export interface Incident {
   id: string;
   latitude: number;
@@ -70,6 +72,8 @@ export interface Incident {
   aiRecommendedDept?: Department;
   assignedDepartment?: Department;
   status: Status;
+  severity?: Severity;
+  urgencyScore?: number;
   adminNotes?: string;
   reporterId: string;
   reporter?: User;
@@ -88,12 +92,14 @@ export interface DashboardStats {
 
 export interface CallLog {
   id: string;
-  requestId: string;
+  requestId?: string | null;
   callerName: string;
   department: string;
+  contact: string;
   duration: string;
   status: 'Accepted' | 'No Response' | 'Declined';
   timestamp: string;
+  createdAt?: string;
 }
 
 export interface DepartmentInfo {

@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, ArrowLeft, AlertTriangle, CheckCircle2, Send } from 'lucide-react';
 import { forgotPassword } from '../../api/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function MobileForgotPassword() {
   const navigate = useNavigate();
@@ -278,7 +281,7 @@ export default function MobileForgotPassword() {
             )}
 
             <div style={{ marginBottom: 18 }}>
-              <label style={{
+              <Label htmlFor="forgot-email" style={{
                 display: 'block',
                 fontSize: 12.5,
                 fontWeight: 700,
@@ -287,7 +290,7 @@ export default function MobileForgotPassword() {
                 letterSpacing: '0.01em',
               }}>
                 Registered Email Address
-              </label>
+              </Label>
               <div style={wrapStyle(!!error)}>
                 <span style={{
                   position: 'absolute',
@@ -298,7 +301,8 @@ export default function MobileForgotPassword() {
                 }}>
                   <Mail size={18} />
                 </span>
-                <input
+                <Input
+                  id="forgot-email"
                   type="email"
                   className={error ? 'mf-input-error' : ''}
                   placeholder="juan@example.com"
@@ -317,7 +321,6 @@ export default function MobileForgotPassword() {
                     background: 'transparent',
                     outline: 'none',
                     fontSize: 15,
-                    fontFamily: 'inherit',
                     color: '#0F172A',
                     padding: '16px 16px 16px 46px',
                     boxSizing: 'border-box',
@@ -326,7 +329,7 @@ export default function MobileForgotPassword() {
               </div>
             </div>
 
-            <button type="submit" className="mf-auth-btn" disabled={loading}>
+            <Button type="submit" className="mf-auth-btn" disabled={loading} style={{ minHeight: 48 }}>
               {loading ? (
                 <>
                   <span className="mf-spin" /> Sending Link…
@@ -336,25 +339,21 @@ export default function MobileForgotPassword() {
                   <Send size={16} /> Send Reset Link
                 </>
               )}
-            </button>
+            </Button>
 
             <div style={{ textAlign: 'center', marginTop: 22 }}>
-              <button
+              <Button
                 type="button"
+                variant="ghost"
                 onClick={() => navigate('/mobile/login')}
                 style={{
-                  background: 'none',
-                  border: 'none',
                   color: '#2563EB',
                   fontSize: 13.5,
                   fontWeight: 700,
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                  padding: 4,
                 }}
               >
                 Remembered your password? Log in
-              </button>
+              </Button>
             </div>
           </form>
         )}

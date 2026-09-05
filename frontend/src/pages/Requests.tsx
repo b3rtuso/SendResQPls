@@ -5,6 +5,8 @@ import { RequestsTableSkeleton } from '../components/PageLoader';
 import { Search, RefreshCw, ChevronLeft, ChevronRight, Image as ImageIcon, X, CheckCircle2, Filter, ArrowRight, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import type { Incident, Status, Department } from '../types';
 import { getIncidents, updateIncidentStatus, invalidateCache } from '../api/client';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { getNearestBarangay } from '../data/balayan-data';
 import { normalizeIncidentType } from '../utils/normalizeIncidentType';
 
@@ -107,6 +109,38 @@ function timeAgo(date: string) {
   return `${Math.floor(h / 24)}d ago`;
 }
 
+export function getIncidentUrgencyScore(inc: Incident): number {
+  let baseScore = inc.urgencyScore;
+  if (!baseScore || typeof baseScore !== 'number') {
+    const sev = (inc.severity || '').toUpperCase();
+    if (sev === 'CRITICAL') baseScore = 90;
+    else if (sev === 'HIGH') baseScore = 75;
+    else if (sev === 'MEDIUM') baseScore = 50;
+    else if (sev === 'LOW') baseScore = 25;
+    else {
+      const type = (inc.aiDetectedType || '').toLowerCase();
+      if (type.includes('fire') || type.includes('explosion') || type.includes('trauma') || type.includes('shooting')) baseScore = 95;
+      else if (type.includes('accident') || type.includes('medical') || type.includes('flood') || type.includes('landslide')) baseScore = 75;
+      else if (type.includes('tree') || type.includes('road') || type.includes('hazard')) baseScore = 50;
+      else baseScore = 30;
+    }
+  }
+
+  let statusModifier = 0;
+  if (inc.status === 'PENDING') statusModifier = 15;
+  else if (inc.status === 'REVIEWING') statusModifier = 10;
+  else if (inc.status === 'DISPATCHED') statusModifier = 0;
+  else if (inc.status === 'RESOLVED' || inc.status === 'REJECTED') statusModifier = -100;
+
+  let timeModifier = 0;
+  if (inc.status === 'PENDING' || inc.status === 'REVIEWING') {
+    const elapsedMinutes = Math.floor((Date.now() - new Date(inc.createdAt).getTime()) / 60000);
+    timeModifier = Math.min(15, Math.floor(elapsedMinutes / 5));
+  }
+
+  return baseScore + statusModifier + timeModifier;
+}
+
 export default function Requests() {
   const navigate = useNavigate();
   const [incidents, setIncidents] = useState<Incident[]>([]);
@@ -124,8 +158,8 @@ export default function Requests() {
   const [batchLoading, setBatchLoading] = useState(false);
 
   // Sorting state
-  type SortKey = 'id' | 'type' | 'location' | 'unit' | 'status' | 'createdAt';
-  const [sortKey, setSortKey] = useState<SortKey>('createdAt');
+  type SortKey = 'id' | 'type' | 'location' | 'unit' | 'status' | 'createdAt' | 'urgency';
+  const [sortKey, setSortKey] = useState<SortKey>('urgency');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
   const handleSort = (key: SortKey) => {
@@ -280,6 +314,10 @@ export default function Requests() {
         case 'status':
           valA = a.status;
           valB = b.status;
+          break;
+        case 'urgency':
+          valA = getIncidentUrgencyScore(a);
+          valB = getIncidentUrgencyScore(b);
           break;
         case 'createdAt':
         default:
@@ -627,6 +665,14 @@ export default function Requests() {
                           ) : <ArrowUpDown size={12} style={{ opacity: 0.4 }} />}
                         </div>
                       </th>
+                      <th className="rq-th sortable" onClick={() => handleSort('urgency')}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                          <span>Urgency</span>
+                          {sortKey === 'urgency' ? (
+                            sortDir === 'asc' ? <ArrowUp size={13} color="#DC2626" /> : <ArrowDown size={13} color="#DC2626" />
+                          ) : <ArrowUpDown size={12} style={{ opacity: 0.4 }} />}
+                        </div>
+                      </th>
                       <th className="rq-th" style={{ textAlign: 'right' }}>Actions</th>
                     </tr>
                   </thead>
@@ -717,7 +763,7 @@ export default function Requests() {
 
                           {/* Status */}
                           <td className="rq-td">
-                            <span style={{
+                            <Badge style={{
                               padding: '4px 10px',
                               borderRadius: 999,
                               background: ss.bg,
@@ -728,7 +774,7 @@ export default function Requests() {
                               letterSpacing: '0.04em',
                             }}>
                               {inc.status}
-                            </span>
+                            </Badge>
                           </td>
 
                           {/* Reported time */}
@@ -736,25 +782,60 @@ export default function Requests() {
                             {timeAgo(inc.createdAt)}
                           </td>
 
+                          {/* Urgency/Severity Badge */}
+                          <td className="rq-td">
+                            {(() => {
+                              const sev = (inc.severity || '').toUpperCase() || 'MEDIUM';
+                              const score = inc.urgencyScore ?? getIncidentUrgencyScore(inc);
+                              const isTerminal = inc.status === 'RESOLVED' || inc.status === 'REJECTED';
+                              const sevColors: Record<string, { bg: string; color: string; border: string; pulse?: boolean }> = {
+                                CRITICAL: { bg: '#FEE2E2', color: '#DC2626', border: '#FECACA', pulse: true },
+                                HIGH:     { bg: '#FFEDD5', color: '#EA580C', border: '#FED7AA', pulse: true },
+                                MEDIUM:   { bg: '#DBEAFE', color: '#2563EB', border: '#BFDBFE' },
+                                LOW:      { bg: '#F1F5F9', color: '#94A3B8', border: '#E2E8F0' },
+                              };
+                              const s = sevColors[sev] || sevColors.MEDIUM;
+                              if (isTerminal) return <span style={{ fontSize: 11, color: '#94A3B8' }}>—</span>;
+                              return (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                                  <Badge style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: 4,
+                                    padding: '3px 8px', borderRadius: 6, fontSize: 11, fontWeight: 800,
+                                    background: s.bg, color: s.color, border: `1.5px solid ${s.border}`,
+                                    whiteSpace: 'nowrap',
+                                  }}>
+                                    {sev === 'CRITICAL' ? '🚨' : sev === 'HIGH' ? '⚡' : sev === 'LOW' ? '🛡️' : '🔵'} {sev}
+                                  </Badge>
+                                  <span style={{ fontSize: 10, color: '#94A3B8', fontWeight: 600 }}>
+                                    Score: {Math.min(score, 100)}
+                                  </span>
+                                </div>
+                              );
+                            })()}
+                          </td>
+
                           {/* Actions */}
                           <td className="rq-td" style={{ textAlign: 'right' }} onClick={e => e.stopPropagation()}>
                             <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }}>
                               {inc.status === 'PENDING' && (
-                                <button
+                                <Button
+                                  size="sm"
+                                  variant="outline"
                                   onClick={e => quickAction(e, inc.id, 'REVIEWING')}
                                   disabled={actionLoading === inc.id + 'REVIEWING'}
                                   title="Accept report for review"
                                   style={{
                                     padding: '5px 10px', borderRadius: 7, border: '1px solid #BBF7D0',
                                     background: '#F0FDF4', color: '#16A34A', fontSize: 12, fontWeight: 700,
-                                    cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4,
+                                    height: 'auto', display: 'flex', alignItems: 'center', gap: 4,
                                   }}
                                 >
                                   <CheckCircle2 size={13} /> Accept
-                                </button>
+                                </Button>
                               )}
 
-                              <button
+                              <Button
+                                size="sm"
                                 onClick={() => navigate(`/requests/${inc.id}`)}
                                 style={{
                                   padding: '5px 12px',
@@ -764,15 +845,14 @@ export default function Requests() {
                                   border: 'none',
                                   fontSize: 12,
                                   fontWeight: 700,
-                                  cursor: 'pointer',
-                                  fontFamily: 'inherit',
+                                  height: 'auto',
                                   display: 'flex',
                                   alignItems: 'center',
                                   gap: 4,
                                 }}
                               >
                                 View <ArrowRight size={12} />
-                              </button>
+                              </Button>
                             </div>
                           </td>
                         </tr>

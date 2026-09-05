@@ -47,6 +47,10 @@ model Incident {
 
   createdAt             DateTime        @default(now())
   updatedAt             DateTime        @updatedAt
+
+  @@index([reporterId])
+  @@index([createdAt])
+  @@index([status])
 }
 
 model IncidentActivity {

@@ -4,7 +4,7 @@ import Header from '../components/Header';
 import { DashboardSkeleton } from '../components/PageLoader';
 import {
   AlertTriangle, RefreshCw, ArrowRight, Phone, Flame,
-  Stethoscope, HardHat, Anchor, ShieldCheck, Clock,
+  Stethoscope, HardHat, Ambulance, ShieldCheck, Clock,
   TrendingUp, TrendingDown, Minus, Calculator, X, ExternalLink,
   Info,
 } from 'lucide-react';
@@ -22,7 +22,7 @@ const DEPARTMENTS = [
   { label: 'PNP',         sub: 'Philippine National Police', icon: ShieldCheck, color: '#3B82F6', bg: '#EFF6FF', tel: 'tel:(043) 211-4325' },
   { label: 'Medical',     sub: 'EMS / Health Services',      icon: Stethoscope, color: '#22C55E', bg: '#ECFDF5', tel: 'tel:(043) 911-0012' },
   { label: 'Engineering', sub: 'Public Works & Infra',       icon: HardHat,     color: '#F59E0B', bg: '#FEFCE8', tel: 'tel:(043) 211-5678' },
-  { label: 'Rescue',      sub: 'Search & Rescue Team',       icon: Anchor,      color: '#8B5CF6', bg: '#F5F3FF', tel: 'tel:(043) 211-1234' },
+  { label: 'Rescue',      sub: 'Search & Rescue Team',       icon: Ambulance,   color: '#8B5CF6', bg: '#F5F3FF', tel: 'tel:(043) 211-1234' },
 ];
 
 const STATUS_STYLE: Record<Status, { bg: string; color: string; label: string }> = {

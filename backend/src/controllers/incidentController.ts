@@ -441,7 +441,7 @@ export const updateIncidentStatus = async (req: AuthRequest, res: Response) => {
       }
     }
 
-    res.json({ message: `Incident updated`, updated });
+    res.json({ message: `Incident updated`, ...updated, updated });
   } catch (err: any) {
     console.error("❌ Update incident error:", err.message);
     res.status(500).json({ error: "Update failed", details: err.message });

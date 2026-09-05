@@ -154,7 +154,7 @@ export default function ResolutionFormModal({ isOpen, onClose, onSubmit, inciden
                 Incident Resolution Questionnaire
               </h2>
               <p style={{ fontSize: 12, color: '#94A3B8', margin: '2px 0 0' }}>
-                Fill out clinical & disposition data to finalize resolution for Incident #{incident.id.slice(0, 8)}
+                Fill out clinical & disposition data to finalize resolution for Incident #{incident?.id ? incident.id.slice(0, 8) : ''}
               </p>
             </div>
           </div>

@@ -3,7 +3,7 @@ import Header from '../components/Header';
 import { DepartmentsSkeleton } from '../components/PageLoader';
 import {
   Phone, Mail, Users, Search, ShieldCheck, Flame,
-  Stethoscope, HardHat, Anchor, Copy, Check, Info, ShieldAlert,
+  Stethoscope, HardHat, Ambulance, Copy, Check, Info, ShieldAlert,
   Plus, Edit2, Trash2,
 } from 'lucide-react';
 import type { DepartmentInfo } from '../types';
@@ -35,7 +35,7 @@ const DEPT_THEME: Record<string, { icon: any; color: string; bg: string }> = {
   PNP: { icon: ShieldCheck, color: '#3B82F6', bg: '#EFF6FF' },
   MEDICAL: { icon: Stethoscope, color: '#22C55E', bg: '#ECFDF5' },
   ENGINEERING: { icon: HardHat, color: '#F59E0B', bg: '#FEFCE8' },
-  RESCUE: { icon: Anchor, color: '#8B5CF6', bg: '#F5F3FF' },
+  RESCUE: { icon: Ambulance, color: '#8B5CF6', bg: '#F5F3FF' },
 };
 
 const getDeptTheme = (name: string) => {

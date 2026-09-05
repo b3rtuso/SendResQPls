@@ -205,7 +205,7 @@ export default function MobileToastCard({ toast, onDismiss, index }: MobileToast
             }}>
               SendResQPls
             </span>
-            {toast.status && (
+            {typeof toast.status === 'string' && toast.status.length > 0 && (
               <>
                 <span style={{ width: 3, height: 3, borderRadius: '50%', background: accent, flexShrink: 0, display: 'inline-block' }} />
                 <span style={{ fontSize: 10.5, fontWeight: 700, color: accent }}>

@@ -277,11 +277,11 @@ export const reportIncident = async (req: AuthRequest, res: Response) => {
 export const updateIncidentStatus = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { status, adminNotes, assignedDepartment, resolutionForm, severity, urgencyScore } = req.body;
+    const { status, adminNotes, assignedDepartment, resolutionForm, severity, urgencyScore, aiDetectedType } = req.body;
 
     const current = await prisma.incident.findUnique({
       where: { id },
-      select: { status: true, assignedDepartment: true, adminNotes: true },
+      select: { status: true, assignedDepartment: true, adminNotes: true, aiDetectedType: true },
     });
     if (!current) return res.status(404).json({ error: 'Incident not found' });
 
@@ -290,6 +290,7 @@ export const updateIncidentStatus = async (req: AuthRequest, res: Response) => {
     if (assignedDepartment !== undefined) data.assignedDepartment = assignedDepartment;
     if (severity) data.severity = severity;
     if (urgencyScore !== undefined) data.urgencyScore = parseInt(urgencyScore);
+    if (aiDetectedType !== undefined) data.aiDetectedType = aiDetectedType;
 
     // ── One-way status progression guard ─────────────────────────────────────
     if (status) {
@@ -343,6 +344,16 @@ export const updateIncidentStatus = async (req: AuthRequest, res: Response) => {
           incidentId: id,
           title: `Admin note: "${adminNotes}"`,
           type: 'ADMIN_NOTE',
+        },
+      });
+    }
+
+    if (aiDetectedType && current.aiDetectedType !== aiDetectedType) {
+      await prisma.incidentActivity.create({
+        data: {
+          incidentId: id,
+          title: `Incident reclassified as ${aiDetectedType}`,
+          type: 'ASSIGNED',
         },
       });
     }

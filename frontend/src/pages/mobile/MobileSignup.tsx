@@ -6,6 +6,7 @@ import { useMobileToast } from '../../components/MobileToastProvider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { validatePhilippineMobile } from '../../utils/phoneValidator';
 
 export default function MobileSignup() {
   const navigate = useNavigate();
@@ -102,6 +103,15 @@ export default function MobileSignup() {
   };
 
   const handleSignup = async () => {
+    if (!form.name.trim()) {
+      setError('Full name is required.');
+      return;
+    }
+    const phoneCheck = validatePhilippineMobile(form.phone);
+    if (!phoneCheck.valid) {
+      setError(phoneCheck.error || 'Invalid mobile number.');
+      return;
+    }
     if (!verified) {
       setError('Please verify your email address first.');
       return;
@@ -113,15 +123,20 @@ export default function MobileSignup() {
     setLoading(true);
     setError('');
     try {
-      const res = await apiRegister({ name: form.name, email: form.email, password: form.password, phoneNumber: form.phone });
+      const res = await apiRegister({
+        name: form.name.trim(),
+        email: form.email.trim(),
+        password: form.password,
+        phoneNumber: phoneCheck.cleaned!,
+      });
       localStorage.setItem('userId', res.data?.id || '');
-      localStorage.setItem('userName', form.name);
-      localStorage.setItem('userEmail', form.email);
-      localStorage.setItem('userPhone', form.phone);
+      localStorage.setItem('userName', form.name.trim());
+      localStorage.setItem('userEmail', form.email.trim());
+      localStorage.setItem('userPhone', phoneCheck.cleaned!);
       toast({ type: 'success', priority: 'important', title: 'Account created! 🎉', message: 'Redirecting to login…' });
       setTimeout(() => navigate('/mobile/login'), 1500);
-    } catch {
-      setError('Failed to create account. Please try again.');
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to create account. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -204,11 +219,20 @@ export default function MobileSignup() {
           </div>
 
           <div className="input-group">
-            <Label>Phone Number</Label>
+            <Label>Phone Number *</Label>
             <div className="input-wrapper">
               <Phone size={18} className="input-icon" />
-              <Input type="tel" autoComplete="tel" placeholder="+63 900 000 0000" value={form.phone} onChange={(e) => update('phone', e.target.value.replace(/[^0-9+ ]/g, ''))} />
+              <Input
+                type="tel"
+                autoComplete="tel"
+                placeholder="09292695926"
+                value={form.phone}
+                onChange={(e) => update('phone', e.target.value.replace(/[^0-9+]/g, ''))}
+              />
             </div>
+            <span style={{ fontSize: 11, color: '#64748B', marginTop: 4, display: 'block' }}>
+              Must be 11 digits starting with 09 (e.g. 09292695926, no +63)
+            </span>
           </div>
 
           {/* Email + Send Code */}

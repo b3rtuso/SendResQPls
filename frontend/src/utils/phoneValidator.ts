@@ -1,6 +1,4 @@
-import validator from 'validator';
-
-export interface MobileValidationResult {
+﻿export interface PhoneValidationResult {
   valid: boolean;
   error?: string;
   cleaned?: string;
@@ -9,13 +7,13 @@ export interface MobileValidationResult {
 /**
  * Validates Philippine Mobile Number.
  * Strict rules:
- * - Mandatory (cannot be empty)
+ * - Mandatory (not optional)
  * - Exactly 11 digits starting with '09' (e.g., 09292695926)
  * - Explicit error for incomplete (< 11, kulang)
  * - Explicit error for exceeding (> 11, sobra)
  * - Explicit error if not starting with 09 or containing +63
  */
-export const validatePhilippineMobile = (phone: string | undefined | null): MobileValidationResult => {
+export const validatePhilippineMobile = (phone: string | undefined | null): PhoneValidationResult => {
   if (!phone || !phone.trim()) {
     return { valid: false, error: 'Mobile number is required and cannot be empty.' };
   }
@@ -60,11 +58,4 @@ export const validatePhilippineMobile = (phone: string | undefined | null): Mobi
   }
 
   return { valid: true, cleaned: raw };
-};
-
-export const validateUserContact = (email: string, phone: string) => {
-  const isEmailValid = validator.isEmail(email);
-  const phoneValidation = validatePhilippineMobile(phone);
-
-  return { isEmailValid, isPhoneValid: phoneValidation.valid, phoneError: phoneValidation.error };
 };

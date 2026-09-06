@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken';
 import { sendVerificationEmail, sendPasswordResetEmail } from '../services/emailService';
 import { AuthRequest } from '../middleware/auth';
 import { redis } from '../config/redis';
+import { validatePhilippineMobile } from '../utils/validators';
 
 // ── JWT Secret — crash immediately on startup if not configured ───────────────
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -76,12 +77,32 @@ export const register = async (req: Request, res: Response) => {
     // Note: 'role' is intentionally excluded — users always register as CITIZEN.
     // Admin accounts must be created by an existing admin via POST /api/auth/admin/create.
     const { name, email, password, phoneNumber } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ error: 'Name, email, and password are required.' });
+    }
+
+    const phoneValidation = validatePhilippineMobile(phoneNumber);
+    if (!phoneValidation.valid) {
+      return res.status(400).json({ error: phoneValidation.error });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 8); // 8 rounds = ~80ms, still secure
     const newUser = await prisma.user.create({
-      data: { name, email, passwordHash: hashedPassword, phoneNumber: phoneNumber || null, role: 'CITIZEN' }
+      data: { name, email, passwordHash: hashedPassword, phoneNumber: phoneValidation.cleaned, role: 'CITIZEN' }
     });
     res.status(201).json(newUser);
   } catch (error: any) {
+    if (error.code === 'P2002') {
+      const target = error.meta?.target;
+      if (Array.isArray(target) && target.includes('phoneNumber')) {
+        return res.status(400).json({ error: 'This mobile number is already registered to another account.' });
+      }
+      if (Array.isArray(target) && target.includes('email')) {
+        return res.status(400).json({ error: 'This email is already registered to another account.' });
+      }
+      return res.status(400).json({ error: 'An account with this email or mobile number already exists.' });
+    }
     res.status(500).json({ error: 'Registration failed. Please try again.' });
   }
 };
@@ -172,7 +193,22 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
     const data: any = {};
     if (name) data.name = name;
     if (email) data.email = email;
-    if (phoneNumber !== undefined) data.phoneNumber = phoneNumber;
+    if (phoneNumber !== undefined) {
+      const phoneValidation = validatePhilippineMobile(phoneNumber);
+      if (!phoneValidation.valid) {
+        return res.status(400).json({ error: phoneValidation.error });
+      }
+      const existingPhone = await prisma.user.findFirst({
+        where: {
+          phoneNumber: phoneValidation.cleaned,
+          NOT: { id: userId },
+        },
+      });
+      if (existingPhone) {
+        return res.status(400).json({ error: 'Mobile number is already in use by another account.' });
+      }
+      data.phoneNumber = phoneValidation.cleaned;
+    }
     if (pushToken !== undefined) data.pushToken = pushToken;
 
     const updated = await prisma.user.update({
@@ -309,9 +345,21 @@ export const createAdmin = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: 'Admin password must be at least 8 characters.' });
     }
 
+    const phoneValidation = validatePhilippineMobile(phoneNumber);
+    if (!phoneValidation.valid) {
+      return res.status(400).json({ error: phoneValidation.error });
+    }
+
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
       return res.status(400).json({ error: 'An account with this email already exists.' });
+    }
+
+    const existingPhone = await prisma.user.findFirst({
+      where: { phoneNumber: phoneValidation.cleaned },
+    });
+    if (existingPhone) {
+      return res.status(400).json({ error: 'An account with this mobile number already exists.' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -320,7 +368,7 @@ export const createAdmin = async (req: AuthRequest, res: Response) => {
         name,
         email,
         passwordHash: hashedPassword,
-        phoneNumber: phoneNumber || null,
+        phoneNumber: phoneValidation.cleaned,
         role: 'ADMIN',
         isActive: true,
       },

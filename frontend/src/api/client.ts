@@ -75,7 +75,7 @@ export function invalidateCache(pattern?: string) {
 export const login = (email: string, password: string) =>
   api.post('/auth/login', { email, password });
 
-export const register = (data: { name: string; email: string; password: string; phoneNumber?: string }) =>
+export const register = (data: { name: string; email: string; password: string; phoneNumber: string }) =>
   api.post('/auth/register', data);
 
 // Email-sending routes use a longer timeout (35s) because Brevo API

@@ -10,6 +10,7 @@ import BottomNav from '../../components/BottomNav';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { validatePhilippineMobile } from '../../utils/phoneValidator';
 
 type Section = 'main' | 'account' | 'contacts' | 'notifications' | 'help';
 
@@ -26,7 +27,7 @@ interface EmergencyContact {
 /* ── shared sub-components ─────────────────────────────── */
 
 function Field({
-  label, icon: Icon, value, onChange, placeholder, type = 'text',
+  label, icon: Icon, value, onChange, placeholder, type = 'text', maxLength,
 }: {
   label: string;
   icon: React.ElementType;
@@ -34,6 +35,7 @@ function Field({
   onChange: (v: string) => void;
   placeholder?: string;
   type?: string;
+  maxLength?: number;
 }) {
   return (
     <div style={{ marginBottom: 14 }}>
@@ -52,6 +54,7 @@ function Field({
           value={value}
           onChange={e => onChange(e.target.value)}
           placeholder={placeholder}
+          maxLength={maxLength}
           style={{
             flex: 1, border: 'none', background: 'none', outline: 'none',
             fontSize: 15, fontFamily: 'var(--font)', color: '#0F172A', minWidth: 0,
@@ -153,15 +156,33 @@ export default function MobileProfile() {
   };
 
   const handleSaveProfile = async () => {
+    const cleanName = name.trim();
+    const cleanEmail = email.trim();
+    const cleanPhone = phone.trim();
+
+    if (!cleanName) {
+      showToast({ type: 'error', priority: 'normal', title: 'Name Required', message: 'Full name cannot be empty.' });
+      return;
+    }
+
+    const phoneCheck = validatePhilippineMobile(cleanPhone);
+    if (!phoneCheck.valid) {
+      showToast({ type: 'error', priority: 'normal', title: 'Invalid Mobile Number', message: phoneCheck.error || 'Invalid mobile number.' });
+      return;
+    }
+
     setSaving(true);
     try {
-      await updateProfile({ userId, name, email, phoneNumber: phone });
-      localStorage.setItem('userName', name);
-      localStorage.setItem('userEmail', email);
-      localStorage.setItem('userPhone', phone);
+      await updateProfile({ userId, name: cleanName, email: cleanEmail, phoneNumber: phoneCheck.cleaned });
+      setName(cleanName);
+      setEmail(cleanEmail);
+      setPhone(phoneCheck.cleaned!);
+      localStorage.setItem('userName', cleanName);
+      localStorage.setItem('userEmail', cleanEmail);
+      localStorage.setItem('userPhone', phoneCheck.cleaned!);
       showToast({ type: 'success', priority: 'normal', title: 'Profile updated', message: 'Your account details have been saved.' });
-    } catch {
-      showToast({ type: 'error', priority: 'normal', title: 'Update failed', message: 'Could not save profile changes.' });
+    } catch (err: any) {
+      showToast({ type: 'error', priority: 'normal', title: 'Update failed', message: err.response?.data?.error || 'Could not save profile changes.' });
     } finally { setSaving(false); }
   };
 
@@ -179,8 +200,21 @@ export default function MobileProfile() {
   };
 
   const addContact = () => {
-    if (!newContact.name || !newContact.phone) { showToast({ type: 'error', priority: 'normal', title: 'Name and phone are required' }); return; }
-    setContacts([...contacts, { ...newContact, id: Date.now().toString() }]);
+    if (!newContact.name.trim()) {
+      showToast({ type: 'error', priority: 'normal', title: 'Name Required', message: 'Please enter contact full name.' });
+      return;
+    }
+    const phoneCheck = validatePhilippineMobile(newContact.phone);
+    if (!phoneCheck.valid) {
+      showToast({ type: 'error', priority: 'normal', title: 'Invalid Mobile Number', message: phoneCheck.error || 'Invalid mobile number.' });
+      return;
+    }
+    setContacts([...contacts, {
+      id: Date.now().toString(),
+      name: newContact.name.trim(),
+      phone: phoneCheck.cleaned!,
+      relation: newContact.relation.trim(),
+    }]);
     setNewContact({ name: '', phone: '', relation: '' });
     setShowAddContact(false);
     showToast({ type: 'success', priority: 'normal', title: 'Contact added' });
@@ -285,7 +319,7 @@ export default function MobileProfile() {
         <div style={{ padding: 'clamp(14px, 4vw, 20px)' }}>
           <Field label="Full Name" icon={User} value={name} onChange={setName} placeholder="Juan Dela Cruz" />
           <Field label="Email Address" icon={Mail} value={email} onChange={setEmail} placeholder="juan@example.com" type="email" />
-          <Field label="Phone Number" icon={Phone} value={phone} onChange={setPhone} placeholder="+63 900 000 0000" type="tel" />
+          <Field label="Phone Number *" icon={Phone} value={phone} onChange={v => setPhone(v.replace(/[^0-9+]/g, ''))} placeholder="09292695926" type="tel" />
 
           <button onClick={handleSaveProfile} disabled={saving} style={{
             width: '100%', padding: 'clamp(12px, 3.5vw, 15px)',
@@ -406,17 +440,37 @@ export default function MobileProfile() {
                 <h4 style={{ fontSize: 14, fontWeight: 800, color: '#0F172A', margin: 0 }}>New Contact</h4>
                 <button onClick={() => setShowAddContact(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}><X size={18} /></button>
               </div>
-              {([['name', 'Full Name'], ['phone', 'Phone Number'], ['relation', 'Relation (e.g. Parent, Sibling)']] as const).map(([field, ph]) => (
-                <input key={field} placeholder={ph}
-                  value={newContact[field]}
-                  onChange={e => setNewContact({ ...newContact, [field]: e.target.value })}
-                  style={{
-                    width: '100%', padding: '12px 14px', borderRadius: 10,
-                    border: '1.5px solid #E2E8F0', background: 'white', fontSize: 14,
-                    fontFamily: 'var(--font)', outline: 'none', marginBottom: 8, boxSizing: 'border-box',
-                  }}
-                />
-              ))}
+              <input
+                placeholder="Full Name *"
+                value={newContact.name}
+                onChange={e => setNewContact({ ...newContact, name: e.target.value })}
+                style={{
+                  width: '100%', padding: '12px 14px', borderRadius: 10,
+                  border: '1.5px solid #E2E8F0', background: 'white', fontSize: 14,
+                  fontFamily: 'var(--font)', outline: 'none', marginBottom: 8, boxSizing: 'border-box',
+                }}
+              />
+              <input
+                type="tel"
+                placeholder="09292695926 (Phone Number *)"
+                value={newContact.phone}
+                onChange={e => setNewContact({ ...newContact, phone: e.target.value.replace(/[^0-9+]/g, '') })}
+                style={{
+                  width: '100%', padding: '12px 14px', borderRadius: 10,
+                  border: '1.5px solid #E2E8F0', background: 'white', fontSize: 14,
+                  fontFamily: 'var(--font)', outline: 'none', marginBottom: 8, boxSizing: 'border-box',
+                }}
+              />
+              <input
+                placeholder="Relation (e.g. Parent, Sibling)"
+                value={newContact.relation}
+                onChange={e => setNewContact({ ...newContact, relation: e.target.value })}
+                style={{
+                  width: '100%', padding: '12px 14px', borderRadius: 10,
+                  border: '1.5px solid #E2E8F0', background: 'white', fontSize: 14,
+                  fontFamily: 'var(--font)', outline: 'none', marginBottom: 8, boxSizing: 'border-box',
+                }}
+              />
               <button onClick={addContact} style={{
                 width: '100%', padding: 12, borderRadius: 12, background: '#2563EB', color: 'white',
                 border: 'none', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font)', marginTop: 4,

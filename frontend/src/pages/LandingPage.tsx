@@ -468,24 +468,23 @@ export default function LandingPage() {
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          width: 100%;
-          max-width: 320px;
           margin: 0 auto;
-          overflow: visible;
         }
 
         .lp-carousel-viewport {
           position: relative;
-          width: 100%;
+          height: clamp(400px, 72vh, 640px);
+          aspect-ratio: 515 / 1024;
+          max-width: calc(100vw - 48px);
           border-radius: 28px;
           overflow: hidden;
-          box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.14);
-          background: #000000;
+          box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.12);
         }
 
         .lp-carousel-track {
           display: flex;
           width: 100%;
+          height: 100%;
           transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
           will-change: transform;
         }
@@ -493,6 +492,7 @@ export default function LandingPage() {
         .lp-carousel-slide {
           flex: 0 0 100%;
           width: 100%;
+          height: 100%;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -500,10 +500,10 @@ export default function LandingPage() {
 
         .lp-carousel-slide img {
           width: 100%;
-          height: auto;
-          max-height: clamp(380px, 68vh, 600px);
+          height: 100%;
           object-fit: cover;
           display: block;
+          border-radius: 28px;
           user-select: none;
           pointer-events: none;
         }
@@ -511,12 +511,12 @@ export default function LandingPage() {
         /* Carousel Navigation Buttons */
         .lp-carousel-btn {
           position: absolute;
-          top: 42%;
+          top: 50%;
           transform: translateY(-50%);
-          width: 42px;
-          height: 42px;
+          width: 44px;
+          height: 44px;
           border-radius: 50%;
-          background: rgba(15, 23, 42, 0.75);
+          background: rgba(15, 23, 42, 0.8);
           backdrop-filter: blur(8px);
           -webkit-backdrop-filter: blur(8px);
           border: 1px solid rgba(255, 255, 255, 0.22);
@@ -537,16 +537,10 @@ export default function LandingPage() {
           transform: translateY(-50%) scale(0.96);
         }
         .lp-carousel-btn-prev {
-          left: -56px;
+          left: clamp(16px, 3vw, 40px);
         }
         .lp-carousel-btn-next {
-          right: -56px;
-        }
-
-        @media (max-width: 768px) {
-          .lp-carousel-btn-prev { left: -20px; }
-          .lp-carousel-btn-next { right: -20px; }
-          .lp-hero-carousel { max-width: 270px; }
+          right: clamp(16px, 3vw, 40px);
         }
 
         /* Carousel Dots */
@@ -978,9 +972,8 @@ export default function LandingPage() {
             align-items: center;
             justify-content: center;
           }
-          .lp-hero-right img {
-            max-height: 520px;
-            max-width: 80%;
+          .lp-carousel-viewport {
+            height: clamp(380px, 58vh, 500px);
           }
           .lp-how {
             grid-template-columns: 1fr;
@@ -1034,10 +1027,22 @@ export default function LandingPage() {
             min-height: 420px;
             padding: 32px 16px;
           }
-          .lp-hero-right img {
-            max-height: 420px;
-            max-width: 90%;
+          .lp-carousel-viewport {
+            height: clamp(360px, 54vh, 440px);
             border-radius: 22px;
+          }
+          .lp-carousel-slide img {
+            border-radius: 22px;
+          }
+          .lp-carousel-btn {
+            width: 38px;
+            height: 38px;
+          }
+          .lp-carousel-btn-prev {
+            left: 12px;
+          }
+          .lp-carousel-btn-next {
+            right: 12px;
           }
           .lp-hero-ctas {
             flex-direction: column;
@@ -1109,9 +1114,18 @@ export default function LandingPage() {
             min-height: 360px;
             padding: 24px 12px;
           }
-          .lp-hero-right img {
-            max-height: 360px;
-            max-width: 95%;
+          .lp-carousel-viewport {
+            height: 350px;
+            border-radius: 18px;
+          }
+          .lp-carousel-slide img {
+            border-radius: 18px;
+          }
+          .lp-carousel-btn-prev {
+            left: 6px;
+          }
+          .lp-carousel-btn-next {
+            right: 6px;
           }
         }
       `}</style>
@@ -1166,6 +1180,18 @@ export default function LandingPage() {
             onMouseEnter={() => setIsHeroCarouselHovered(true)}
             onMouseLeave={() => setIsHeroCarouselHovered(false)}
           >
+            {/* Previous Slide Button — left corner/side of hero panel */}
+            <button
+              type="button"
+              className="lp-carousel-btn lp-carousel-btn-prev"
+              onClick={prevHeroSlide}
+              aria-label="Previous screen"
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m15 18-6-6 6-6" />
+              </svg>
+            </button>
+
             <div
               className="lp-hero-carousel"
               onTouchStart={handleTouchStart}
@@ -1188,30 +1214,6 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              {/* Previous Slide Button — left edge of carousel container */}
-              <button
-                type="button"
-                className="lp-carousel-btn lp-carousel-btn-prev"
-                onClick={prevHeroSlide}
-                aria-label="Previous screen"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="m15 18-6-6 6-6" />
-                </svg>
-              </button>
-
-              {/* Next Slide Button — right edge of carousel container */}
-              <button
-                type="button"
-                className="lp-carousel-btn lp-carousel-btn-next"
-                onClick={nextHeroSlide}
-                aria-label="Next screen"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="m9 18 6-6-6-6" />
-                </svg>
-              </button>
-
               {/* Bottom Navigation Dots */}
               <div className="lp-carousel-dots">
                 {HERO_SLIDES.map((_, idx) => (
@@ -1225,6 +1227,18 @@ export default function LandingPage() {
                 ))}
               </div>
             </div>
+
+            {/* Next Slide Button — right corner/side of hero panel */}
+            <button
+              type="button"
+              className="lp-carousel-btn lp-carousel-btn-next"
+              onClick={nextHeroSlide}
+              aria-label="Next screen"
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m9 18 6-6-6-6" />
+              </svg>
+            </button>
           </div>
         </section>
 

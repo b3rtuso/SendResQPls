@@ -58,7 +58,7 @@ export default function GetTheApp() {
           padding: 0 clamp(20px, 5vw, 72px);
           height: 64px;
           border-bottom: 1px solid var(--divider);
-          background: linear-gradient(160deg, #0F1F38 0%, #1D4ED8 60%, #2563EB 100%);
+          background: #0B132B;
           position: sticky;
           top: 0;
           z-index: 100;

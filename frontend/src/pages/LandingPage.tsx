@@ -1,5 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+
+const HERO_SLIDES = [
+  '/hero-slide-1.jpg',
+  '/hero-slide-2.jpg',
+  '/hero-slide-3.jpg',
+  '/hero-slide-4.jpg',
+  '/hero-slide-5.jpg',
+];
 
 /* ─── Bauhaus Geometric Design System ───────────────────────────────────────
    DESIGN_VARIANCE: 8 | MOTION_INTENSITY: 6 | VISUAL_DENSITY: 4
@@ -22,6 +30,40 @@ export default function LandingPage() {
   const [highlighted, setHighlighted] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const highlightTimerRef = useRef<any>(null);
+
+  // Hero Carousel State
+  const [currentHeroSlide, setCurrentHeroSlide] = useState(0);
+  const [isHeroCarouselHovered, setIsHeroCarouselHovered] = useState(false);
+  const touchStartXRef = useRef<number | null>(null);
+
+  const nextHeroSlide = useCallback(() => {
+    setCurrentHeroSlide(prev => (prev + 1) % HERO_SLIDES.length);
+  }, []);
+
+  const prevHeroSlide = useCallback(() => {
+    setCurrentHeroSlide(prev => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length);
+  }, []);
+
+  // Auto-advance hero carousel every 4.5s when not hovered
+  useEffect(() => {
+    if (isHeroCarouselHovered) return;
+    const timer = setInterval(nextHeroSlide, 4500);
+    return () => clearInterval(timer);
+  }, [isHeroCarouselHovered, nextHeroSlide]);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartXRef.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartXRef.current === null) return;
+    const diff = touchStartXRef.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 40) {
+      if (diff > 0) nextHeroSlide();
+      else prevHeroSlide();
+    }
+    touchStartXRef.current = null;
+  };
 
   const scrollToAccess = () => {
     const el = document.getElementById('access-section');
@@ -406,7 +448,7 @@ export default function LandingPage() {
         .btn-admin:hover { background: #172E54; }
         .btn-admin:active { transform: translateY(1px); }
 
-        /* Hero right */
+        /* Hero right carousel */
         .lp-hero-right {
           position: relative;
           display: flex;
@@ -419,15 +461,117 @@ export default function LandingPage() {
           padding: clamp(20px, 3.5vw, 40px);
         }
         .lp-hero-right.visible { opacity: 1; }
-        .lp-hero-right img {
-          width: auto;
-          max-width: 100%;
-          max-height: clamp(400px, 72vh, 640px);
-          object-fit: contain;
-          object-position: center;
-          display: block;
+
+        .lp-hero-carousel {
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+          max-width: 320px;
+          margin: 0 auto;
+        }
+
+        .lp-carousel-viewport {
+          position: relative;
+          width: 100%;
           border-radius: 28px;
-          box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.12);
+          overflow: hidden;
+          box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.14);
+          background: #000000;
+        }
+
+        .lp-carousel-track {
+          display: flex;
+          width: 100%;
+          transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+          will-change: transform;
+        }
+
+        .lp-carousel-slide {
+          flex: 0 0 100%;
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .lp-carousel-slide img {
+          width: 100%;
+          height: auto;
+          max-height: clamp(380px, 68vh, 600px);
+          object-fit: contain;
+          display: block;
+          user-select: none;
+          pointer-events: none;
+        }
+
+        /* Carousel Navigation Buttons */
+        .lp-carousel-btn {
+          position: absolute;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 42px;
+          height: 42px;
+          border-radius: 50%;
+          background: rgba(15, 23, 42, 0.75);
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          border: 1px solid rgba(255, 255, 255, 0.22);
+          color: #FFFFFF;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          z-index: 10;
+        }
+        .lp-carousel-btn:hover {
+          background: rgba(37, 99, 235, 0.95);
+          border-color: rgba(255, 255, 255, 0.5);
+          transform: translateY(-50%) scale(1.08);
+        }
+        .lp-carousel-btn:active {
+          transform: translateY(-50%) scale(0.96);
+        }
+        .lp-carousel-btn-prev {
+          left: -20px;
+        }
+        .lp-carousel-btn-next {
+          right: -20px;
+        }
+
+        @media (max-width: 768px) {
+          .lp-carousel-btn-prev { left: 8px; }
+          .lp-carousel-btn-next { right: 8px; }
+          .lp-hero-carousel { max-width: 270px; }
+        }
+
+        /* Carousel Dots */
+        .lp-carousel-dots {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          margin-top: 18px;
+        }
+        .lp-carousel-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 999px;
+          background: rgba(255, 255, 255, 0.3);
+          border: none;
+          cursor: pointer;
+          padding: 0;
+          transition: all 0.25s ease;
+        }
+        .lp-carousel-dot:hover {
+          background: rgba(255, 255, 255, 0.65);
+        }
+        .lp-carousel-dot.active {
+          width: 26px;
+          background: #2563EB;
         }
 
         /* ─── TICKER ─── */
@@ -1015,13 +1159,71 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Right — generated Bauhaus hero image */}
-          <div className={`lp-hero-right ${heroVisible ? 'visible' : ''}`} aria-hidden="true">
-            <img
-              src="/bauhaus-hero.jpg"
-              alt="SendResQPls mobile app — Bauhaus geometric composition"
-              loading="eager"
-            />
+          {/* Right — Interactive Mobile App Screenshots Carousel */}
+          <div
+            className={`lp-hero-right ${heroVisible ? 'visible' : ''}`}
+            onMouseEnter={() => setIsHeroCarouselHovered(true)}
+            onMouseLeave={() => setIsHeroCarouselHovered(false)}
+          >
+            <div
+              className="lp-hero-carousel"
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+            >
+              <div className="lp-carousel-viewport">
+                <div
+                  className="lp-carousel-track"
+                  style={{ transform: `translateX(-${currentHeroSlide * 100}%)` }}
+                >
+                  {HERO_SLIDES.map((src, idx) => (
+                    <div key={idx} className="lp-carousel-slide">
+                      <img
+                        src={src}
+                        alt={`SendResQPls mobile app screen ${idx + 1}`}
+                        loading={idx === 0 ? 'eager' : 'lazy'}
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                {/* Previous Slide Button */}
+                <button
+                  type="button"
+                  className="lp-carousel-btn lp-carousel-btn-prev"
+                  onClick={prevHeroSlide}
+                  aria-label="Previous screen"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m15 18-6-6 6-6" />
+                  </svg>
+                </button>
+
+                {/* Next Slide Button */}
+                <button
+                  type="button"
+                  className="lp-carousel-btn lp-carousel-btn-next"
+                  onClick={nextHeroSlide}
+                  aria-label="Next screen"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m9 18 6-6-6-6" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Bottom Navigation Dots */}
+              <div className="lp-carousel-dots">
+                {HERO_SLIDES.map((_, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    className={`lp-carousel-dot ${currentHeroSlide === idx ? 'active' : ''}`}
+                    onClick={() => setCurrentHeroSlide(idx)}
+                    aria-label={`Go to slide ${idx + 1}`}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
         </section>
 

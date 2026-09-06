@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { AlertCircle, MapPin, RefreshCw, ChevronLeft, Loader2, CheckCircle2, Clock, ShieldCheck, XCircle, AlertTriangle, PlusCircle, X, Phone, Siren, ChevronRight, Check } from 'lucide-react';
+import { AlertCircle, MapPin, RefreshCw, ChevronLeft, Loader2, CheckCircle2, Clock, XCircle, AlertTriangle, PlusCircle, X, Phone, ChevronRight, Check, Truck } from 'lucide-react';
 import { getMyIncidents, getIncidents, getIncident, invalidateCache } from '../../api/client';
 import type { Incident, Status } from '../../types';
 import BottomNav from '../../components/BottomNav';
@@ -14,7 +14,7 @@ import { MobileHistorySkeleton } from '../../components/PageLoader';
 const STATUS_ICONS: Record<Status, any> = {
   PENDING: Clock,
   REVIEWING: AlertCircle,
-  DISPATCHED: ShieldCheck,
+  DISPATCHED: Truck,
   RESOLVED: CheckCircle2,
   REJECTED: XCircle,
 };
@@ -912,7 +912,7 @@ export default function MobileHistory() {
                   flexShrink: 0,
                   boxShadow: '0 4px 12px rgba(139, 92, 246, 0.35)',
                 }}>
-                  <Siren size={22} />
+                  <Truck size={22} />
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 13, fontWeight: 800, color: '#5B21B6' }}>
@@ -995,7 +995,7 @@ export default function MobileHistory() {
                       {selectedIncident.status === 'RESOLVED' ? (
                         <Check size={18} strokeWidth={3} />
                       ) : (
-                        <ShieldCheck size={18} />
+                        <Truck size={18} />
                       )}
                     </div>
                     <div style={{ fontSize: 13.5, fontWeight: 800, color: '#0F172A' }}>

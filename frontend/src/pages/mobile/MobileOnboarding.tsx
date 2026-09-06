@@ -101,16 +101,19 @@ export default function MobileOnboarding({ onDone }: { onDone: () => void }) {
   const skip = () => {
     localStorage.setItem(ONBOARDING_KEY, '1');
     onDone();
+    navigate('/mobile/login', { replace: true });
   };
 
   const handleGetStarted = () => {
     localStorage.setItem(ONBOARDING_KEY, '1');
-    navigate('/mobile/login');
+    onDone();
+    navigate('/mobile/login', { replace: true });
   };
 
   const handleCreateAccount = () => {
     localStorage.setItem(ONBOARDING_KEY, '1');
-    navigate('/mobile/signup');
+    onDone();
+    navigate('/mobile/signup', { replace: true });
   };
 
   const isLast = current === slides.length - 1;

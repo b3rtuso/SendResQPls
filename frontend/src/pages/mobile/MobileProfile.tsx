@@ -141,9 +141,15 @@ export default function MobileProfile() {
 
   const handleLogout = () => {
     const onboardingDone = localStorage.getItem('srq_onboarding_done');
-    localStorage.clear();
+    localStorage.removeItem('token');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('userPhone');
+    localStorage.removeItem('userAvatar');
     if (onboardingDone) localStorage.setItem('srq_onboarding_done', onboardingDone);
-    navigate('/mobile/login');
+    navigate('/mobile/login', { replace: true });
   };
 
   const handleSaveProfile = async () => {

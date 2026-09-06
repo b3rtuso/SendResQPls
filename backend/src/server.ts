@@ -77,35 +77,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// ── Rate Limiters ─────────────────────────────────────────────────────────────
-
-// 1. Global limiter — applies to every route
-const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200,                  // 200 requests per IP per window
-  standardHeaders: true,     // Return RateLimit-* headers
-  legacyHeaders: false,
-  message: { error: 'Too many requests. Please try again later.' },
-});
-
-// 2. Auth limiter — strict, prevents brute-force on login/register
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10,                   // Only 10 attempts per 15 min
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Too many authentication attempts. Please try again in 15 minutes.' },
-  skipSuccessfulRequests: true, // Don't count successful logins against the limit
-});
-
-// 3. Report submission limiter — prevent spam reports from the mobile app
-const reportLimiter = rateLimit({
-  windowMs: 60 * 1000,       // 1 minute window
-  max: 5,                    // Max 5 new reports per minute per IP
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'You are submitting reports too quickly. Please wait a moment.' },
-});
+import { globalLimiter, reportLimiter } from './middleware/rateLimiters';
 
 // ── Health check — ping this with Better Stack / UptimeRobot to prevent cold starts ──
 // Placed BEFORE rate limiters so monitoring pings never get throttled or counted against users
@@ -117,8 +89,8 @@ app.get('/api/health', healthHandler);
 
 app.use(globalLimiter);
 
-// Routes
-app.use('/api/auth', authLimiter, authRoutes);
+// Routes (authLimiter applied selectively inside authRoutes.ts to public endpoints only)
+app.use('/api/auth', authRoutes);
 app.use('/api/incidents', incidentRoutes);
 app.use('/api/incidents/create', reportLimiter); // tighter limit for new report submissions
 app.use('/api/departments', departmentRoutes);

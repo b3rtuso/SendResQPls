@@ -250,12 +250,26 @@ export default function MobileLogin() {
         )}
 
         {/* Remember Me + Forgot password row */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', userSelect: 'none' }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 'clamp(14px, 4vw, 28px)',
+          marginBottom: 24,
+          flexWrap: 'wrap',
+        }}>
+          <label style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 8,
+            cursor: 'pointer',
+            userSelect: 'none',
+            flexShrink: 0,
+          }}>
             <div
               onClick={() => setRememberMe(!rememberMe)}
               style={{
-                width: 36, height: 20, borderRadius: 10,
+                width: 38, height: 22, borderRadius: 11,
                 background: rememberMe ? '#2563EB' : '#E2E8F0',
                 position: 'relative', transition: 'background 0.2s',
                 flexShrink: 0, cursor: 'pointer',
@@ -263,12 +277,12 @@ export default function MobileLogin() {
             >
               <div style={{
                 position: 'absolute', top: 3, left: rememberMe ? 19 : 3,
-                width: 14, height: 14, borderRadius: '50%',
+                width: 16, height: 16, borderRadius: '50%',
                 background: 'white', transition: 'left 0.2s',
                 boxShadow: '0 1px 4px rgba(0,0,0,0.18)',
               }} />
             </div>
-            <span style={{ fontSize: 12.5, fontWeight: 600, color: '#475569' }}>Remember me</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#475569' }}>Remember me</span>
           </label>
           <button
             type="button"
@@ -276,7 +290,17 @@ export default function MobileLogin() {
               e.preventDefault();
               navigate('/mobile/forgot-password');
             }}
-            style={{ background: 'none', border: 'none', color: '#2563EB', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#2563EB',
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              padding: '4px 0',
+              marginLeft: 'auto',
+            }}
           >
             Forgot password?
           </button>

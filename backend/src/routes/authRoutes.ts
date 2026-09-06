@@ -27,6 +27,8 @@ router.patch('/password', requireAuth, changePassword);
 router.post('/admin/create', requireAdmin, createAdmin);
 router.get('/admins', requireAdmin, listAdmins);
 router.patch('/admin/:id/deactivate', requireAdmin, deactivateAdmin);
+router.patch('/admins/:id/deactivate', requireAdmin, deactivateAdmin);
 router.delete('/admin/:id', requireAdmin, deleteAdmin);
+router.delete('/admins/:id', requireAdmin, deleteAdmin);
 
 export default router;

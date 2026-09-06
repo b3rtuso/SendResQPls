@@ -464,6 +464,12 @@ export const deleteAdmin = async (req: AuthRequest, res: Response) => {
     }
 
     // 5. Permanently remove the admin and their credentials from the database
+    // First clear any active incident concurrency locks held by this admin
+    await prisma.incident.updateMany({
+      where: { lockedByAdminId: id },
+      data: { lockedByAdminId: null, lockedByAdminName: null, lockedAt: null },
+    });
+
     await prisma.user.delete({ where: { id } });
 
     console.log(`🗑️ Admin ${target.email} (ID: ${id}) permanently deleted by ${req.user!.userId}`);

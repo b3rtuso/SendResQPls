@@ -454,7 +454,7 @@ export default function LandingPage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          overflow: hidden;
+          overflow: visible;
           opacity: 0;
           transition: opacity 0.8s ease 0.3s;
           background: radial-gradient(circle at center, rgba(37, 99, 235, 0.28) 0%, rgba(29, 78, 216, 0.15) 50%, #081223 100%);
@@ -471,6 +471,7 @@ export default function LandingPage() {
           width: 100%;
           max-width: 320px;
           margin: 0 auto;
+          overflow: visible;
         }
 
         .lp-carousel-viewport {
@@ -501,7 +502,7 @@ export default function LandingPage() {
           width: 100%;
           height: auto;
           max-height: clamp(380px, 68vh, 600px);
-          object-fit: contain;
+          object-fit: cover;
           display: block;
           user-select: none;
           pointer-events: none;
@@ -510,7 +511,7 @@ export default function LandingPage() {
         /* Carousel Navigation Buttons */
         .lp-carousel-btn {
           position: absolute;
-          top: 50%;
+          top: 42%;
           transform: translateY(-50%);
           width: 42px;
           height: 42px;
@@ -536,15 +537,15 @@ export default function LandingPage() {
           transform: translateY(-50%) scale(0.96);
         }
         .lp-carousel-btn-prev {
-          left: -20px;
+          left: -56px;
         }
         .lp-carousel-btn-next {
-          right: -20px;
+          right: -56px;
         }
 
         @media (max-width: 768px) {
-          .lp-carousel-btn-prev { left: 8px; }
-          .lp-carousel-btn-next { right: 8px; }
+          .lp-carousel-btn-prev { left: -20px; }
+          .lp-carousel-btn-next { right: -20px; }
           .lp-hero-carousel { max-width: 270px; }
         }
 
@@ -570,8 +571,8 @@ export default function LandingPage() {
           background: rgba(255, 255, 255, 0.65);
         }
         .lp-carousel-dot.active {
-          width: 26px;
-          background: #2563EB;
+          background: #FFFFFF;
+          box-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
         }
 
         /* ─── TICKER ─── */
@@ -1185,31 +1186,31 @@ export default function LandingPage() {
                     </div>
                   ))}
                 </div>
-
-                {/* Previous Slide Button */}
-                <button
-                  type="button"
-                  className="lp-carousel-btn lp-carousel-btn-prev"
-                  onClick={prevHeroSlide}
-                  aria-label="Previous screen"
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="m15 18-6-6 6-6" />
-                  </svg>
-                </button>
-
-                {/* Next Slide Button */}
-                <button
-                  type="button"
-                  className="lp-carousel-btn lp-carousel-btn-next"
-                  onClick={nextHeroSlide}
-                  aria-label="Next screen"
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="m9 18 6-6-6-6" />
-                  </svg>
-                </button>
               </div>
+
+              {/* Previous Slide Button — left edge of carousel container */}
+              <button
+                type="button"
+                className="lp-carousel-btn lp-carousel-btn-prev"
+                onClick={prevHeroSlide}
+                aria-label="Previous screen"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m15 18-6-6 6-6" />
+                </svg>
+              </button>
+
+              {/* Next Slide Button — right edge of carousel container */}
+              <button
+                type="button"
+                className="lp-carousel-btn lp-carousel-btn-next"
+                onClick={nextHeroSlide}
+                aria-label="Next screen"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m9 18 6-6-6-6" />
+                </svg>
+              </button>
 
               {/* Bottom Navigation Dots */}
               <div className="lp-carousel-dots">

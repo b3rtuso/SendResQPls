@@ -8,8 +8,8 @@ import { FaBriefcaseMedical } from 'react-icons/fa';
 import { RiCriminalFill, RiTyphoonFill } from 'react-icons/ri';
 import { MdLandslide } from 'react-icons/md';
 import { IoBandage } from 'react-icons/io5';
-import type { Incident, Status, Department } from '../types';
-import { getIncidents, updateIncidentStatus, batchUpdateIncidents, invalidateCache } from '../api/client';
+import type { Incident, Status, Department, DepartmentInfo } from '../types';
+import { getIncidents, updateIncidentStatus, batchUpdateIncidents, invalidateCache, getDepartments } from '../api/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { getNearestBarangay } from '../data/balayan-data';
@@ -203,6 +203,15 @@ export default function Requests() {
   // Multi-select batch operations state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [batchLoading, setBatchLoading] = useState(false);
+  const [departmentsList, setDepartmentsList] = useState<DepartmentInfo[]>([]);
+
+  useEffect(() => {
+    getDepartments()
+      .then((res) => {
+        if (Array.isArray(res.data)) setDepartmentsList(res.data);
+      })
+      .catch((err) => console.warn('[Requests] Failed to load departments:', err));
+  }, []);
 
   // Sorting state
   type SortKey = 'id' | 'type' | 'location' | 'unit' | 'status' | 'createdAt' | 'urgency';
@@ -1506,11 +1515,21 @@ export default function Requests() {
               }}
             >
               <option value="" disabled>Choose Department…</option>
-              <option value="BFP">BFP Fire Rescue</option>
-              <option value="PNP">PNP Police</option>
-              <option value="MEDICAL">Medical EMS</option>
-              <option value="ENGINEERING">Engineering</option>
-              <option value="RESCUE">MDRRMO Rescue</option>
+              {departmentsList.length > 0 ? (
+                departmentsList.map(dept => (
+                  <option key={dept.name} value={dept.name}>
+                    {dept.name} — {dept.fullName || dept.name}
+                  </option>
+                ))
+              ) : (
+                <>
+                  <option value="BFP">BFP Fire Rescue</option>
+                  <option value="PNP">PNP Police</option>
+                  <option value="MEDICAL">Medical EMS</option>
+                  <option value="ENGINEERING">Engineering</option>
+                  <option value="RESCUE">MDRRMO Rescue</option>
+                </>
+              )}
             </select>
           </div>
 

@@ -107,6 +107,12 @@ export const updateIncidentStatus = (id: string, data: { status?: string; adminN
     return res;
   });
 
+export const batchUpdateIncidents = (data: { ids: string[]; status?: string; assignedDepartment?: string }) =>
+  api.patch('/incidents/batch', data).then(res => {
+    invalidateCache('incidents');
+    return res;
+  });
+
 export const getIncidents = () => cachedGet('/incidents', 60000);
 export const getIncidentsByRange = (from: string, to: string) =>
   cachedGet(`/incidents?from=${from}&to=${to}`, 60000);

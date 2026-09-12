@@ -1,5 +1,5 @@
 export type Status = 'PENDING' | 'REVIEWING' | 'DISPATCHED' | 'RESOLVED' | 'REJECTED';
-export type Department = 'BFP' | 'PNP' | 'MEDICAL' | 'ENGINEERING' | 'RESCUE';
+export type Department = 'BFP' | 'PNP' | 'MEDICAL' | 'ENGINEERING' | 'RESCUE' | (string & {});
 export type Role = 'CITIZEN' | 'ADMIN';
 
 export interface User {
@@ -75,6 +75,11 @@ export interface Incident {
   severity?: Severity;
   urgencyScore?: number;
   adminNotes?: string;
+  barangay?: string;
+  formattedAddress?: string;
+  lockedByAdminId?: string;
+  lockedByAdminName?: string;
+  lockedAt?: string;
   reporterId: string;
   reporter?: User;
   resolutionForm?: ResolutionForm;

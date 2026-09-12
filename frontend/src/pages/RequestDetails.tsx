@@ -3,9 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { RequestDetailsSkeleton } from '../components/PageLoader';
 import Toast, { type ToastType } from '../components/Toast';
-import { ArrowLeft, AlertTriangle, Brain, MapPin, Camera, User, Clock, ExternalLink, X, Phone, Building2, CheckCircle2 } from 'lucide-react';
-import { updateIncidentStatus, getIncident as fetchIncident, reverseGeocode, createCallLog } from '../api/client';
-import type { Status, Incident, ResolutionForm } from '../types';
+import { ArrowLeft, AlertTriangle, Brain, MapPin, User, Clock, ExternalLink, X, Phone, Building2, CheckCircle2, Copy, PhoneCall } from 'lucide-react';
+import { updateIncidentStatus, getIncident as fetchIncident, reverseGeocode, createCallLog, getDepartments } from '../api/client';
+import type { Status, Incident, ResolutionForm, DepartmentInfo } from '../types';
+import { getDeptTheme, getDeptDisplayName, getDeptContact, getDeptAbbr } from '../utils/departmentUtils';
 import ResolutionFormModal from '../components/ResolutionFormModal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -61,22 +62,6 @@ function getAvailableStatuses(current: Status): Status[] {
   return [...forward, 'REJECTED'];
 }
 
-const deptNames: Record<string, string> = {
-  BFP: 'BFP (Bureau of Fire Protection)',
-  PNP: 'PNP (Philippine National Police)',
-  MEDICAL: 'Medical / Red Cross / Ambulance',
-  ENGINEERING: 'Engineering / DPWH',
-  RESCUE: 'MDRRMO Rescue Team',
-};
-
-const departments = [
-  { key: 'BFP', name: 'Bureau of Fire Protection', abbr: 'BFP', contact: '(043) 740-1234', color: '#EF4444' },
-  { key: 'PNP', name: 'Philippine National Police', abbr: 'PNP', contact: '(043) 740-5678', color: '#3B82F6' },
-  { key: 'MEDICAL', name: 'Medical / Red Cross', abbr: 'MED', contact: '(043) 740-9012', color: '#22C55E' },
-  { key: 'ENGINEERING', name: 'Engineering / DPWH', abbr: 'ENG', contact: '(043) 740-3456', color: '#F59E0B' },
-  { key: 'RESCUE', name: 'MDRRMO Rescue Team', abbr: 'RSQ', contact: '(043) 740-7890', color: '#8B5CF6' },
-];
-
 interface ToastState {
   show: boolean;
   message: string;
@@ -97,6 +82,20 @@ export default function RequestDetails() {
   const [resolvedAddress, setResolvedAddress] = useState('');
   const [resolvingAddress, setResolvingAddress] = useState(false);
   const [showResolutionModal, setShowResolutionModal] = useState(false);
+  const [departmentsList, setDepartmentsList] = useState<DepartmentInfo[]>([]);
+
+  // Fetch dynamic departments list from database
+  useEffect(() => {
+    getDepartments()
+      .then((res) => {
+        if (Array.isArray(res.data)) {
+          setDepartmentsList(res.data);
+        }
+      })
+      .catch((err) => {
+        console.warn('[RequestDetails] Failed to load departments:', err);
+      });
+  }, []);
 
   const showToast = useCallback((type: ToastType, message: string, detail?: string) => {
     setToast({ show: true, message, detail, type });
@@ -235,12 +234,13 @@ export default function RequestDetails() {
 
     try {
       const res = await updateIncidentStatus(id!, { assignedDepartment: deptKey });
-      const dept = departments.find(d => d.key === deptKey);
+      const deptName = getDeptDisplayName(deptKey, departmentsList);
+      const deptContact = getDeptContact(deptKey, departmentsList);
       const updatedIncident = (res?.data as any)?.updated || res?.data;
       if (updatedIncident && updatedIncident.id) {
         setIncident((prev) => prev ? { ...prev, ...updatedIncident } : updatedIncident);
       }
-      showToast('success', `Department assigned: ${dept?.name}`, `Contact: ${dept?.contact} — You can now call them directly.`);
+      showToast('success', `Department assigned: ${deptName}`, `Contact: ${deptContact} — You can now call them directly.`);
     } catch {
       setIncident((prev) => prev ? { ...prev, assignedDepartment: prevDept } : prev);
       showToast('error', 'Failed to assign department', 'Server returned an error. Reverting department assignment.');
@@ -249,16 +249,28 @@ export default function RequestDetails() {
     }
   };
 
-  const handleCallDept = (_e: React.MouseEvent, dept: any) => {
+  const handleCallDept = (_e?: React.MouseEvent, deptParam?: any) => {
+    const deptKey = typeof deptParam === 'string'
+      ? deptParam
+      : deptParam?.key || deptParam?.name || incident?.assignedDepartment || incident?.aiRecommendedDept || 'RESCUE';
+    const name = getDeptDisplayName(deptKey, departmentsList);
+    const contact = typeof deptParam === 'object' && deptParam?.contact
+      ? deptParam.contact
+      : getDeptContact(deptKey, departmentsList);
     const adminName = localStorage.getItem('userName') || 'MDRRMO Dispatcher';
+
     createCallLog({
       requestId: id,
       callerName: adminName,
-      department: dept.abbr || dept.name,
-      contact: dept.contact,
+      department: getDeptAbbr(deptKey),
+      contact: contact || '(043) 211-1234',
       status: 'Accepted',
     }).catch(() => {});
-    showToast('info', `Calling ${dept.name}`, `Initiated call to ${dept.contact}. Call log recorded.`);
+
+    showToast('info', `Calling ${name}`, `Initiated call to ${contact}. Call log recorded.`);
+    if (contact) {
+      window.location.href = `tel:${contact.replace(/[^0-9+]/g, '')}`;
+    }
   };
 
   const handleCallReporter = () => {
@@ -272,6 +284,7 @@ export default function RequestDetails() {
       status: 'Accepted',
     }).catch(() => {});
     showToast('info', `Calling Reporter`, `Initiated call to ${incident.reporter.phoneNumber}. Call log recorded.`);
+    window.location.href = `tel:${incident.reporter.phoneNumber.replace(/[^0-9+]/g, '')}`;
   };
 
   const openLocation = () => {
@@ -312,6 +325,28 @@ export default function RequestDetails() {
     );
   }
 
+  const activeDepartments = departmentsList.length > 0
+    ? departmentsList.map((d) => {
+        const theme = getDeptTheme(d.name, departmentsList);
+        return {
+          key: d.name,
+          name: d.fullName || d.name,
+          abbr: getDeptAbbr(d.name),
+          contact: d.contact,
+          color: theme.color,
+          bg: theme.bg,
+          border: theme.border,
+          icon: theme.icon,
+        };
+      })
+    : [
+        { key: 'BFP', name: 'Bureau of Fire Protection', abbr: 'BFP', contact: '(043) 211-6387', color: '#EF4444', bg: 'rgba(239, 68, 68, 0.08)', border: 'rgba(239, 68, 68, 0.25)', icon: Building2 },
+        { key: 'PNP', name: 'Philippine National Police', abbr: 'PNP', contact: '(043) 211-4325', color: '#3B82F6', bg: 'rgba(59, 130, 246, 0.08)', border: 'rgba(59, 130, 246, 0.25)', icon: Building2 },
+        { key: 'MEDICAL', name: 'Medical / MHO / Ambulance', abbr: 'MED', contact: '(043) 911-0012', color: '#22C55E', bg: 'rgba(34, 197, 94, 0.08)', border: 'rgba(34, 197, 94, 0.25)', icon: Building2 },
+        { key: 'ENGINEERING', name: 'Engineering / DPWH', abbr: 'ENG', contact: '(043) 211-5678', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.08)', border: 'rgba(245, 158, 11, 0.25)', icon: Building2 },
+        { key: 'RESCUE', name: 'MDRRMO Rescue Team', abbr: 'RSQ', contact: '(043) 211-1234', color: '#8B5CF6', bg: 'rgba(139, 92, 246, 0.08)', border: 'rgba(139, 92, 246, 0.25)', icon: Building2 },
+      ];
+
   return (
     <>
       <Header title={`Request ${(incident?.id || id || '').slice(0, 8)}...`} subtitle="Review incident details and update status" />
@@ -346,13 +381,13 @@ export default function RequestDetails() {
                 <div>
                   <strong style={{ fontSize: 12, color: 'var(--text-muted)' }}>RECOMMENDED DEPT</strong>
                   <div style={{ fontSize: 16, fontWeight: 700, marginTop: 4 }}>
-                    {incident.aiRecommendedDept ? deptNames[incident.aiRecommendedDept] || incident.aiRecommendedDept : '—'}
+                    {incident.aiRecommendedDept ? getDeptDisplayName(incident.aiRecommendedDept, departmentsList) : '—'}
                   </div>
                 </div>
                 <div>
                   <strong style={{ fontSize: 12, color: 'var(--text-muted)' }}>ASSIGNED DEPT</strong>
                   <div style={{ fontSize: 16, fontWeight: 700, marginTop: 4, color: incident.assignedDepartment ? 'var(--primary)' : 'var(--text-muted)' }}>
-                    {incident.assignedDepartment ? deptNames[incident.assignedDepartment] || incident.assignedDepartment : 'Not yet assigned'}
+                    {incident.assignedDepartment ? getDeptDisplayName(incident.assignedDepartment, departmentsList) : 'Not yet assigned'}
                   </div>
                 </div>
                 <div>
@@ -469,6 +504,224 @@ export default function RequestDetails() {
               })()}
             </div>
 
+            {/* ── Emergency Quick Call Priority Section (Top of Incident Details) ── */}
+            <div
+              className="card"
+              style={{
+                background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
+                border: '1.5px solid rgba(239, 68, 68, 0.4)',
+                borderRadius: 16,
+                padding: '16px 20px',
+                color: 'white',
+                boxShadow: '0 8px 24px rgba(15, 23, 42, 0.12)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{
+                    width: 32, height: 32, borderRadius: 8,
+                    background: '#EF4444', display: 'flex',
+                    alignItems: 'center', justifyContent: 'center',
+                    boxShadow: '0 0 12px rgba(239, 68, 68, 0.45)',
+                  }}>
+                    <PhoneCall size={16} color="white" />
+                  </div>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: 14, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#F8FAFC' }}>
+                      EMERGENCY QUICK CALL
+                    </h3>
+                    <p style={{ margin: 0, fontSize: 11, color: '#94A3B8' }}>
+                      Instant speed-dial with automatic MDRRMO call logging
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    padding: '4px 10px', borderRadius: 20,
+                    background: 'rgba(34, 197, 94, 0.15)', border: '1px solid rgba(34, 197, 94, 0.3)',
+                    fontSize: 11, fontWeight: 700, color: '#4ADE80',
+                  }}>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ADE80' }} />
+                    DISPATCH READY
+                  </span>
+                </div>
+              </div>
+
+              {/* 2-Column Responsive Dial Cards */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(270px, 1fr))', gap: 12 }}>
+                
+                {/* 1. Citizen Reporter Call Box */}
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: 12,
+                  padding: '12px 14px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  gap: 8,
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                      <div style={{ fontSize: 10.5, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        CITIZEN REPORTER
+                      </div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: '#FFFFFF', marginTop: 2 }}>
+                        {incident.reporter?.name || 'Citizen Reporter'}
+                      </div>
+                    </div>
+                    <span style={{
+                      fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 6,
+                      background: incident.reporter?.phoneNumber ? 'rgba(59, 130, 246, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                      color: incident.reporter?.phoneNumber ? '#93C5FD' : '#FCA5A5',
+                    }}>
+                      {incident.reporter?.phoneNumber ? 'PHONE AVAILABLE' : 'NO PHONE'}
+                    </span>
+                  </div>
+
+                  <div style={{
+                    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                    fontSize: 15,
+                    fontWeight: 800,
+                    color: incident.reporter?.phoneNumber ? '#38BDF8' : '#64748B',
+                    letterSpacing: '0.04em',
+                  }}>
+                    {incident.reporter?.phoneNumber || 'No phone provided'}
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 6, marginTop: 2 }}>
+                    <button
+                      type="button"
+                      disabled={!incident.reporter?.phoneNumber}
+                      onClick={() => handleCallReporter()}
+                      style={{
+                        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                        padding: '8px 0', borderRadius: 8, fontSize: 12, fontWeight: 700,
+                        background: incident.reporter?.phoneNumber ? '#2563EB' : 'rgba(255,255,255,0.08)',
+                        color: incident.reporter?.phoneNumber ? 'white' : '#64748B',
+                        border: 'none', cursor: incident.reporter?.phoneNumber ? 'pointer' : 'not-allowed',
+                        transition: 'background 0.15s',
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      <Phone size={13} /> Call Reporter
+                    </button>
+                    {incident.reporter?.phoneNumber && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(incident.reporter!.phoneNumber!).then(() => {
+                            showToast('info', `Copied: ${incident.reporter!.phoneNumber}`, 'Reporter phone copied to clipboard.');
+                          });
+                        }}
+                        title="Copy phone number"
+                        style={{
+                          padding: '8px 12px', borderRadius: 8, fontSize: 11, fontWeight: 700,
+                          background: 'rgba(255, 255, 255, 0.1)', color: '#CBD5E1',
+                          border: '1px solid rgba(255, 255, 255, 0.15)', cursor: 'pointer',
+                          fontFamily: 'inherit',
+                        }}
+                      >
+                        <Copy size={12} style={{ marginRight: 3, verticalAlign: -1, display: 'inline-block' }} /> Copy
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* 2. Responding Agency / Unit Call Box */}
+                {(() => {
+                  const targetDeptCode = incident.assignedDepartment || incident.aiRecommendedDept;
+                  const targetDeptName = getDeptDisplayName(targetDeptCode, departmentsList);
+                  const targetDeptContact = getDeptContact(targetDeptCode, departmentsList);
+                  const targetTheme = getDeptTheme(targetDeptCode, departmentsList);
+                  const isAssigned = !!incident.assignedDepartment;
+
+                  return (
+                    <div style={{
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      border: isAssigned ? `1.5px solid ${targetTheme.color}50` : '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: 12,
+                      padding: '12px 14px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      gap: 8,
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div>
+                          <div style={{ fontSize: 10.5, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            {isAssigned ? 'ASSIGNED RESPONDER' : 'AI RECOMMENDED UNIT'}
+                          </div>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: '#FFFFFF', marginTop: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <targetTheme.icon size={14} color={targetTheme.color} />
+                            {targetDeptName}
+                          </div>
+                        </div>
+                        <span style={{
+                          fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 6,
+                          background: `${targetTheme.color}25`,
+                          color: targetTheme.color,
+                          border: `1.5px solid ${targetTheme.color}40`,
+                        }}>
+                          {targetDeptCode || 'UNASSIGNED'}
+                        </span>
+                      </div>
+
+                      <div style={{
+                        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                        fontSize: 15,
+                        fontWeight: 800,
+                        color: targetTheme.color,
+                        letterSpacing: '0.04em',
+                      }}>
+                        {targetDeptContact || '(043) 211-1234'}
+                      </div>
+
+                      <div style={{ display: 'flex', gap: 6, marginTop: 2 }}>
+                        <button
+                          type="button"
+                          onClick={(e) => handleCallDept(e, { key: targetDeptCode || 'RESCUE', name: targetDeptName, contact: targetDeptContact })}
+                          style={{
+                            flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                            padding: '8px 0', borderRadius: 8, fontSize: 12, fontWeight: 700,
+                            background: targetTheme.color,
+                            color: 'white',
+                            border: 'none', cursor: 'pointer',
+                            transition: 'opacity 0.15s',
+                            fontFamily: 'inherit',
+                          }}
+                        >
+                          <Phone size={13} /> Call {getDeptAbbr(targetDeptCode) || 'Unit'}
+                        </button>
+                        {targetDeptContact && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(targetDeptContact).then(() => {
+                                showToast('info', `Copied: ${targetDeptContact}`, `${targetDeptName} phone copied to clipboard.`);
+                              });
+                            }}
+                            title="Copy phone number"
+                            style={{
+                              padding: '8px 12px', borderRadius: 8, fontSize: 11, fontWeight: 700,
+                              background: 'rgba(255, 255, 255, 0.1)', color: '#CBD5E1',
+                              border: '1px solid rgba(255, 255, 255, 0.15)', cursor: 'pointer',
+                              fontFamily: 'inherit',
+                            }}
+                          >
+                            <Copy size={12} style={{ marginRight: 3, verticalAlign: -1, display: 'inline-block' }} /> Copy
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+              </div>
+            </div>
+
             {/* Incident Details — uses REAL data from database */}
             <div className="card">
               <div className="card-header"><h3>Incident Details</h3></div>
@@ -497,47 +750,26 @@ export default function RequestDetails() {
                     </div>
                   </div>
                   <div className="dept-detail">
-                    <Camera size={16} />
-                    <strong>Photo:</strong>
-                    {incident.photoUrl ? (
-                      <span
-                        className="table-link"
-                        onClick={() => setShowPhoto(true)}
-                        style={{ cursor: 'pointer' }}
-                      >
-                        View uploaded image
-                      </span>
-                    ) : (
-                      <span style={{ color: 'var(--text-muted)' }}>No photo available</span>
-                    )}
-                  </div>
-                  <div className="dept-detail">
                     <User size={16} />
                     <strong>Reporter:</strong> {incident.reporter?.name || 'Unknown'} ({incident.reporter?.email || (incident.reporterId ? incident.reporterId.slice(0, 8) + '...' : 'Unknown')})
                   </div>
-                    {incident.reporter?.phoneNumber && (
-                      <div className="dept-detail">
-                        <Phone size={16} />
-                        <strong>Phone:</strong>
-                        <a
-                          href={`tel:${incident.reporter.phoneNumber}`}
-                          onClick={() => handleCallReporter()}
-                          style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}
-                        >
-                          {incident.reporter.phoneNumber}
-                        </a>
-                      </div>
-                    )}
+                  {incident.reporter?.phoneNumber && (
+                    <div className="dept-detail">
+                      <Phone size={16} />
+                      <strong>Phone:</strong>
+                      <a
+                        href={`tel:${incident.reporter.phoneNumber}`}
+                        onClick={() => handleCallReporter()}
+                        style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}
+                      >
+                        {incident.reporter.phoneNumber}
+                      </a>
+                    </div>
+                  )}
                   <div className="dept-detail">
                     <Clock size={16} />
                     <strong>Reported:</strong> {new Date(incident.createdAt).toLocaleString()}
                   </div>
-                  {incident.updatedAt !== incident.createdAt && (
-                    <div className="dept-detail">
-                      <Clock size={16} />
-                      <strong>Last Updated:</strong> {new Date(incident.updatedAt).toLocaleString()}
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -590,8 +822,9 @@ export default function RequestDetails() {
               <div className="card-body">
                 <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>Select a responding department. This will update the Assigned Dept above and notify the team.</p>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  {departments.map((dept) => {
+                  {activeDepartments.map((dept) => {
                     const isSelected = incident.assignedDepartment === dept.key;
+                    const DeptIcon = dept.icon || Building2;
                     return (
                       <div
                         key={dept.key}
@@ -612,10 +845,12 @@ export default function RequestDetails() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                           <div style={{
                             width: 36, height: 36, borderRadius: 10,
-                            background: `${dept.color}15`, display: 'flex',
+                            background: dept.bg || `${dept.color}15`, display: 'flex',
                             alignItems: 'center', justifyContent: 'center',
                             color: dept.color, fontWeight: 800, fontSize: 12,
-                          }}>{dept.abbr}</div>
+                          }}>
+                            <DeptIcon size={18} color={dept.color} />
+                          </div>
                           <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>{dept.name}</div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>

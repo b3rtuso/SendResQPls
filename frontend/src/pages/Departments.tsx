@@ -2,8 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import Header from '../components/Header';
 import { DepartmentsSkeleton } from '../components/PageLoader';
 import {
-  Phone, Mail, Users, Search, ShieldCheck, Flame,
-  Stethoscope, HardHat, Ambulance, Copy, Check, Info, ShieldAlert,
+  Phone, Mail, Users, Search, Flame,
+  Copy, Check, Info, ShieldAlert,
   Plus, Edit2, Trash2,
 } from 'lucide-react';
 import type { DepartmentInfo } from '../types';
@@ -30,19 +30,7 @@ const statusColors: Record<string, string> = {
   Deployed: '#EF4444',
 };
 
-const DEPT_THEME: Record<string, { icon: any; color: string; bg: string }> = {
-  BFP: { icon: Flame, color: '#EF4444', bg: '#FEF2F2' },
-  PNP: { icon: ShieldCheck, color: '#3B82F6', bg: '#EFF6FF' },
-  MEDICAL: { icon: Stethoscope, color: '#22C55E', bg: '#ECFDF5' },
-  ENGINEERING: { icon: HardHat, color: '#F59E0B', bg: '#FEFCE8' },
-  RESCUE: { icon: Ambulance, color: '#8B5CF6', bg: '#F5F3FF' },
-};
-
-const getDeptTheme = (name: string) => {
-  const code = name.toUpperCase();
-  if (DEPT_THEME[code]) return DEPT_THEME[code];
-  return { icon: ShieldCheck, color: '#64748B', bg: '#F1F5F9' }; // default fallback theme
-};
+import { getDeptTheme } from '../utils/departmentUtils';
 
 type FilterStatus = 'ALL' | 'Available' | 'On Standby' | 'Deployed';
 

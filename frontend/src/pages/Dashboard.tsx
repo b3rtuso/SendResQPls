@@ -9,8 +9,9 @@ import {
   Info, ChevronLeft, ChevronRight, MapPin,
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
-import type { Incident, Status } from '../types';
-import { getIncidents, getIncidentStats, invalidateCache } from '../api/client';
+import type { Incident, Status, DepartmentInfo } from '../types';
+import { getIncidents, getIncidentStats, invalidateCache, getDepartments } from '../api/client';
+import { getDeptTheme } from '../utils/departmentUtils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { getNearestBarangay } from '../data/balayan-data';
@@ -151,6 +152,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [statusFilter, setStatusFilter] = useState<Status | 'ALL'>('ALL');
+  const [departmentsList, setDepartmentsList] = useState<DepartmentInfo[]>([]);
   const [dashboardYear, setDashboardYear] = useState<string>(String(new Date().getFullYear()));
   const [activeDonutIndex, setActiveDonutIndex] = useState<number | null>(null);
   const [showComputationModal, setShowComputationModal] = useState(false);
@@ -285,7 +287,17 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchData();
-    const iv = setInterval(fetchData, 60000); // 60s — SSE handles real-time alerts
+    getDepartments()
+      .then((r) => { if (Array.isArray(r.data)) setDepartmentsList(r.data); })
+      .catch(() => {});
+
+    const iv = setInterval(() => {
+      fetchData();
+      getDepartments()
+        .then((r) => { if (Array.isArray(r.data)) setDepartmentsList(r.data); })
+        .catch(() => {});
+    }, 60000); // 60s — SSE handles real-time alerts
+
     return () => clearInterval(iv);
   }, []);
 
@@ -1268,7 +1280,19 @@ export default function Dashboard() {
               Department Activity
             </div>
             <div style={{ padding: '12px', flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {DEPARTMENTS.map(({ label, sub, icon: Icon, color, bg, tel }) => (
+              {(departmentsList.length > 0 ? departmentsList.map((d) => {
+                const theme = getDeptTheme(d.name, departmentsList);
+                const dotColor = d.status === 'Deployed' ? '#EF4444' : d.status === 'On Standby' ? '#F59E0B' : '#22C55E';
+                return {
+                  label: d.name,
+                  sub: d.fullName || d.name,
+                  icon: theme.icon,
+                  color: theme.color,
+                  bg: theme.bg,
+                  tel: `tel:${(d.contact || '').replace(/[^0-9+]/g, '')}`,
+                  dotColor,
+                };
+              }) : DEPARTMENTS.map(d => ({ ...d, dotColor: '#22C55E' }))).map(({ label, sub, icon: Icon, color, bg, tel, dotColor }) => (
                 <div key={label} style={{
                   padding: '14px', borderRadius: 10, border: '1px solid #F1F5F9',
                   transition: 'border-color 0.15s',
@@ -1288,7 +1312,7 @@ export default function Dashboard() {
                     </div>
                     <div
                       className="status-pulse-dot"
-                      style={{ '--pulse-color': '#22C55E', background: '#22C55E', marginLeft: 'auto' } as any}
+                      style={{ '--pulse-color': dotColor, background: dotColor, marginLeft: 'auto' } as any}
                     />
                   </div>
                   <Button

@@ -210,6 +210,11 @@ export const downloadOfficialReport = async (req: Request, res: Response) => {
       orderBy: { createdAt: 'asc' },
     });
 
+    // In MDRRMO official operational reporting, resolved incidents with mission completion forms are prioritized
+    const resolved = incidents.filter(i => i.status === 'RESOLVED');
+    const sorted = (resolved.length > 0 ? resolved : incidents.filter(i => i.status !== 'REJECTED'))
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
     const templateBuf = getTemplateBuffer(range);
     const zip = new PizZip(templateBuf);
     const doc = new Docxtemplater(zip, {
@@ -222,28 +227,43 @@ export const downloadOfficialReport = async (req: Request, res: Response) => {
 
     if (range === 'daily') {
       const reportDate = formatDisplayDate(dateQuery);
-      const incidentData = incidents.map((inc, idx) => {
+      const incidentData = sorted.map((inc, idx) => {
         const rf = inc.resolutionForm;
-        const incTimeStr = rf?.incidentTime || militaryTime(inc.createdAt);
+        const incTimeStr = rf?.incidentTime 
+          ? (rf.incidentTime.includes('H') ? rf.incidentTime : rf.incidentTime.replace(':', '') + 'H') 
+          : militaryTime(inc.createdAt);
         const incDateStr = rf?.incidentDate ? formatDisplayDate(rf.incidentDate) : formatDisplayDate(inc.createdAt);
         const incTypeStr = describeType(inc);
         const locStr = resolveLocation(inc);
 
-        const patientName = rf?.patientName || inc.reporter?.name || 'Unidentified Patient';
-        const patientSex = (rf?.patientSex || 'Male').toLowerCase();
+        const patientName = rf?.patientName || inc.reporter?.name || 'Citizen Reporter / Patient';
+        const patientSex = (rf?.patientSex || 'unspecified').toLowerCase();
         const patientAge = rf?.patientAge || 'N/A';
         const patientAddress = cleanLocation(rf?.patientAddress || locStr);
 
-        const intoxicationDetail = rf?.intoxicationSuspected?.toLowerCase() === 'yes' ? 'was alcohol intoxicated, ' : '';
-        const mechanismDetail = rf?.mechanismOfInjury ? `crashed / suffered ${rf.mechanismOfInjury.toLowerCase()}, ` : '';
-        const injuriesObserved = rf?.injuriesObserved ? rf.injuriesObserved.toLowerCase() : 'minor injuries';
+        const intoxicationDetail = rf?.intoxicationSuspected?.toLowerCase() === 'yes' ? 'was suspected of alcohol intoxication, ' : '';
+        const mechanismDetail = rf?.mechanismOfInjury 
+          ? `crashed / suffered ${rf.mechanismOfInjury.toLowerCase()}, ` 
+          : (rf?.howIncidentHappened ? `experienced ${rf.howIncidentHappened.toLowerCase()}, ` : 'was involved in an emergency incident, ');
+        const injuriesObserved = rf?.injuriesObserved ? rf.injuriesObserved.toLowerCase() : 'injuries assessed on scene';
 
-        const responders = rf?.responderNames || 'MDRRMO Rescue & EMS Response Team';
-        const interventions = rf?.treatmentInterventions ? `${rf.treatmentInterventions.toLowerCase()}, ` : 'proper positioning, wound cleaning/disinfecting, ';
-        const vitalsDetail = `an SaO₂ of ${rf?.oxygenSaturation || '98%'}, pulse rate of ${rf?.pulseRate || '80 bpm'}, blood pressure of ${rf?.bloodPressure || '120/80 mmHg'}, and a GCS of ${rf?.gcsScore || '15'}`;
+        const responders = rf?.responderNames || (inc.assignedDepartment ? `${inc.assignedDepartment} On-Duty Team` : 'MDRRMO Rescue & EMS Response Team');
+        const interventions = rf?.treatmentInterventions 
+          ? `including ${rf.treatmentInterventions.toLowerCase()},` 
+          : 'including supportive patient positioning and continuous monitoring,';
+
+        const hasVitals = rf?.oxygenSaturation || rf?.pulseRate || rf?.bloodPressure || rf?.gcsScore;
+        const vitalsDetail = hasVitals
+          ? `an SaO₂ of ${rf?.oxygenSaturation || '98'}%, pulse rate of ${rf?.pulseRate || '80'} bpm, blood pressure of ${rf?.bloodPressure || '120/80'} mmHg, and a GCS of ${rf?.gcsScore || '15'}`
+          : 'vital signs monitored and maintained within stable limits';
+
         const dispositionDetail = rf?.destinationFacility
-          ? `immediately transported to ${rf.destinationFacility} for further hospital treatment`
-          : 'managed and rendered appropriate care on scene';
+          ? `immediately transported to ${rf.destinationFacility} for further medical evaluation and management`
+          : (rf?.dispositionStatus === 'DEAD_ON_SPOT'
+              ? 'pronounced deceased on the spot and endorsed to authorities'
+              : (rf?.dispositionStatus === 'REFUSED_TRANSPORT'
+                  ? 'refused ambulance transport after on-scene care and signed release waiver'
+                  : 'managed and rendered appropriate care on scene'));
 
         return {
           incident_no: idx + 1,
@@ -268,7 +288,7 @@ export const downloadOfficialReport = async (req: Request, res: Response) => {
 
       templateData = {
         report_date: reportDate,
-        total_incidents: incidents.length,
+        total_incidents: sorted.length,
         incidents: incidentData.length > 0 ? incidentData : [
           {
             incident_no: 1,
@@ -297,7 +317,7 @@ export const downloadOfficialReport = async (req: Request, res: Response) => {
       const dateRangeStr = `${monLabel} to ${sunLabel}`;
 
       const groups = new Map<string, any[]>();
-      incidents.forEach((inc) => {
+      sorted.forEach((inc) => {
         const typeName = describeType(inc);
         if (!groups.has(typeName)) groups.set(typeName, []);
         groups.get(typeName)!.push(inc);
@@ -370,7 +390,7 @@ export const downloadOfficialReport = async (req: Request, res: Response) => {
       const weeksData = [
         {
           date_range: dateRangeStr,
-          total_incidents: countWithWords(incidents.length),
+          total_incidents: countWithWords(sorted.length),
           type_counts: type_counts.length > 0 ? type_counts : [{ type_name: 'No Active Emergency', count: 'Zero (0)' }],
           type_summaries: type_summaries.length > 0 ? type_summaries : [
             {
@@ -391,7 +411,7 @@ export const downloadOfficialReport = async (req: Request, res: Response) => {
       // Monthly
       const monthNameStr = fromDate.toLocaleDateString('en-PH', { month: 'long', year: 'numeric' });
       const groups = new Map<string, any[]>();
-      incidents.forEach((inc) => {
+      sorted.forEach((inc) => {
         const typeName = describeType(inc);
         if (!groups.has(typeName)) groups.set(typeName, []);
         groups.get(typeName)!.push(inc);
@@ -475,7 +495,7 @@ export const downloadOfficialReport = async (req: Request, res: Response) => {
 
       templateData = {
         month_name: monthNameStr,
-        total_incidents: countWithWords(incidents.length),
+        total_incidents: countWithWords(sorted.length),
         included_types_sentence: includedTypesSentence,
         monthly_narrative_paragraphs: monthlyNarrativeParagraphs,
       };

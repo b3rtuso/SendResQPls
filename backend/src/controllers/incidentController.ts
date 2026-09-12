@@ -250,7 +250,7 @@ export const reportIncident = async (req: AuthRequest, res: Response) => {
   try {
     // Take userId from verified JWT — never trust the body for identity
     const userId = req.user!.userId;
-    const { latitude, longitude } = req.body;
+    const { latitude, longitude, description } = req.body;
 
     if (!req.file) return res.status(400).json({ error: 'No image provided' });
 
@@ -266,6 +266,7 @@ export const reportIncident = async (req: AuthRequest, res: Response) => {
 
     const user = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
     const reporterName = user?.name || 'Citizen';
+    const cleanDescription = description ? String(description).trim() : null;
 
     // Reverse geocode barangay and formatted address on ingest (non-blocking fallback)
     const geo = await performReverseGeocode(lat, lng).catch(() => null);
@@ -281,6 +282,7 @@ export const reportIncident = async (req: AuthRequest, res: Response) => {
         barangay: resolvedBarangay,
         formattedAddress: resolvedAddress,
         photoUrl: imageUrl,
+        description: cleanDescription,
         aiDetectedType: 'Processing...', // Worker will update this
         severity: 'MEDIUM',
         urgencyScore: 50,
@@ -288,6 +290,7 @@ export const reportIncident = async (req: AuthRequest, res: Response) => {
         activities: {
           create: {
             title: `Incident reported by ${reporterName} via mobile app`,
+            description: cleanDescription || undefined,
             type: 'REPORTED',
           },
         },
@@ -297,17 +300,39 @@ export const reportIncident = async (req: AuthRequest, res: Response) => {
       },
     });
 
-    // Broadcast new incident creation to active admin dashboards via SSE
-    broadcastSseEvent('incident_created', {
-      incidentId: incident.id,
-      status: 'PENDING',
-      barangay: resolvedBarangay,
-      formattedAddress: resolvedAddress,
-      latitude: lat,
-      longitude: lng,
-      photoUrl: imageUrl,
-      createdAt: incident.createdAt,
-    });
+    // 📡 Broadcast immediate SSE to admin web dashboard (<300ms)
+    // Dispatchers get instantaneous audio alert and banner without waiting 3-6s for Gemini AI
+    try {
+      broadcastSseEvent('new_incident', {
+        id: incident.id,
+        latitude: incident.latitude,
+        longitude: incident.longitude,
+        barangay: resolvedBarangay,
+        formattedAddress: resolvedAddress,
+        photoUrl: incident.photoUrl,
+        description: incident.description,
+        aiDetectedType: 'Emergency (Analyzing...)',
+        aiRecommendedDept: 'RESCUE',
+        severity: 'MEDIUM',
+        urgencyScore: 50,
+        status: 'PENDING',
+        createdAt: incident.createdAt,
+      });
+      broadcastSseEvent('incident_created', {
+        incidentId: incident.id,
+        status: 'PENDING',
+        barangay: resolvedBarangay,
+        formattedAddress: resolvedAddress,
+        latitude: lat,
+        longitude: lng,
+        photoUrl: imageUrl,
+        description: incident.description,
+        createdAt: incident.createdAt,
+      });
+      console.log(`⚡ Immediate SSE broadcast sent for incident ${incident.id}`);
+    } catch (sseErr: any) {
+      console.warn('⚠️ Immediate SSE broadcast failed:', sseErr.message);
+    }
 
     // ② Enqueue the AI classification job — non-blocking, fires in the background
     try {

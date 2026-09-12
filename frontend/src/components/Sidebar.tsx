@@ -1,18 +1,20 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
-  LayoutDashboard, FileText, Phone,
-  BarChart3, Building2, Settings, LogOut, X,
+  LayoutDashboard, FileText,
+  BarChart3, Building2, LogOut, X,
 } from 'lucide-react';
+import { FaCog } from 'react-icons/fa';
+import { FiPhone } from 'react-icons/fi';
 import { useAdminNav } from '../context/AdminNavContext';
 
 const navItems = [
-  { to: '/dashboard',   icon: LayoutDashboard, label: 'Dashboard'   },
+  { to: '/dashboard',   icon: LayoutDashboard,  label: 'Dashboard'   },
   { to: '/requests',    icon: FileText,         label: 'Requests'    },
-  { to: '/call-logs',   icon: Phone,            label: 'Call Logs'   },
+  { to: '/call-logs',   icon: FiPhone,          label: 'Call Logs'   },
   { to: '/analytics',  icon: BarChart3,         label: 'Analytics'   },
   { to: '/departments', icon: Building2,        label: 'Departments' },
-  { to: '/settings',   icon: Settings,          label: 'Settings'    },
+  { to: '/settings',   icon: FaCog,             label: 'Settings'    },
 ];
 
 export default function Sidebar() {
@@ -62,7 +64,7 @@ export default function Sidebar() {
             top: 0;
             bottom: 0;
             width: 260px;
-            background: linear-gradient(180deg, #0F2942 0%, #153454 50%, #1B3C62 100%);
+            background: linear-gradient(160deg, #0F1F38 0%, #1D4ED8 60%, #2563EB 100%);
             display: flex;
             flex-direction: column;
             z-index: 1001;
@@ -78,6 +80,57 @@ export default function Sidebar() {
 
           .sb-mobile-close {
             display: none;
+          }
+
+          @media (min-width: 1025px) and (max-width: 1366px) {
+            .app-sidebar {
+              width: 210px;
+            }
+            .sb-brand {
+              padding: 16px 14px 14px;
+              gap: 10px;
+            }
+            .sb-brand-title {
+              font-size: 13.5px;
+            }
+            .sb-brand-sub {
+              font-size: 10px;
+            }
+            .sb-nav-container {
+              padding: 4px 8px;
+            }
+            .sb-nav-item {
+              padding: 8px 10px;
+              font-size: 12.5px;
+              gap: 9px;
+            }
+            .sb-nav-icon-box {
+              width: 26px;
+              height: 26px;
+            }
+            .sb-section-label {
+              padding: 12px 10px 4px;
+              font-size: 9.5px;
+            }
+            .sb-footer {
+              padding: 10px 10px 14px;
+            }
+            .sb-signout-btn {
+              padding: 8px 10px;
+              font-size: 12px;
+              margin-bottom: 8px;
+            }
+            .sb-user-card {
+              padding: 8px 10px;
+            }
+            .sb-user-avatar {
+              width: 32px;
+              height: 32px;
+              font-size: 12px;
+            }
+            .sb-user-name {
+              font-size: 12px;
+            }
           }
 
           @media (max-width: 1024px) {

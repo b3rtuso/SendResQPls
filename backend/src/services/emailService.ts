@@ -2,15 +2,15 @@ import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
 
-// â”€â”€â”€ Brevo Config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Brevo Config -----------------------------------------------------------
 function getBrevoConfig() {
   const apiKey = process.env.BREVO_API_KEY;
   const senderEmail = process.env.SYSTEM_EMAIL?.trim().replace(/"/g, '') || 'bertingmagiting16@gmail.com';
-  if (!apiKey) console.error('âŒ BREVO_API_KEY is not set in environment variables!');
+  if (!apiKey) console.error('[Config Error] BREVO_API_KEY is not set in environment variables!');
   return { apiKey, senderEmail };
 }
 
-// â”€â”€â”€ Logo Loader â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Logo Loader ------------------------------------------------------------
 let cachedLogoBase64 = '';
 function getLogoBase64(): string {
   if (cachedLogoBase64) return cachedLogoBase64;
@@ -37,23 +37,22 @@ function getEmailAttachments() {
   return [{ content: logoBase64, name: 'logo.jpg' }];
 }
 
-// â”€â”€â”€ Master Email Layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const LOGO_PUBLIC_URL = 'https://sendresqpls-mobile.vercel.app/logo.jpg';
+
+// --- Master Email Layout ----------------------------------------------------
 // Brand palette from the SRQ logo:
-//   Royal blue  â†’ #1A3FA3
-//   Brand red   â†’ #E5332A
-//   Dark navy   â†’ #0A1931
+//   Royal blue  -> #1A3FA3
+//   Dark navy   -> #0A1931
 function renderEmailLayout(title: string, contentHtml: string): string {
-  const logoBase64 = getLogoBase64();
-  const logoTag = logoBase64
-    ? `<img src="cid:logo.jpg" alt="SendResQPls Logo" width="76" height="76"
-         style="display:block; border-radius:14px; border:3px solid #FFFFFF;
-                box-shadow:0 4px 16px rgba(0,0,0,0.35); object-fit:cover;" />`
-    : '';
+  const logoTag = `<img src="${LOGO_PUBLIC_URL}" alt="SendResQPls Logo" width="76" height="76"
+         style="display:block; margin:0 auto; border-radius:14px; border:3px solid #FFFFFF;
+                box-shadow:0 4px 16px rgba(0,0,0,0.35); object-fit:cover;" />`;
 
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>${title}</title>
 </head>
@@ -71,12 +70,7 @@ function renderEmailLayout(title: string, contentHtml: string): string {
                       overflow:hidden; border:1px solid #CBD5E1;
                       box-shadow:0 8px 32px rgba(10,25,49,0.12), 0 2px 8px rgba(0,0,0,0.06);">
 
-          <!-- Top red accent stripe -->
-          <tr>
-            <td style="background-color:#E5332A; height:5px; line-height:5px; font-size:1px;">&nbsp;</td>
-          </tr>
-
-          <!-- Header -->
+          <!-- Clean Header (No red accent lines/stripes) -->
           <tr>
             <td style="background-color:#1A3FA3;
                        background-image:linear-gradient(135deg, #0A1931 0%, #1A3FA3 55%, #2255C8 100%);
@@ -88,14 +82,9 @@ function renderEmailLayout(title: string, contentHtml: string): string {
               </h1>
               <p style="margin:0; color:#BFD4FF; font-size:12px; font-weight:600;
                         letter-spacing:1px; text-transform:uppercase;">
-                MDRRMO &bull; Municipality of Balayan, Batangas
+                MDRRMO | Municipality of Balayan, Batangas
               </p>
             </td>
-          </tr>
-
-          <!-- Red divider under header -->
-          <tr>
-            <td style="background-color:#E5332A; height:4px; line-height:4px; font-size:1px;">&nbsp;</td>
           </tr>
 
           <!-- Body -->
@@ -140,7 +129,7 @@ function renderEmailLayout(title: string, contentHtml: string): string {
           <tr>
             <td style="background-color:#0A1931; padding:10px 28px; text-align:center;">
               <p style="margin:0; font-size:10px; color:#5E7AA8; letter-spacing:0.4px;">
-                &copy; 2025 SendResQPls &bull; MDRRMO Balayan &bull; All rights reserved
+                &copy; 2026 SendResQPls | MDRRMO Balayan | All rights reserved
               </p>
             </td>
           </tr>
@@ -155,7 +144,7 @@ function renderEmailLayout(title: string, contentHtml: string): string {
 </html>`;
 }
 
-// ——— Send helper ————————————————————————————————————————————————————————————
+// --- Send helper ------------------------------------------------------------
 async function sendEmail(
   apiKey: string,
   senderName: string,
@@ -179,78 +168,72 @@ async function sendEmail(
   });
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// EMAIL 1 — Verification Code (Clean, Minimalist, 1-Minute Expiration)
-// ═══════════════════════════════════════════════════════════════════════════════
+// ----------------------------------------------------------------------------
+// EMAIL 1 - Verification Code (Matches Status Update Master Design)
+// ----------------------------------------------------------------------------
 export const sendVerificationEmail = async (to: string, code: string) => {
   const { apiKey, senderEmail } = getBrevoConfig();
   if (!apiKey) throw new Error('BREVO_API_KEY is missing');
 
-  const cleanHtml = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Verification Code</title>
-</head>
-<body style="margin:0; padding:0; background-color:#F8FAFC; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing:antialiased; color:#0F172A;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F8FAFC; padding:36px 16px;">
-    <tr>
-      <td align="center">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:440px; background-color:#FFFFFF; border-radius:16px; overflow:hidden; border:1px solid #E2E8F0; box-shadow:0 4px 16px rgba(10,25,49,0.06);">
-          <tr>
-            <td style="padding:28px 24px 8px; text-align:center;">
-              <div style="font-size:16px; font-weight:800; color:#0A1931; letter-spacing:0.5px; text-transform:uppercase;">
-                SendResQPls
-              </div>
-              <div style="font-size:11.5px; font-weight:600; color:#64748B; margin-top:2px;">
-                MDRRMO Balayan
-              </div>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:12px 28px 24px; text-align:center;">
-              <h2 style="margin:0 0 6px; color:#0A1931; font-size:20px; font-weight:800;">
-                Verification Code
-              </h2>
-              <p style="margin:0 0 20px; color:#64748B; font-size:13.5px; line-height:1.5;">
-                Enter this 6-digit code to verify your account:
-              </p>
+  const content = `
+    <p style="margin:0 0 4px; color:#94A3B8; font-size:12px; font-weight:600;
+              text-transform:uppercase; letter-spacing:0.8px;">
+      Account Verification
+    </p>
+    <h2 style="margin:0 0 16px; color:#0A1931; font-size:22px; font-weight:800; line-height:1.25;">
+      Verification Code
+    </h2>
+    <p style="margin:0 0 24px; color:#475569; font-size:14px; line-height:1.65;">
+      Enter this 6-digit verification code to complete your SendResQPls account setup:
+    </p>
 
-              <!-- OTP Display Box -->
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:14px;">
-                <tr>
-                  <td style="background-color:#0F172A; border-radius:12px; padding:20px 16px; text-align:center;">
-                    <div style="font-size:42px; font-weight:800; letter-spacing:10px; color:#FFFFFF; font-family:'Courier New', Courier, monospace; padding-left:10px; line-height:1;">
-                      ${code}
-                    </div>
-                  </td>
-                </tr>
-              </table>
+    <!-- Verification Code Card matching Status Update incident card -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+      <tr>
+        <td style="border:1px solid #E2E8F0; border-radius:14px; overflow:hidden;">
 
-              <!-- 1 Minute Expiration Notice -->
-              <p style="margin:0 0 16px; color:#DC2626; font-size:13px; font-weight:700;">
-                &#9203;&nbsp; This code expires in 1 minute
-              </p>
+          <!-- Card Header -->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="background-color:#1A3FA3; padding:12px 18px;">
+                <span style="color:#FFFFFF; font-size:11px; font-weight:800; letter-spacing:0.8px; text-transform:uppercase;">
+                  One-Time Passcode (OTP)
+                </span>
+              </td>
+            </tr>
+          </table>
 
-              <p style="margin:0; color:#94A3B8; font-size:11.5px; line-height:1.45;">
-                If you did not request this code, you can safely ignore this email.
-              </p>
-            </td>
-          </tr>
-          <tr>
-            <td style="background-color:#F8FAFC; border-top:1px solid #F1F5F9; padding:14px 24px; text-align:center;">
-              <p style="margin:0; font-size:11px; color:#94A3B8;">
-                &copy; 2026 MDRRMO Balayan &bull; SendResQPls
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`;
+          <!-- Card Body -->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="padding:28px 20px; text-align:center; background-color:#F8FAFC;">
+                <div style="font-size:42px; font-weight:800; letter-spacing:10px; color:#0F172A; font-family:'Courier New', Courier, monospace; padding-left:10px; line-height:1;">
+                  ${code}
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td style="height:1px; background-color:#E2E8F0; line-height:1px; font-size:1px;">&nbsp;</td>
+            </tr>
+            <tr>
+              <td style="padding:14px 18px; text-align:center; background-color:#FFFFFF;">
+                <span style="color:#DC2626; font-size:13px; font-weight:700;">
+                  This code expires in 1 minute
+                </span>
+              </td>
+            </tr>
+          </table>
+
+        </td>
+      </tr>
+    </table>
+
+    <p style="margin:0; color:#94A3B8; font-size:12px; line-height:1.55;">
+      If you did not request this verification code, please ignore this email. Your account remains secure.
+    </p>
+  `;
+
+  const html = renderEmailLayout('SendResQPls - Verification Code', content);
 
   try {
     await sendEmail(
@@ -259,18 +242,17 @@ export const sendVerificationEmail = async (to: string, code: string) => {
       senderEmail,
       to,
       `${code} is your SendResQPls verification code`,
-      cleanHtml,
-      true,
+      html,
+      false,
     );
   } catch (err: any) {
     throw new Error(err.response?.data?.message || err.message);
   }
 };
 
-
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// EMAIL 2 â€” Incident Status Notification
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ----------------------------------------------------------------------------
+// EMAIL 2 - Incident Status Notification
+// ----------------------------------------------------------------------------
 export const sendStatusNotification = async (
   to: string,
   reporterName: string,
@@ -318,9 +300,7 @@ export const sendStatusNotification = async (
           <!-- Card header -->
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
             <tr>
-              <td style="background-color:#1A3FA3;
-                         background-image:linear-gradient(90deg, #0A1931 0%, #1A3FA3 100%);
-                         padding:12px 18px;">
+              <td style="background-color:#1A3FA3; padding:12px 18px;">
                 <span style="color:#FFFFFF; font-size:11px; font-weight:800; letter-spacing:0.8px; text-transform:uppercase;">
                   Incident Report
                 </span>
@@ -388,89 +368,90 @@ export const sendStatusNotification = async (
       'MDRRMO Balayan Dispatch',
       senderEmail,
       to,
-      `[${newStatus}] Emergency Report Update â€” ${incidentType}`,
-      renderEmailLayout(`Incident Update â€” ${incidentType}`, content),
+      `[${newStatus}] Emergency Report Update - ${incidentType}`,
+      renderEmailLayout(`Incident Update - ${incidentType}`, content),
     );
   } catch (err: any) {
     throw new Error(err.response?.data?.message || err.message);
   }
 };
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// EMAIL 3 â€” Password Reset
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ----------------------------------------------------------------------------
+// EMAIL 3 - Password Reset
+// ----------------------------------------------------------------------------
 export const sendPasswordResetEmail = async (to: string, name: string, resetUrl: string) => {
   const { apiKey, senderEmail } = getBrevoConfig();
   if (!apiKey) throw new Error('BREVO_API_KEY is missing');
 
   const content = `
-    <div style="display:inline-block; background-color:#FFF5F5; color:#C0392B;
-                border:1px solid #FECACA; font-size:11px; font-weight:800;
-                padding:4px 12px; border-radius:99px; letter-spacing:0.8px;
-                text-transform:uppercase; margin-bottom:18px;">
+    <p style="margin:0 0 4px; color:#94A3B8; font-size:12px; font-weight:600;
+              text-transform:uppercase; letter-spacing:0.8px;">
       Account Security
-    </div>
-
-    <h2 style="margin:0 0 12px; color:#0A1931; font-size:22px; font-weight:800; line-height:1.25;">
-      Password Reset Request
+    </p>
+    <h2 style="margin:0 0 16px; color:#0A1931; font-size:22px; font-weight:800; line-height:1.25;">
+      Reset Your Password
     </h2>
-
-    <p style="margin:0 0 8px; color:#475569; font-size:14px; line-height:1.65;">
-      Hello <strong style="color:#0A1931;">${name}</strong>,
+    <p style="margin:0 0 6px; color:#475569; font-size:14px; line-height:1.65;">
+      Hello <strong style="color:#0A1931;">${name || 'Citizen'}</strong>,
     </p>
-    <p style="margin:0 0 28px; color:#475569; font-size:14px; line-height:1.65;">
-      We received a request to reset the password for your
-      <strong style="color:#1A3FA3;">SendResQPls</strong> account.
-      Click the button below to set a new secure password:
+    <p style="margin:0 0 24px; color:#64748B; font-size:13.5px; line-height:1.6;">
+      We received a request to reset your SendResQPls account password. Click the button below to choose a new password:
     </p>
 
-    <!-- CTA -->
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+    <!-- CTA Button -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
       <tr>
         <td align="center">
           <a href="${resetUrl}"
-             style="display:inline-block; background-color:#E5332A;
-                    background-image:linear-gradient(135deg, #C0392B 0%, #E5332A 100%);
-                    color:#FFFFFF; padding:15px 40px; border-radius:12px;
-                    text-decoration:none; font-weight:800; font-size:14px;
-                    letter-spacing:0.3px; box-shadow:0 6px 18px rgba(229,51,42,0.35);">
+             target="_blank"
+             style="display:inline-block; background-color:#1D4ED8;
+                    color:#FFFFFF; padding:14px 32px; border-radius:12px;
+                    text-decoration:none; font-weight:700; font-size:14px;
+                    letter-spacing:0.2px; box-shadow:0 4px 14px rgba(29,78,216,0.3);">
             Reset My Password
           </a>
         </td>
       </tr>
     </table>
 
-    <!-- Warning -->
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
       <tr>
-        <td style="background-color:#FFFBEB; border-left:4px solid #F59E0B;
-                   border-radius:0 10px 10px 0; padding:13px 16px;">
-          <p style="margin:0; color:#92400E; font-size:12.5px; line-height:1.55;">
-            <strong>Important:</strong> This link expires in 30 minutes. If you did not request a
-            password reset, please ignore this email â€” your account remains secure.
-          </p>
+        <td style="text-align:center;">
+          <span style="color:#DC2626; font-size:12.5px; font-weight:700;">
+            This link expires in 30 minutes
+          </span>
         </td>
       </tr>
     </table>
 
-    <p style="margin:0; color:#94A3B8; font-size:11.5px; line-height:1.5;">
-      If the button doesn't work, copy and paste this link into your browser:<br />
-      <a href="${resetUrl}" style="color:#1A3FA3; word-break:break-all; font-size:11px;">${resetUrl}</a>
+    <p style="margin:0 0 16px; color:#94A3B8; font-size:12px; line-height:1.45;">
+      If you did not request a password reset, you can safely ignore this email - your account remains secure.
     </p>
+
+    <!-- Fallback Link -->
+    <div style="border-top:1px solid #E2E8F0; padding-top:14px; text-align:left;">
+      <p style="margin:0 0 4px; color:#94A3B8; font-size:11px;">
+        Button not working? Copy and paste this URL into your browser:
+      </p>
+      <a href="${resetUrl}" style="color:#1D4ED8; font-size:11px; word-break:break-all; text-decoration:underline;">
+        ${resetUrl}
+      </a>
+    </div>
   `;
+
+  const html = renderEmailLayout('SendResQPls - Reset Your Password', content);
 
   try {
     await sendEmail(
       apiKey,
-      'MDRRMO Balayan Security',
+      'SendResQPls',
       senderEmail,
       to,
       'Reset Your SendResQPls Password',
-      renderEmailLayout('Password Reset â€” SendResQPls', content),
+      html,
+      false,
     );
   } catch (err: any) {
     throw new Error(err.response?.data?.message || err.message);
   }
 };
-
-
